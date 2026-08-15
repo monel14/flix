@@ -4,66 +4,88 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <title>{% block title %}Coflix — Streaming Gratuit{% endblock %}</title>
-    <meta name="description" content="{% block description %}Films et séries en streaming gratuit VF/VOSTFR.{% endblock %}">
-    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+    <title>{% block title %}Coflix — Streaming Films & Séries VF/VOSTFR{% endblock %}</title>
+    <meta name="description" content="{% block description %}Plateforme de streaming gratuit pour regarder des films et séries en VF et VOSTFR HD.{% endblock %}">
+    
+    <!-- Google Font Plus Jakarta Sans & Font Awesome 6 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
 
-<header class="site-header">
+<!-- Header / Navigation Bar (Frosted Glass) -->
+<header class="site-header" id="site-header">
     <div class="header-inner">
+        <!-- Logo -->
         <a class="brand" href="/">
-            <i class="fas fa-film"></i>
+            <div class="brand-icon"><i class="fas fa-play"></i></div>
             <span>Co<b>flix</b></span>
         </a>
 
+        <!-- Desktop Navigation -->
+        <nav class="main-nav">
+            <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+                <i class="fas fa-house"></i> Accueil
+            </a>
+            <a href="/films" class="nav-link {% if request.url.path.startswith('/films') %}active{% endif %}">
+                <i class="fas fa-film"></i> Films
+            </a>
+            <a href="/series" class="nav-link {% if request.url.path.startswith('/series') %}active{% endif %}">
+                <i class="fas fa-tv"></i> Séries
+            </a>
+        </nav>
+
+        <!-- Search Bar with Live Dropdown -->
         <form class="search-bar" action="/recherche" method="get" id="search-form" autocomplete="off">
-            <input type="text" name="q" id="search-input" placeholder="Rechercher un film, une série…"
-                   value="{% block search_value %}{% endblock %}">
-            <button type="submit" aria-label="Rechercher"><i class="fas fa-search"></i></button>
+            <div class="search-input-wrapper">
+                <i class="fas fa-magnifying-glass search-icon"></i>
+                <input type="text" name="q" id="search-input" placeholder="Titres, genres, séries…"
+                       value="{% block search_value %}{% endblock %}">
+            </div>
             <div id="search-dropdown" class="search-dropdown" hidden></div>
         </form>
-
-        <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false">
-            <i class="fas fa-bars"></i>
-        </button>
-        <nav class="main-nav" id="main-nav">
-            <a href="/">Accueil</a>
-            <a href="/films">Films</a>
-            <a href="/series">Séries</a>
-        </nav>
     </div>
 </header>
 
+<!-- Main Container -->
 <main class="site-main">
     {% block content %}{% endblock %}
 </main>
 
+<!-- Mobile Bottom Navigation (Native App feel) -->
+<nav class="mobile-bottom-bar" aria-label="Navigation mobile">
+    <a href="/" class="mobile-tab {% if request.url.path == '/' %}active{% endif %}">
+        <i class="fas fa-house"></i>
+        <span>Accueil</span>
+    </a>
+    <a href="/films" class="mobile-tab {% if request.url.path.startswith('/films') %}active{% endif %}">
+        <i class="fas fa-film"></i>
+        <span>Films</span>
+    </a>
+    <a href="/series" class="mobile-tab {% if request.url.path.startswith('/series') %}active{% endif %}">
+        <i class="fas fa-tv"></i>
+        <span>Séries</span>
+    </a>
+    <a href="/recherche" class="mobile-tab {% if request.url.path == '/recherche' %}active{% endif %}">
+        <i class="fas fa-magnifying-glass"></i>
+        <span>Recherche</span>
+    </a>
+</nav>
+
+<!-- Footer -->
 <footer class="site-footer">
-    <p>© 2026 Coflix — Usage personnel uniquement.</p>
+    <p>© 2026 Coflix — Streaming personnel & haute performance.</p>
 </footer>
 
+<!-- Global Scripts -->
 <script>
 (function () {
-    // Hamburger
-    const toggle = document.getElementById('nav-toggle');
-    const nav = document.getElementById('main-nav');
-    if (toggle && nav) {
-        toggle.addEventListener('click', () => {
-            const open = nav.classList.toggle('open');
-            toggle.setAttribute('aria-expanded', open);
-        });
-        document.addEventListener('click', e => {
-            if (!toggle.contains(e.target) && !nav.contains(e.target)) {
-                nav.classList.remove('open');
-                toggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-
-    // Autocomplete recherche
+    // Autocomplete recherche instantanée
     const input = document.getElementById('search-input');
     const dropdown = document.getElementById('search-dropdown');
     if (!input || !dropdown) return;
@@ -73,25 +95,31 @@
     input.addEventListener('input', () => {
         clearTimeout(timer);
         const q = input.value.trim();
-        if (q.length < 2) { dropdown.hidden = true; return; }
+        if (q.length < 2) { 
+            dropdown.hidden = true; 
+            return; 
+        }
         timer = setTimeout(() => {
             fetch(`/api/search?q=${encodeURIComponent(q)}`)
                 .then(r => r.json())
                 .then(data => {
                     const results = data.results || [];
-                    if (!results.length) { dropdown.hidden = true; return; }
+                    if (!results.length) { 
+                        dropdown.hidden = true; 
+                        return; 
+                    }
                     dropdown.innerHTML = results.map(r => `
                         <a href="/film/${r.slug}" class="dd-item">
-                            <img src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">
-                            <div>
+                            <img class="dd-poster" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">
+                            <div class="dd-info">
                                 <span class="dd-title">${r.title}</span>
-                                <span class="dd-type">${r.type === 'series' ? 'Série' : 'Film'}</span>
+                                <span class="dd-badge">${r.type === 'series' ? '<i class=\"fas fa-tv\"></i> Série' : '<i class=\"fas fa-film\"></i> Film'}</span>
                             </div>
                         </a>`).join('');
                     dropdown.hidden = false;
                 })
                 .catch(() => { dropdown.hidden = true; });
-        }, 300);
+        }, 250);
     });
 
     document.addEventListener('click', e => {
@@ -102,5 +130,5 @@
 })();
 </script>
 {% block scripts %}{% endblock %}
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2bac8129bd20144',t:'MTc4NjgyMzk4NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

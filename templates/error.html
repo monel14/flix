@@ -1,9 +1,18 @@
 {% extends "base.html" %}
+
 {% block title %}Erreur {{ status_code }} — Coflix{% endblock %}
+
 {% block content %}
-<div class="error-page">
-    <div class="error-code">{{ status_code }}</div>
-    <p class="error-message">{{ message }}</p>
-    <a href="/" class="btn-play">← Retour à l'accueil</a>
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 20px;">
+    <div style="font-size: 6rem; font-weight: 900; color: var(--brand); text-shadow: 0 0 40px var(--brand-glow); line-height: 1;">
+        {{ status_code }}
+    </div>
+    <h1 style="font-size: 1.6rem; font-weight: 800; color: #fff;">Oups ! Quelque chose s'est mal passé.</h1>
+    <p style="font-size: 1rem; color: var(--text-muted); max-width: 460px; line-height: 1.6;">
+        {{ message }}
+    </p>
+    <a href="/" class="btn-stream btn-stream--primary" style="margin-top: 12px;">
+        <i class="fas fa-house"></i> Retour à l'accueil
+    </a>
 </div>
 {% endblock %}

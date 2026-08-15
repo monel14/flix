@@ -1,94 +1,102 @@
 {% extends "base.html" %}
 
-{% block title %}{{ film.title }} — Coflix{% endblock %}
-{% block description %}{{ film.synopsis[:155] if film.synopsis else 'Regarder ' ~ film.title ~ ' en streaming gratuit.' }}{% endblock %}
+{% block title %}{{ film.title }} — Regarder en Streaming HD — Coflix{% endblock %}
+{% block description %}{{ film.synopsis[:155] if film.synopsis else 'Regarder ' ~ film.title ~ ' en streaming gratuit VF et VOSTFR.' }}{% endblock %}
 
 {% block content %}
-<div class="detail-layout">
-
-    <!-- Backdrop flou -->
+<!-- 1. CINEMATIC DETAIL HERO BANNER -->
+<div class="detail-hero-wrapper">
     {% if film.image %}
-    <div class="detail-backdrop" style="background-image: url('{{ film.image }}')"></div>
+    <div class="detail-backdrop-blur" style="background-image: url('{{ film.image }}');"></div>
     {% endif %}
 
-    <div class="detail-body">
-        <!-- Poster + infos -->
-        <aside class="detail-aside">
-            <img class="detail-poster" src="{{ film.image }}" alt="{{ film.title }}" loading="eager">
+    <div class="detail-content-grid">
+        <!-- Colonne Affiche & Actions -->
+        <div class="detail-poster-column">
+            <img class="detail-poster-img" src="{{ film.image }}" alt="{{ film.title }}" loading="eager">
 
             {% if film.first_episode_id %}
-            <a href="/regarder/{{ slug }}/ep-{{ film.first_episode_id }}" class="btn-play btn-play--big">
-                <i class="fas fa-play"></i> {{ 'Épisode 1' if film.type == 'series' else 'Regarder' }}
+            <a href="/regarder/{{ slug }}/ep-{{ film.first_episode_id }}" class="btn-stream btn-stream--primary btn-stream--big">
+                <i class="fas fa-play"></i> {{ 'Lire l\'épisode 1' if film.type == 'series' else 'Lancer le film' }}
             </a>
             {% endif %}
-        </aside>
+        </div>
 
-        <!-- Métadonnées -->
-        <section class="detail-info">
-            <h1 class="detail-title">{{ film.title }}</h1>
-
-            <div class="detail-meta">
-                {% if film.year %}<span class="meta-chip"><i class="fas fa-calendar"></i> {{ film.year }}</span>{% endif %}
-                {% if film.version %}<span class="meta-chip meta-chip--version">{{ film.version }}</span>{% endif %}
-                {% if film.status %}<span class="meta-chip">{{ film.status }}</span>{% endif %}
-                {% if film.content_type %}<span class="meta-chip">{{ film.content_type }}</span>{% endif %}
+        <!-- Colonne Informations & Métadonnées -->
+        <div class="detail-meta-column">
+            <div class="detail-chips-row">
+                <span class="badge-stream badge-stream--brand">{{ 'SÉRIE' if film.type == 'series' else 'FILM' }}</span>
+                {% if film.version %}<span class="badge-stream">{{ film.version }}</span>{% endif %}
+                {% if film.year %}<span class="detail-meta-chip"><i class="fas fa-calendar"></i> {{ film.year }}</span>{% endif %}
+                {% if film.status %}<span class="detail-meta-chip"><i class="fas fa-circle-check"></i> {{ film.status }}</span>{% endif %}
             </div>
 
+            <h1 class="detail-main-title">{{ film.title }}</h1>
+
             {% if film.genres %}
-            <div class="detail-genres">
+            <div class="detail-genres-row">
                 {% for g in film.genres %}
-                <a href="/films?genre={{ g | lower | replace(' ', '-') }}" class="genre-tag">{{ g }}</a>
+                <a href="/films?genre={{ g | lower | replace(' ', '-') }}" class="detail-genre-badge">
+                    {{ g }}
+                </a>
                 {% endfor %}
             </div>
             {% endif %}
 
             {% if film.synopsis %}
-            <p class="detail-synopsis">{{ film.synopsis }}</p>
+            <p class="detail-synopsis-text">{{ film.synopsis }}</p>
             {% endif %}
-        </section>
+        </div>
+    </div>
+</div>
+
+<!-- 2. SÉLECTEUR D'ÉPISODES (Séries) -->
+{% if film.type == 'series' and film.episodes %}
+<section class="episodes-section-block">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-list-ul"></i> Liste des Épisodes ({{ film.episodes | length }})</h2>
     </div>
 
-    <!-- Épisodes (séries uniquement, affichés dans l'ordre naturel chronologique) -->
-    {% if film.type == 'series' and film.episodes %}
-    <section class="episodes-section">
-        <h2 class="section-title"><i class="fas fa-list"></i> Épisodes ({{ film.episodes | length }})</h2>
-
-        {% set seasons = film.episodes | groupby('season') %}
-        {% for season_num, eps in seasons %}
-        <div class="season-block">
-            <h3 class="season-title">Saison {{ season_num }}</h3>
-            <div class="episodes-grid">
-                {% for ep in eps %}
-                <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}" class="episode-card">
-                    <span class="ep-num">{{ ep.title }}</span>
-                </a>
-                {% endfor %}
-            </div>
+    {% set seasons = film.episodes | groupby('season') %}
+    {% for season_num, eps in seasons %}
+    <div class="season-block">
+        <div class="season-heading">
+            <i class="fas fa-folder-open"></i> Saison {{ season_num }}
         </div>
-        {% endfor %}
-    </section>
-    {% endif %}
-
-    <!-- Films et séries similaires / Recommandations (#related) -->
-    {% if related %}
-    <section class="content-section related-section">
-        <div class="section-header">
-            <h2 class="section-title"><i class="fas fa-layer-group"></i> Titres similaires & recommandés</h2>
-        </div>
-        <div class="cards-grid">
-            {% for item in related %}
-            <a href="/film/{{ item.slug }}" class="card">
-                <div class="card-poster">
-                    <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                    {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
-                    <div class="card-overlay"><i class="fas fa-play"></i></div>
-                </div>
-                <p class="card-title">{{ item.title }}</p>
+        <div class="episodes-grid-layout">
+            {% for ep in eps %}
+            <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}" class="episode-btn-card">
+                <span>{{ ep.title }}</span>
+                <i class="fas fa-play"></i>
             </a>
             {% endfor %}
         </div>
-    </section>
-    {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
 
-</div>
+<!-- 3. TITRES SIMILAIRES (#related) -->
+{% if related %}
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-sparkles"></i> Vous aimerez aussi</h2>
+    </div>
+    <div class="cards-rail">
+        {% for item in related %}
+        <a href="/film/{{ item.slug }}" class="stream-card" style="width: 160px;">
+            <div class="card-poster-wrap">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
+            </div>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
 {% endblock %}

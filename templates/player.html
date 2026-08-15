@@ -1,47 +1,55 @@
 {% extends "base.html" %}
 
 {% block title %}
-{% if current_ep %}{{ film.title }} — {{ current_ep.title }}{% else %}{{ film.title }}{% endif %} — Coflix
+{% if current_ep %}{{ film.title }} — {{ current_ep.title }}{% else %}{{ film.title }}{% endif %} — Streaming — Coflix
 {% endblock %}
 
 {% block content %}
-<div class="player-layout">
+<div class="player-container-layout">
 
-    <!-- Titre + navigation épisodes -->
-    <div class="player-topbar">
-        <a href="/film/{{ slug }}" class="player-back"><i class="fas fa-arrow-left"></i> {{ film.title }}</a>
-        {% if current_ep %}
-        <span class="player-ep-label">{{ current_ep.title }}</span>
-        {% endif %}
-        <div class="player-nav-btns">
+    <!-- 1. BARRE SUPÉRIEURE DU LECTEUR -->
+    <div class="player-header-bar">
+        <div class="player-title-info">
+            <a href="/film/{{ slug }}" class="player-back-btn" title="Retour à la fiche">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="player-media-title">{{ film.title }}</h1>
+                {% if current_ep %}
+                <span class="player-ep-pill">{{ current_ep.title }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="player-nav-controls">
             {% if prev_ep %}
-            <a href="/regarder/{{ slug }}/ep-{{ prev_ep.episode_id }}" class="btn-nav" title="{{ prev_ep.title }}">
-                <i class="fas fa-step-backward"></i> Précédent
+            <a href="/regarder/{{ slug }}/ep-{{ prev_ep.episode_id }}" class="player-ctrl-btn" title="{{ prev_ep.title }}">
+                <i class="fas fa-backward-step"></i> Précédent
             </a>
             {% endif %}
             {% if next_ep %}
-            <a href="/regarder/{{ slug }}/ep-{{ next_ep.episode_id }}" class="btn-nav" title="{{ next_ep.title }}">
-                Suivant <i class="fas fa-step-forward"></i>
+            <a href="/regarder/{{ slug }}/ep-{{ next_ep.episode_id }}" class="player-ctrl-btn" style="background: var(--brand);" title="{{ next_ep.title }}">
+                Suivant <i class="fas fa-forward-step"></i>
             </a>
             {% endif %}
         </div>
     </div>
 
-    <!-- Sélection du serveur -->
-    <div class="server-bar">
-        <span class="server-label"><i class="fas fa-server"></i> Serveur :</span>
+    <!-- 2. SÉLECTEUR DE SERVEURS VIDÉO -->
+    <div class="servers-selector-bar">
+        <span class="server-lbl"><i class="fas fa-server"></i> Source :</span>
         {% for srv in servers %}
-        <button class="server-btn {% if loop.first %}active{% endif %}"
+        <button class="server-pill-btn {% if loop.first %}active{% endif %}"
                 data-link="{{ srv.server_link }}"
                 data-idx="{{ loop.index0 }}">
-            {{ srv.server_name }}
-            {% if srv.version %}<small>{{ srv.version }}</small>{% endif %}
+            <i class="fas fa-bolt"></i> {{ srv.server_name }}
+            {% if srv.version %}<small>({{ srv.version }})</small>{% endif %}
         </button>
         {% endfor %}
     </div>
 
-    <!-- Iframe lecteur -->
-    <div class="player-wrapper">
+    <!-- 3. CADRE CINÉMA THEATER (Iframe) -->
+    <div class="theater-frame-box">
         <iframe id="player-frame"
                 src="{{ default_server.server_link if default_server else '' }}"
                 allowfullscreen
@@ -52,14 +60,14 @@
         </iframe>
     </div>
 
-    <!-- Liste épisodes (séries dans l'ordre chronologique) -->
+    <!-- 4. PLAYLIST DES ÉPISODES (Séries) -->
     {% if episodes %}
-    <div class="player-episodes">
-        <h3 class="section-title"><i class="fas fa-list"></i> Épisodes</h3>
-        <div class="ep-list">
+    <div class="player-playlist-box">
+        <h2 class="playlist-heading"><i class="fas fa-list-ol"></i> Tous les épisodes</h2>
+        <div class="playlist-rail">
             {% for ep in episodes %}
             <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}"
-               class="ep-list-item {% if str(ep.episode_id) == str(episode_id) %}ep-list-item--active{% endif %}">
+               class="playlist-ep-chip {% if str(ep.episode_id) == str(episode_id) %}active{% endif %}">
                 {{ ep.title }}
             </a>
             {% endfor %}
@@ -74,7 +82,7 @@
 <script>
 (function () {
     const frame = document.getElementById('player-frame');
-    const btns = document.querySelectorAll('.server-btn');
+    const btns = document.querySelectorAll('.server-pill-btn');
 
     btns.forEach(btn => {
         btn.addEventListener('click', () => {

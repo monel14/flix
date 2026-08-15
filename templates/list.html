@@ -1,56 +1,72 @@
 {% extends "base.html" %}
 
-{% block title %}{{ section_label }} — Coflix{% endblock %}
+{% block title %}{{ section_label }} en Streaming HD — Coflix{% endblock %}
 
 {% block content %}
 <section class="content-section">
     <div class="section-header">
         <h1 class="section-title">
-            <i class="fas fa-{% if section == 'films' %}video{% else %}tv{% endif %}"></i>
+            <i class="fas fa-{% if section == 'films' %}clapperboard{% else %}tv{% endif %}"></i>
             {{ section_label }}
         </h1>
-        <nav class="pagination-inline" aria-label="Pagination">
-            {% if prev_url %}<a href="{{ prev_url }}" class="btn-page"><i class="fas fa-chevron-left"></i></a>{% endif %}
-            <span>Page {{ current_page }} / {{ last_page }}</span>
-            {% if next_url %}<a href="{{ next_url }}" class="btn-page"><i class="fas fa-chevron-right"></i></a>{% endif %}
-        </nav>
+        <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">
+            Page {{ current_page }} sur {{ last_page }}
+        </div>
     </div>
 
-    <!-- Barre de filtres par Genre -->
+    <!-- Barre de défilement des Genres -->
     {% if genres %}
-    <div class="genres-filter-bar">
-        <a href="{{ base_path }}" class="genre-pill {% if not current_genre %}active{% endif %}">
-            Tous
+    <div class="genres-scroll-bar">
+        <a href="{{ base_path }}" class="genre-chip {% if not current_genre %}active{% endif %}">
+            <i class="fas fa-layer-group"></i> Tous les genres
         </a>
         {% for g in genres %}
         <a href="{{ base_path }}?genre={{ g.slug }}"
-           class="genre-pill {% if current_genre == g.slug %}active{% endif %}">
+           class="genre-chip {% if current_genre == g.slug %}active{% endif %}">
             {{ g.label }}
         </a>
         {% endfor %}
     </div>
     {% endif %}
 
+    <!-- Grille des Affiches -->
     <div class="cards-grid">
         {% for item in items %}
-        <a href="/film/{{ item.slug }}" class="card">
-            <div class="card-poster">
+        <a href="/film/{{ item.slug }}" class="stream-card">
+            <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
-                <div class="card-overlay"><i class="fas fa-play"></i></div>
+                {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
-            <p class="card-title">{{ item.title }}</p>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+                <p class="card-sub">{{ 'Série' if item.type == 'series' else 'Film' }}</p>
+            </div>
         </a>
         {% else %}
-        <p class="empty-msg">Aucun contenu trouvé dans cette catégorie.</p>
+        <div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted);">
+            <i class="fas fa-film" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.3;"></i>
+            <p>Aucun titre trouvé dans cette catégorie.</p>
+        </div>
         {% endfor %}
     </div>
 
+    <!-- Pagination Moderne -->
     {% if prev_url or next_url %}
-    <nav class="pagination" aria-label="Pagination">
-        {% if prev_url %}<a href="{{ prev_url }}" class="btn-page">← Précédent</a>{% endif %}
-        <span class="page-info">Page {{ current_page }} / {{ last_page }}</span>
-        {% if next_url %}<a href="{{ next_url }}" class="btn-page">Suivant →</a>{% endif %}
+    <nav class="pagination-container" aria-label="Pagination">
+        {% if prev_url %}
+        <a href="{{ prev_url }}" class="pagination-btn">
+            <i class="fas fa-arrow-left"></i> Précédent
+        </a>
+        {% endif %}
+        
+        <span class="pagination-counter">{{ current_page }} / {{ last_page }}</span>
+        
+        {% if next_url %}
+        <a href="{{ next_url }}" class="pagination-btn">
+            Suivant <i class="fas fa-arrow-right"></i>
+        </a>
+        {% endif %}
     </nav>
     {% endif %}
 </section>

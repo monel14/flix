@@ -1,42 +1,56 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Résultats pour "' ~ query ~ '"' if query else 'Recherche' }} — Coflix{% endblock %}
+{% block title %}{{ 'Résultats pour "' ~ query ~ '"' if query else 'Explorer & Rechercher' }} — Coflix{% endblock %}
 {% block search_value %}{{ query }}{% endblock %}
 
 {% block content %}
 <section class="content-section">
     <div class="section-header">
         <h1 class="section-title">
+            <i class="fas fa-magnifying-glass"></i>
             {% if query %}
-            Résultats pour <em>« {{ query }} »</em>
+            Résultats pour <em style="color: var(--brand);">« {{ query }} »</em>
             {% else %}
-            Recherche
+            Explorer le catalogue
             {% endif %}
         </h1>
         {% if results %}
-        <span class="results-count">{{ results | length }} résultat(s)</span>
+        <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">
+            {{ results | length }} titre(s) trouvé(s)
+        </span>
         {% endif %}
     </div>
 
     {% if error %}
-    <p class="error-msg"><i class="fas fa-exclamation-triangle"></i> {{ error }}</p>
+    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 16px 20px; border-radius: var(--radius-md); color: #f87171; margin-bottom: 24px;">
+        <i class="fas fa-triangle-exclamation"></i> {{ error }}
+    </div>
     {% endif %}
 
     {% if not query %}
-    <p class="empty-msg">Tape un titre dans la barre de recherche pour commencer.</p>
+    <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <i class="fas fa-compass" style="font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3;"></i>
+        <p style="font-size: 1.1rem; font-weight: 600;">Tapez un nom de film, série ou acteur pour explorer.</p>
+    </div>
     {% elif not results and not error %}
-    <p class="empty-msg">Aucun résultat pour <strong>{{ query }}</strong>.</p>
+    <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <i class="fas fa-film-slash" style="font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3;"></i>
+        <p style="font-size: 1.1rem; font-weight: 600;">Aucun résultat trouvé pour « {{ query }} ».</p>
+        <p style="font-size: 0.9rem; margin-top: 8px;">Essayez avec un autre mot-clé ou parcourez nos catégories de films et séries.</p>
+    </div>
     {% else %}
     <div class="cards-grid">
         {% for item in results %}
-        <a href="/film/{{ item.slug }}" class="card">
-            <div class="card-poster">
+        <a href="/film/{{ item.slug }}" class="stream-card">
+            <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
-                <div class="card-overlay"><i class="fas fa-play"></i></div>
+                {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
-            <p class="card-title">{{ item.title }}</p>
-            <p class="card-type">{{ 'Série' if item.type == 'series' else 'Film' }}</p>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+                <p class="card-sub">{{ 'Série' if item.type == 'series' else 'Film' }}</p>
+            </div>
         </a>
         {% endfor %}
     </div>

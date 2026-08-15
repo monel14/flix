@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Coflix — Films & Séries en Streaming Gratuit VF & VOSTFR{% endblock %}
+{% block title %}Coflix — Regarder Films & Séries en Streaming Gratuit HD{% endblock %}
 
 {% block content %}
 
-<!-- Carrousel Hero (Films & Séries à la une) -->
+<!-- 1. CINEMATIC HERO SHOWCASE (Slider à la une) -->
 {% if hero_slides %}
 <section class="hero-slider-section" id="hero-slider">
     <div class="hero-slides-wrapper">
@@ -13,7 +13,8 @@
             <div class="hero-slide-backdrop" style="background-image: url('{{ slide.image }}');"></div>
             <div class="hero-slide-content">
                 <div class="hero-slide-meta">
-                    {% if slide.version %}<span class="badge badge--brand">{{ slide.version }}</span>{% endif %}
+                    <span class="badge-stream badge-stream--brand"><i class="fas fa-sparkles"></i> À LA UNE</span>
+                    {% if slide.version %}<span class="badge-stream">{{ slide.version }}</span>{% endif %}
                     {% if slide.year %}<span class="hero-meta-item"><i class="fas fa-calendar"></i> {{ slide.year }}</span>{% endif %}
                 </div>
                 <h1 class="hero-slide-title">{{ slide.title }}</h1>
@@ -21,8 +22,11 @@
                 <p class="hero-slide-synopsis">{{ slide.synopsis }}</p>
                 {% endif %}
                 <div class="hero-slide-actions">
-                    <a href="/film/{{ slide.slug }}" class="btn-play btn-play--big">
-                        <i class="fas fa-play"></i> Regarder
+                    <a href="/film/{{ slide.slug }}" class="btn-stream btn-stream--primary btn-stream--big">
+                        <i class="fas fa-play"></i> Regarder maintenant
+                    </a>
+                    <a href="/film/{{ slide.slug }}" class="btn-stream btn-stream--glass btn-stream--big">
+                        <i class="fas fa-circle-info"></i> Détails
                     </a>
                 </div>
             </div>
@@ -30,86 +34,96 @@
         {% endfor %}
     </div>
 
-    <!-- Navigation Hero Slider -->
+    <!-- Contrôles Slider -->
     {% if hero_slides | length > 1 %}
-    <button class="hero-nav hero-nav--prev" id="hero-prev" aria-label="Slide précédente"><i class="fas fa-chevron-left"></i></button>
-    <button class="hero-nav hero-nav--next" id="hero-next" aria-label="Slide suivante"><i class="fas fa-chevron-right"></i></button>
+    <button class="hero-nav hero-nav--prev" id="hero-prev" aria-label="Précédent"><i class="fas fa-chevron-left"></i></button>
+    <button class="hero-nav hero-nav--next" id="hero-next" aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
     <div class="hero-dots" id="hero-dots">
         {% for slide in hero_slides %}
-        <button class="hero-dot {% if loop.first %}active{% endif %}" data-idx="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"></button>
+        <button class="hero-dot {% if loop.first %}active{% endif %}" data-idx="{{ loop.index0 }}" aria-label="Diapositive {{ loop.index }}"></button>
         {% endfor %}
     </div>
     {% endif %}
 </section>
 {% endif %}
 
-<!-- Top Tendances -->
+
+<!-- 2. TOP 10 DU MOMENT (Style Netflix avec Numéros Géants) -->
 {% if top %}
-<section class="hero-section">
-    <div class="hero-inner">
-        <div class="section-header">
-            <h2 class="section-title"><i class="fas fa-fire"></i> Tendances</h2>
-            <div class="top-tabs">
-                <a href="/?top_filter=day" class="top-tab {% if top_filter == 'day' %}active{% endif %}">Jour</a>
-                <a href="/?top_filter=week" class="top-tab {% if top_filter == 'week' %}active{% endif %}">Semaine</a>
-                <a href="/?top_filter=month" class="top-tab {% if top_filter == 'month' %}active{% endif %}">Mois</a>
-            </div>
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-fire-flame-curved"></i> Top 10 des Tendances</h2>
+        <div class="top-tabs-bar">
+            <a href="/?top_filter=day" class="top-tab-btn {% if top_filter == 'day' %}active{% endif %}">Aujourd'hui</a>
+            <a href="/?top_filter=week" class="top-tab-btn {% if top_filter == 'week' %}active{% endif %}">Cette semaine</a>
+            <a href="/?top_filter=month" class="top-tab-btn {% if top_filter == 'month' %}active{% endif %}">Ce mois</a>
         </div>
-        <div class="cards-row" id="top-carousel">
-            {% for item in top %}
-            <a href="/film/{{ item.slug }}" class="card card-sm">
-                <div class="card-poster">
-                    <img src="{{ item.image }}" alt="{{ item.title }}" loading="{% if loop.index <= 5 %}eager{% else %}lazy{% endif %}">
-                    {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
+    </div>
+    <div class="cards-rail">
+        {% for item in top %}
+        <a href="/film/{{ item.slug }}" class="top-rail-card">
+            <span class="top-rank-number">{{ loop.index }}</span>
+            <div class="top-card-inner">
+                <div class="card-poster-wrap">
+                    <img src="{{ item.image }}" alt="{{ item.title }}" loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}">
+                    {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                    <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
                 </div>
-                <p class="card-title">{{ item.title }}</p>
-            </a>
-            {% endfor %}
-        </div>
+            </div>
+        </a>
+        {% endfor %}
     </div>
 </section>
 {% endif %}
 
-<!-- Films Récents -->
+
+<!-- 3. FILMS RÉCENTS (Rail Défilant) -->
 <section class="content-section">
     <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-video"></i> Films récents</h2>
-        <a href="/films" class="see-all">Voir tout <i class="fas fa-chevron-right"></i></a>
+        <h2 class="section-title"><i class="fas fa-clapperboard"></i> Derniers Films Ajoutés</h2>
+        <a href="/films" class="see-all-link">Explorer tout <i class="fas fa-chevron-right"></i></a>
     </div>
-    <div class="cards-grid">
+    <div class="cards-rail">
         {% for item in recent_movies %}
-        <a href="/film/{{ item.slug }}" class="card">
-            <div class="card-poster">
+        <a href="/film/{{ item.slug }}" class="stream-card" style="width: 170px;">
+            <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
-                <div class="card-overlay"><i class="fas fa-play"></i></div>
+                {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
-            <p class="card-title">{{ item.title }}</p>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+                <p class="card-sub"><i class="fas fa-film"></i> Film</p>
+            </div>
         </a>
         {% else %}
-        <p class="empty-msg">Aucun film disponible pour le moment.</p>
+        <p style="color: var(--text-muted);">Aucun film disponible pour le moment.</p>
         {% endfor %}
     </div>
 </section>
 
-<!-- Séries Récents -->
+
+<!-- 4. SÉRIES RÉCENTES (Rail Défilant) -->
 <section class="content-section">
     <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-tv"></i> Séries récentes</h2>
-        <a href="/series" class="see-all">Voir tout <i class="fas fa-chevron-right"></i></a>
+        <h2 class="section-title"><i class="fas fa-tv"></i> Séries Populaires & Nouveautés</h2>
+        <a href="/series" class="see-all-link">Explorer tout <i class="fas fa-chevron-right"></i></a>
     </div>
-    <div class="cards-grid">
+    <div class="cards-rail">
         {% for item in recent_series %}
-        <a href="/film/{{ item.slug }}" class="card">
-            <div class="card-poster">
+        <a href="/film/{{ item.slug }}" class="stream-card" style="width: 170px;">
+            <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
-                <div class="card-overlay"><i class="fas fa-play"></i></div>
+                {% if item.version %}<span class="card-badge">{{ item.version }}</span>{% endif %}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
-            <p class="card-title">{{ item.title }}</p>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+                <p class="card-sub"><i class="fas fa-tv"></i> Série</p>
+            </div>
         </a>
         {% else %}
-        <p class="empty-msg">Aucune série disponible pour le moment.</p>
+        <p style="color: var(--text-muted);">Aucune série disponible pour le moment.</p>
         {% endfor %}
     </div>
 </section>
@@ -119,7 +133,7 @@
 {% block scripts %}
 <script>
 (function() {
-    // Hero Slider
+    // Autoplay & navigation du Hero Slider
     const slides = document.querySelectorAll('.hero-slide');
     const dots = document.querySelectorAll('.hero-dot');
     const prevBtn = document.getElementById('hero-prev');
@@ -147,7 +161,7 @@
         dot.addEventListener('click', () => { goToSlide(i); resetAuto(); });
     });
 
-    function startAuto() { autoTimer = setInterval(nextSlide, 6000); }
+    function startAuto() { autoTimer = setInterval(nextSlide, 6500); }
     function resetAuto() { clearInterval(autoTimer); startAuto(); }
 
     startAuto();
