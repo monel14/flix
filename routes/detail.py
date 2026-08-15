@@ -33,10 +33,17 @@ async def _load_detail(slug: str) -> dict:
     else:
         detail["episodes"] = []  # type: ignore[assignment]
 
-    # Premier épisode pour les séries, sinon ID direct pour les films
+    # Premier épisode pour les séries ; pour les films on utilise le movie_id directement comme episode_id
     first_ep = detail["episodes"][0] if detail.get("episodes") else None  # type: ignore[index]
-    detail["first_episode_id"] = first_ep["episode_id"] if first_ep else None  # type: ignore[assignment]
-    detail["first_episode_url"] = first_ep["url"] if first_ep else None  # type: ignore[assignment]
+    if first_ep:
+        detail["first_episode_id"] = first_ep["episode_id"]  # type: ignore[assignment]
+        detail["first_episode_url"] = first_ep["url"]  # type: ignore[assignment]
+    elif detail["type"] == "movie" and detail["movie_id"]:
+        detail["first_episode_id"] = detail["movie_id"]  # type: ignore[assignment]
+        detail["first_episode_url"] = f"/regarder/{slug}/ep-{detail['movie_id']}"  # type: ignore[assignment]
+    else:
+        detail["first_episode_id"] = None  # type: ignore[assignment]
+        detail["first_episode_url"] = None  # type: ignore[assignment]
 
     return dict(detail)
 

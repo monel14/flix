@@ -49,7 +49,10 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
         servers = []
 
     if not servers:
-        raise HTTPException(status_code=404, detail="Aucun serveur disponible pour cet épisode")
+        raise HTTPException(
+            status_code=404,
+            detail="Aucun serveur disponible pour ce contenu. Il a peut-être été retiré du site source.",
+        )
 
     # Épisodes de la série pour la navigation
     episodes = film.get("episodes", [])
@@ -110,7 +113,14 @@ async def _load_detail_for_player(slug: str) -> dict:
         detail["episodes"] = []  # type: ignore[assignment]
 
     first_ep = detail["episodes"][0] if detail.get("episodes") else None  # type: ignore[index]
-    detail["first_episode_id"] = first_ep["episode_id"] if first_ep else None  # type: ignore[assignment]
-    detail["first_episode_url"] = first_ep["url"] if first_ep else None  # type: ignore[assignment]
+    if first_ep:
+        detail["first_episode_id"] = first_ep["episode_id"]  # type: ignore[assignment]
+        detail["first_episode_url"] = first_ep["url"]  # type: ignore[assignment]
+    elif detail["type"] == "movie" and detail["movie_id"]:
+        detail["first_episode_id"] = detail["movie_id"]  # type: ignore[assignment]
+        detail["first_episode_url"] = f"/regarder/{slug}/ep-{detail['movie_id']}"  # type: ignore[assignment]
+    else:
+        detail["first_episode_id"] = None  # type: ignore[assignment]
+        detail["first_episode_url"] = None  # type: ignore[assignment]
 
     return dict(detail)

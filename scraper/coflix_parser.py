@@ -209,8 +209,13 @@ def parse_coflix_episodes(json_data: dict) -> list[CoflixEpisode]:
 
 def parse_coflix_servers(json_data: dict) -> list[CoflixServer]:
     """Parse la réponse JSON de /ajax/episode/player."""
+    # Quand l'épisode est introuvable côté source, message est une string d'erreur
+    message = json_data.get("message", [])
+    if not isinstance(message, list):
+        return []
+
     servers = []
-    for item in json_data.get("message", []):
+    for item in message:
         if not isinstance(item, dict):
             continue
         link = item.get("server_link", "")
