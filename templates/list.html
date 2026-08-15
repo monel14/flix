@@ -6,7 +6,7 @@
 <section class="content-section">
     <div class="section-header">
         <h1 class="section-title">
-            <i class="fas fa-{% if section == 'films' %}clapperboard{% else %}tv{% endif %}"></i>
+            <i class="fas fa-{% if section == 'films' %}clapperboard{% elif section == 'dramas' %}earth-asia{% else %}tv{% endif %}"></i>
             {{ section_label }}
         </h1>
         <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">
@@ -32,7 +32,7 @@
     <!-- Grille des Affiches -->
     <div class="cards-grid">
         {% for item in items %}
-        <a href="/film/{{ item.slug }}" class="stream-card">
+        <a href="{% if item.type == 'drama' or section == 'dramas' %}/drama/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                 {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
@@ -40,7 +40,7 @@
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-sub">{{ 'Série' if item.type == 'series' else 'Film' }}</p>
+                <p class="card-sub">{{ 'K-Drama' if (item.type == 'drama' or section == 'dramas') else ('Série' if item.type == 'series' else 'Film') }}</p>
             </div>
         </a>
         {% else %}

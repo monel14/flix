@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ drama.title }} — K-Drama en Streaming HD — Coflix{% endblock %}
+{% block description %}{{ drama.synopsis[:155] if drama.synopsis else 'Regarder ' ~ drama.title ~ ' drama coréen en streaming gratuit VOSTFR et VF.' }}{% endblock %}
+
+{% block content %}
+<!-- 1. CINEMATIC DRAMA HERO BANNER -->
+<div class="detail-hero-wrapper">
+    {% if drama.image %}
+    <div class="detail-backdrop-blur" style="background-image: url('{{ drama.image }}');"></div>
+    {% endif %}
+
+    <div class="detail-content-grid">
+        <!-- Colonne Affiche & Actions -->
+        <div class="detail-poster-column">
+            <img class="detail-poster-img" src="{{ drama.image }}" alt="{{ drama.title }}" loading="eager">
+
+            {% if drama.first_episode_id %}
+            <a href="/regarder-drama/{{ slug }}/{{ drama.first_episode_id }}" class="btn-liquid btn-liquid--primary btn-liquid--big">
+                <i class="fas fa-play"></i> Lancer l'Épisode 1
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Colonne Informations & Métadonnées -->
+        <div class="detail-meta-column">
+            <div class="detail-chips-row">
+                <span class="badge-liquid badge-liquid--brand"><i class="fas fa-tv"></i> K-DRAMA</span>
+                {% if drama.version %}<span class="badge-liquid">{{ drama.version }}</span>{% endif %}
+                {% if drama.country %}<span class="detail-meta-chip"><i class="fas fa-earth-asia"></i> {{ drama.country }}</span>{% endif %}
+                {% if drama.year %}<span class="detail-meta-chip"><i class="fas fa-calendar"></i> {{ drama.year }}</span>{% endif %}
+                {% if drama.status %}<span class="detail-meta-chip"><i class="fas fa-circle-check"></i> {{ drama.status }}</span>{% endif %}
+            </div>
+
+            <h1 class="detail-main-title">{{ drama.title }}</h1>
+
+            {% if drama.genres %}
+            <div class="detail-genres-row">
+                {% for g in drama.genres %}
+                <a href="/dramas?genre={{ g | lower | replace(' ', '-') }}" class="detail-genre-badge">
+                    {{ g }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if drama.synopsis %}
+            <p class="detail-synopsis-text">{{ drama.synopsis }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 2. LISTE DES ÉPISODES DU DRAMA -->
+{% if drama.episodes %}
+<section class="episodes-section-block">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-list-ol"></i> Épisodes Disponibles ({{ drama.episodes | length }})</h2>
+    </div>
+
+    <div class="episodes-grid-layout">
+        {% for ep in drama.episodes %}
+        <a href="/regarder-drama/{{ slug }}/{{ ep.episode_id }}" class="episode-btn-card">
+            <span>{{ ep.title }}</span>
+            <i class="fas fa-play"></i>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

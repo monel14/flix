@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if current_ep %}{{ drama.title }} — {{ current_ep.title }}{% else %}{{ drama.title }}{% endif %} — K-Drama Streaming — Coflix
+{% endblock %}
+
+{% block content %}
+<div class="player-container-layout">
+
+    <!-- 1. BARRE SUPÉRIEURE DU LECTEUR -->
+    <div class="player-header-bar">
+        <div class="player-title-info">
+            <a href="/drama/{{ slug }}" class="player-back-btn" title="Retour au drama">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="player-media-title">{{ drama.title }}</h1>
+                {% if current_ep %}
+                <span class="player-ep-pill">{{ current_ep.title }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="player-nav-controls">
+            {% if prev_ep %}
+            <a href="/regarder-drama/{{ slug }}/{{ prev_ep.episode_id }}" class="player-ctrl-btn" title="{{ prev_ep.title }}">
+                <i class="fas fa-backward-step"></i> Précédent
+            </a>
+            {% endif %}
+            {% if next_ep %}
+            <a href="/regarder-drama/{{ slug }}/{{ next_ep.episode_id }}" class="player-ctrl-btn" style="background: var(--brand);" title="{{ next_ep.title }}">
+                Suivant <i class="fas fa-forward-step"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 2. SÉLECTEUR DE SERVEURS VIDÉO -->
+    <div class="servers-selector-bar">
+        <span class="server-lbl"><i class="fas fa-server"></i> Lecteur :</span>
+        {% for srv in servers %}
+        <button class="server-pill-btn {% if loop.first %}active{% endif %}"
+                data-link="{{ srv.server_link }}"
+                data-idx="{{ loop.index0 }}">
+            <i class="fas fa-bolt"></i> {{ srv.server_name }}
+        </button>
+        {% endfor %}
+    </div>
+
+    <!-- 3. CADRE CINÉMA THEATER (Iframe) -->
+    <div class="theater-frame-box">
+        <iframe id="player-frame"
+                src="{{ default_server.server_link if default_server else '' }}"
+                allowfullscreen
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                frameborder="0"
+                scrolling="no">
+        </iframe>
+    </div>
+
+    <!-- 4. PLAYLIST DES ÉPISODES DU DRAMA -->
+    {% if episodes %}
+    <div class="player-playlist-box">
+        <h2 class="playlist-heading"><i class="fas fa-list-ol"></i> Tous les épisodes du drama</h2>
+        <div class="playlist-rail">
+            {% for ep in episodes %}
+            <a href="/regarder-drama/{{ slug }}/{{ ep.episode_id }}"
+               class="playlist-ep-chip {% if ep.episode_id|string == episode_slug|string %}active{% endif %}">
+                {{ ep.title }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const frame = document.getElementById('player-frame');
+    const btns = document.querySelectorAll('.server-pill-btn');
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            frame.src = btn.dataset.link;
+        });
+    });
+})();
+</script>
+{% endblock %}

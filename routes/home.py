@@ -17,6 +17,8 @@ from scraper.coflix_parser import (
     parse_coflix_list,
     parse_coflix_top,
 )
+from scraper.voirdrama_client import voirdrama_get_html
+from scraper.voirdrama_parser import parse_voirdrama_list
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -56,9 +58,23 @@ async def _load_top(top_type: str = "day") -> list:
         return []
 
 
+async def _load_popular_dramas() -> list:
+    """Charge les K-Dramas populaires / récents depuis voirdrama.to."""
+    try:
+        html = await voirdrama_get_html("/nouveaux-ajouts/")
+        items = parse_voirdrama_list(html)
+        if not items:
+            html_all = await voirdrama_get_html("/liste-dramas/")
+            items = parse_voirdrama_list(html_all)
+        return items[:18]
+    except Exception as exc:
+        logger.warning("Erreur chargement K-Dramas accueil : %s", exc)
+        return []
+
+
 @router.get("/", response_class=HTMLResponse)
-async def home(request: Request, top_filter: str = Query(default="day", regex="^(day|week|month)$")) -> HTMLResponse:
-    """Page d'accueil : carrousel hero + films récents + séries récentes + top tendances."""
+async def home(request: Request, top_filter: str = Query(default="day", pattern="^(day|week|month)$")) -> HTMLResponse:
+    """Page d'accueil : carrousel hero + films récents + séries récentes + top tendances + K-Dramas."""
     async def fetch_hero():
         try:
             return await cache.get_or_set("home:hero", HOME_TTL, _load_hero)
@@ -89,12 +105,19 @@ async def home(request: Request, top_filter: str = Query(default="day", regex="^
         except Exception:
             return []
 
-    # Chargement concurrent des 4 composants d'accueil
-    hero_slides, movies_data, series_data, top = await asyncio.gather(
+    async def fetch_dramas():
+        try:
+            return await cache.get_or_set("home:dramas:popular", HOME_TTL, _load_popular_dramas)
+        except Exception:
+            return []
+
+    # Chargement concurrent des 5 composants d'accueil
+    hero_slides, movies_data, series_data, top, popular_dramas = await asyncio.gather(
         fetch_hero(),
         fetch_movies(),
         fetch_series(),
         fetch_top(),
+        fetch_dramas(),
     )
 
     return templates.TemplateResponse(request, "home.html", {
@@ -102,6 +125,7 @@ async def home(request: Request, top_filter: str = Query(default="day", regex="^
         "hero_slides": hero_slides if isinstance(hero_slides, list) else [],
         "recent_movies": movies_data.get("items", [])[:24],
         "recent_series": series_data.get("items", [])[:24],
+        "popular_dramas": popular_dramas if isinstance(popular_dramas, list) else [],
         "top": top[:10] if isinstance(top, list) else [],
         "top_filter": top_filter,
     })
@@ -123,12 +147,10 @@ async def movies_list(
         logger.warning("Erreur liste films p%d genre=%s : %s", page, genre, exc)
         data = {"items": [], "last_page": 1}
 
-    # Calcul des URLs de pagination avec préservation du genre
     genre_param = f"&genre={genre}" if genre else ""
     prev_url = f"/films?page={page - 1}{genre_param}" if page > 1 else None
     next_url = f"/films?page={page + 1}{genre_param}" if page < data.get("last_page", 1) else None
 
-    # Libellé de la section
     genre_label = next((g["label"] for g in AVAILABLE_GENRES if g["slug"] == genre), None) if genre else None
     section_label = f"Films — {genre_label}" if genre_label else "Films"
 
@@ -163,12 +185,10 @@ async def series_list(
         logger.warning("Erreur liste séries p%d genre=%s : %s", page, genre, exc)
         data = {"items": [], "last_page": 1}
 
-    # Calcul des URLs de pagination avec préservation du genre
     genre_param = f"&genre={genre}" if genre else ""
     prev_url = f"/series?page={page - 1}{genre_param}" if page > 1 else None
     next_url = f"/series?page={page + 1}{genre_param}" if page < data.get("last_page", 1) else None
 
-    # Libellé de la section
     genre_label = next((g["label"] for g in AVAILABLE_GENRES if g["slug"] == genre), None) if genre else None
     section_label = f"Séries — {genre_label}" if genre_label else "Séries"
 

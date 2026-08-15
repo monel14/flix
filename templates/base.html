@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <title>{% block title %}Coflix — Streaming Films & Séries VF/VOSTFR{% endblock %}</title>
-    <meta name="description" content="{% block description %}Plateforme de streaming gratuit pour regarder des films et séries en VF et VOSTFR HD.{% endblock %}">
+    <title>{% block title %}Coflix — Streaming Films, Séries & K-Dramas VF/VOSTFR{% endblock %}</title>
+    <meta name="description" content="{% block description %}Plateforme de streaming gratuit pour regarder des films, séries et K-Dramas asiatiques en VF et VOSTFR HD.{% endblock %}">
     
     <!-- Google Font Plus Jakarta Sans & Font Awesome 6 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,13 +38,16 @@
             <a href="/series" class="nav-link {% if request.url.path.startswith('/series') %}active{% endif %}">
                 <i class="fas fa-tv"></i> Séries
             </a>
+            <a href="/dramas" class="nav-link {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
+                <i class="fas fa-earth-asia"></i> K-Dramas
+            </a>
         </nav>
 
         <!-- Search Bar with Live Dropdown -->
         <form class="search-bar" action="/recherche" method="get" id="search-form" autocomplete="off">
             <div class="search-input-wrapper">
                 <i class="fas fa-magnifying-glass search-icon"></i>
-                <input type="text" name="q" id="search-input" placeholder="Titres, genres, séries…"
+                <input type="text" name="q" id="search-input" placeholder="Films, séries, K-Dramas…"
                        value="{% block search_value %}{% endblock %}">
             </div>
             <div id="search-dropdown" class="search-dropdown" hidden></div>
@@ -71,6 +74,10 @@
         <i class="fas fa-tv"></i>
         <span>Séries</span>
     </a>
+    <a href="/dramas" class="mobile-tab {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
+        <i class="fas fa-earth-asia"></i>
+        <span>Dramas</span>
+    </a>
     <a href="/recherche" class="mobile-tab {% if request.url.path == '/recherche' %}active{% endif %}">
         <i class="fas fa-magnifying-glass"></i>
         <span>Recherche</span>
@@ -79,13 +86,12 @@
 
 <!-- Footer -->
 <footer class="site-footer">
-    <p>© 2026 Coflix — Streaming personnel & haute performance.</p>
+    <p>© 2026 Coflix — Streaming personnel multi-sources (Films, Séries & K-Dramas).</p>
 </footer>
 
 <!-- Global Scripts -->
 <script>
 (function () {
-    // Autocomplete recherche instantanée
     const input = document.getElementById('search-input');
     const dropdown = document.getElementById('search-dropdown');
     if (!input || !dropdown) return;
@@ -109,17 +115,17 @@
                         return; 
                     }
                     dropdown.innerHTML = results.map(r => `
-                        <a href="/film/${r.slug}" class="dd-item">
+                        <a href="${r.url || ('/film/' + r.slug)}" class="dd-item">
                             <img class="dd-poster" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">
                             <div class="dd-info">
                                 <span class="dd-title">${r.title}</span>
-                                <span class="dd-badge">${r.type === 'series' ? '<i class=\"fas fa-tv\"></i> Série' : '<i class=\"fas fa-film\"></i> Film'}</span>
+                                <span class="dd-badge">${r.type === 'drama' ? '<i class=\"fas fa-earth-asia\"></i> K-Drama' : (r.type === 'series' ? '<i class=\"fas fa-tv\"></i> Série' : '<i class=\"fas fa-film\"></i> Film')}</span>
                             </div>
                         </a>`).join('');
                     dropdown.hidden = false;
                 })
                 .catch(() => { dropdown.hidden = true; });
-        }, 250);
+        }, 220);
     });
 
     document.addEventListener('click', e => {
@@ -130,5 +136,5 @@
 })();
 </script>
 {% block scripts %}{% endblock %}
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2bac8129bd20144',t:'MTc4NjgyMzk4NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2bb8fe4be32fead',t:'MTc4NjgzMjE2OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

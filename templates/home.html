@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Coflix — Regarder Films & Séries en Streaming Gratuit HD{% endblock %}
+{% block title %}Coflix — Regarder Films, Séries & K-Dramas en Streaming Gratuit HD{% endblock %}
 
 {% block content %}
 
@@ -77,7 +77,33 @@
 {% endif %}
 
 
-<!-- 3. FILMS RÉCENTS (Rail Défilant) -->
+<!-- 3. K-DRAMAS POPULAIRES (Rail Défilant) -->
+{% if popular_dramas %}
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-earth-asia"></i> K-Dramas & Séries Asiatiques</h2>
+        <a href="/dramas" class="see-all-link">Explorer tout <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="cards-rail">
+        {% for item in popular_dramas %}
+        <a href="/drama/{{ item.slug }}" class="stream-card" style="width: 170px;">
+            <div class="card-poster-wrap">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                <span class="card-badge card-badge--vf">{{ item.version }}</span>
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
+            </div>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+                <p class="card-sub"><i class="fas fa-tv"></i> K-Drama</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+
+<!-- 4. FILMS RÉCENTS (Rail Défilant) -->
 <section class="content-section">
     <div class="section-header">
         <h2 class="section-title"><i class="fas fa-clapperboard"></i> Derniers Films Ajoutés</h2>
@@ -103,7 +129,7 @@
 </section>
 
 
-<!-- 4. SÉRIES RÉCENTES (Rail Défilant) -->
+<!-- 5. SÉRIES RÉCENTES (Rail Défilant) -->
 <section class="content-section">
     <div class="section-header">
         <h2 class="section-title"><i class="fas fa-tv"></i> Séries Populaires & Nouveautés</h2>
@@ -133,7 +159,6 @@
 {% block scripts %}
 <script>
 (function() {
-    // Autoplay & navigation du Hero Slider
     const slides = document.querySelectorAll('.hero-slide');
     const dots = document.querySelectorAll('.hero-dot');
     const prevBtn = document.getElementById('hero-prev');

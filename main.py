@@ -1,21 +1,23 @@
 from __future__ import annotations
 
 import logging
+import urllib.parse
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
-from routes import detail, home, player, search
+from routes import detail, drama, home, player, search
 from scraper.coflix_client import close_coflix_client
+from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("coflix")
@@ -23,15 +25,16 @@ logger = logging.getLogger("coflix")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Nettoyage automatique du cache expiré au démarrage
+    # Nettoyage automatique du cache expiré au démarrage (conserve les archives)
     try:
         purged = cache.purge_expired()
         if purged > 0:
-            logger.info("Cache nettoyé au démarrage : %d entrée(s) expirée(s) supprimée(s)", purged)
+            logger.info("Cache nettoyé au démarrage : %d entrée(s) temporaire(s) expirée(s) supprimée(s)", purged)
     except Exception as exc:
         logger.warning("Impossible de purger le cache : %s", exc)
     yield
     await close_coflix_client()
+    await close_voirdrama_client()
 
 
 app = FastAPI(title="Coflix", lifespan=lifespan)
@@ -45,6 +48,52 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 templates.env.globals["str"] = str
+
+
+# ---------------------------------------------------------------------------
+# Proxy d'images (Contournement de la protection anti-hotlink 403 de voirdrama)
+# ---------------------------------------------------------------------------
+
+@app.get("/api/image-proxy")
+async def image_proxy(url: str = Query(...)):
+    """Relaye les images distantes avec le bon Referer pour contourner les erreurs 403."""
+    if not url.startswith("http://") and not url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="Invalid URL")
+
+    # Déterminer le Referer adapté
+    referer = "https://voirdrama.to/" if "voirdrama" in url else "https://coflix.wiki/"
+
+    try:
+        client = get_voirdrama_client()
+        r = await client.get(
+            url,
+            headers={
+                "Referer": referer,
+                "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            },
+            timeout=10.0,
+        )
+        if r.status_code == 200:
+            content_type = r.headers.get("content-type", "image/jpeg")
+            return Response(
+                content=r.content,
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "public, max-age=604800, immutable",
+                },
+            )
+    except Exception as exc:
+        logger.warning("Erreur image proxy pour %s : %s", url, exc)
+
+    # Image de secours (placeholder neutre)
+    placeholder = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">'
+        '<rect width="300" height="450" fill="#131622"/>'
+        '<text x="50%" y="50%" font-family="sans-serif" font-size="16" fill="#64748b" text-anchor="middle" dominant-baseline="middle">'
+        'Affiche indisponible'
+        '</text></svg>'
+    )
+    return Response(content=placeholder, media_type="image/svg+xml")
 
 
 # ---------------------------------------------------------------------------
@@ -99,4 +148,5 @@ async def server_error_handler(request: Request, exc: Exception):
 app.include_router(home.router)
 app.include_router(detail.router)
 app.include_router(player.router)
+app.include_router(drama.router)
 app.include_router(search.router)

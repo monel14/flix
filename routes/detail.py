@@ -4,12 +4,14 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from cache import DETAIL_TTL, cache
 from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_get_html, coflix_get_json
 from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
+from scraper.voirdrama_client import VoirdramaNotFoundError, voirdrama_get_html
+from scraper.voirdrama_parser import parse_voirdrama_detail
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -23,7 +25,7 @@ async def load_detail(slug: str) -> dict:
 
     # Si aucun movie_id n'a été trouvé (ex: redirection vers la page d'accueil par le site source)
     if not detail.get("movie_id"):
-        raise CoflixNotFoundError(f"Film ou série introuvable : {slug}")
+        raise CoflixNotFoundError(f"Film ou série introuvable sur Coflix : {slug}")
 
     # Si c'est une série, on charge les épisodes
     if detail["type"] == "series" and detail["movie_id"]:
@@ -58,23 +60,30 @@ async def load_detail(slug: str) -> dict:
 
 
 @router.get("/film/{slug}", response_class=HTMLResponse)
-async def film_detail(request: Request, slug: str) -> HTMLResponse:
+async def film_detail(request: Request, slug: str):
+    # 1. Tentative de chargement depuis Coflix (Films / Séries)
     try:
         data = await cache.get_or_set(
             f"detail:{slug}", DETAIL_TTL, lambda: load_detail(slug)
         )
-    except CoflixNotFoundError:
-        raise HTTPException(status_code=404, detail="Film introuvable")
-    except CoflixFetchError as exc:
-        logger.warning("Erreur détail %s : %s", slug, exc)
-        raise HTTPException(status_code=502, detail="Source indisponible")
+        if data and data.get("title") and data.get("movie_id"):
+            return templates.TemplateResponse(request, "detail.html", {
+                "request": request,
+                "film": data,
+                "slug": slug,
+                "related": data.get("related", []),
+            })
+    except (CoflixNotFoundError, CoflixFetchError):
+        pass
 
-    if not data or not data.get("title") or not data.get("movie_id"):
-        raise HTTPException(status_code=404, detail="Film introuvable")
+    # 2. Fallback intelligent : vérification si le titre est un K-Drama sur Voirdrama
+    try:
+        html_drama = await voirdrama_get_html(f"/drama/{slug}/")
+        drama_data = parse_voirdrama_detail(html_drama, slug)
+        if drama_data and drama_data.get("title") and drama_data.get("episodes"):
+            logger.info("Redirection automatique de /film/%s vers /drama/%s (détecté comme K-Drama)", slug, slug)
+            return RedirectResponse(url=f"/drama/{slug}", status_code=302)
+    except Exception:
+        pass
 
-    return templates.TemplateResponse(request, "detail.html", {
-        "request": request,
-        "film": data,
-        "slug": slug,
-        "related": data.get("related", []),
-    })
+    raise HTTPException(status_code=404, detail="Film, série ou drama introuvable")
