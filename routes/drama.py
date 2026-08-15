@@ -26,12 +26,15 @@ router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 
 
-async def _load_dramas_list(page: int = 1, genre: str | None = None) -> dict:
-    """Charge la liste paginée des dramas ou filtre par genre."""
+async def _load_dramas_list(page: int = 1, genre: str | None = None, sort: str = "latest") -> dict:
+    """Charge la liste paginée des dramas (Dernières sorties par défaut, A-Z ou filtre par genre)."""
     if genre:
         path = f"/drama-genre/{genre}/" if page == 1 else f"/drama-genre/{genre}/page/{page}/"
-    else:
+    elif sort in ("all", "az"):
         path = "/liste-dramas/" if page == 1 else f"/liste-dramas/page/{page}/"
+    else:
+        # Par défaut : Dernières sorties & ajouts récents
+        path = "/nouveaux-ajouts/" if page == 1 else f"/nouveaux-ajouts/page/{page}/"
 
     html = await voirdrama_get_html(path)
     items = parse_voirdrama_list(html)
@@ -44,7 +47,6 @@ async def _load_drama_detail(slug: str) -> dict:
     html = await voirdrama_get_html(f"/drama/{slug}/")
     detail = parse_voirdrama_detail(html, slug)
     if not detail.get("title") or not detail.get("episodes"):
-        # Si la fiche est vide ou introuvable
         if not detail.get("title"):
             raise VoirdramaNotFoundError(f"Drama introuvable : {slug}")
     return dict(detail)
@@ -61,25 +63,37 @@ async def dramas_list(
     request: Request,
     page: int = Query(default=1, ge=1),
     genre: str | None = Query(default=None),
+    sort: str = Query(default="latest", pattern="^(latest|az|all)$"),
 ) -> HTMLResponse:
-    """Catalogue paginé des K-Dramas (filtrable par genre)."""
-    cache_key = f"list:dramas:{genre}:{page}" if genre else f"list:dramas:{page}"
+    """Catalogue des K-Dramas (Dernières sorties par défaut, ou filtrable par genre / A-Z)."""
+    cache_key = f"list:dramas:{genre}:{page}" if genre else f"list:dramas:{sort}:{page}"
     try:
         data = await cache.get_or_set(
-            cache_key, HOME_TTL, lambda: _load_dramas_list(page, genre)
+            cache_key, HOME_TTL, lambda: _load_dramas_list(page, genre, sort)
         )
     except VoirdramaFetchError as exc:
-        logger.warning("Erreur liste dramas p%d genre=%s : %s", page, genre, exc)
+        logger.warning("Erreur liste dramas p%d genre=%s sort=%s : %s", page, genre, sort, exc)
         data = {"items": [], "last_page": 1}
 
-    # Calcul des URLs de pagination
-    genre_param = f"&genre={genre}" if genre else ""
-    prev_url = f"/dramas?page={page - 1}{genre_param}" if page > 1 else None
-    next_url = f"/dramas?page={page + 1}{genre_param}" if page < data.get("last_page", 1) else None
+    # Calcul des paramètres de pagination
+    params = []
+    if genre:
+        params.append(f"genre={genre}")
+    elif sort != "latest":
+        params.append(f"sort={sort}")
+    query_str = f"&{'&'.join(params)}" if params else ""
+
+    prev_url = f"/dramas?page={page - 1}{query_str}" if page > 1 else None
+    next_url = f"/dramas?page={page + 1}{query_str}" if page < data.get("last_page", 1) else None
 
     # Libellé de section
-    genre_label = next((g["label"] for g in VOIRDRAMA_GENRES if g["slug"] == genre), None) if genre else None
-    section_label = f"K-Dramas — {genre_label}" if genre_label else "K-Dramas & Séries Asiatiques"
+    if genre:
+        genre_label = next((g["label"] for g in VOIRDRAMA_GENRES if g["slug"] == genre), genre)
+        section_label = f"K-Dramas — {genre_label}"
+    elif sort in ("all", "az"):
+        section_label = "K-Dramas — Tous les titres (A-Z)"
+    else:
+        section_label = "K-Dramas — Dernières Sorties & Nouveautés"
 
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
@@ -92,6 +106,7 @@ async def dramas_list(
         "next_url": next_url,
         "genres": VOIRDRAMA_GENRES,
         "current_genre": genre,
+        "current_sort": sort,
         "base_path": "/dramas",
     })
 
@@ -122,7 +137,7 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
 @router.get("/regarder-drama/{slug}/{episode_slug}", response_class=HTMLResponse)
 async def drama_player(request: Request, slug: str, episode_slug: str) -> HTMLResponse:
     """Lecteur vidéo d'un épisode de drama."""
-    # 1. Charger la fiche du drama (pour les épisodes, titre et navigation)
+    # 1. Charger la fiche du drama
     try:
         drama = await cache.get_or_set(
             f"detail:drama:{slug}",
