@@ -1,13 +1,60 @@
 {% extends "base.html" %}
 
-{% block title %}Coflix — Films & Séries en Streaming Gratuit{% endblock %}
+{% block title %}Coflix — Films & Séries en Streaming Gratuit VF & VOSTFR{% endblock %}
 
 {% block content %}
 
+<!-- Carrousel Hero (Films & Séries à la une) -->
+{% if hero_slides %}
+<section class="hero-slider-section" id="hero-slider">
+    <div class="hero-slides-wrapper">
+        {% for slide in hero_slides %}
+        <div class="hero-slide {% if loop.first %}active{% endif %}" data-slide-index="{{ loop.index0 }}">
+            <div class="hero-slide-backdrop" style="background-image: url('{{ slide.image }}');"></div>
+            <div class="hero-slide-content">
+                <div class="hero-slide-meta">
+                    {% if slide.version %}<span class="badge badge--brand">{{ slide.version }}</span>{% endif %}
+                    {% if slide.year %}<span class="hero-meta-item"><i class="fas fa-calendar"></i> {{ slide.year }}</span>{% endif %}
+                </div>
+                <h1 class="hero-slide-title">{{ slide.title }}</h1>
+                {% if slide.synopsis %}
+                <p class="hero-slide-synopsis">{{ slide.synopsis }}</p>
+                {% endif %}
+                <div class="hero-slide-actions">
+                    <a href="/film/{{ slide.slug }}" class="btn-play btn-play--big">
+                        <i class="fas fa-play"></i> Regarder
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Navigation Hero Slider -->
+    {% if hero_slides | length > 1 %}
+    <button class="hero-nav hero-nav--prev" id="hero-prev" aria-label="Slide précédente"><i class="fas fa-chevron-left"></i></button>
+    <button class="hero-nav hero-nav--next" id="hero-next" aria-label="Slide suivante"><i class="fas fa-chevron-right"></i></button>
+    <div class="hero-dots" id="hero-dots">
+        {% for slide in hero_slides %}
+        <button class="hero-dot {% if loop.first %}active{% endif %}" data-idx="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"></button>
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+
+<!-- Top Tendances -->
 {% if top %}
 <section class="hero-section">
     <div class="hero-inner">
-        <h2 class="section-title"><i class="fas fa-fire"></i> Tendances du jour</h2>
+        <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-fire"></i> Tendances</h2>
+            <div class="top-tabs">
+                <a href="/?top_filter=day" class="top-tab {% if top_filter == 'day' %}active{% endif %}">Jour</a>
+                <a href="/?top_filter=week" class="top-tab {% if top_filter == 'week' %}active{% endif %}">Semaine</a>
+                <a href="/?top_filter=month" class="top-tab {% if top_filter == 'month' %}active{% endif %}">Mois</a>
+            </div>
+        </div>
         <div class="cards-row" id="top-carousel">
             {% for item in top %}
             <a href="/film/{{ item.slug }}" class="card card-sm">
@@ -23,6 +70,7 @@
 </section>
 {% endif %}
 
+<!-- Films Récents -->
 <section class="content-section">
     <div class="section-header">
         <h2 class="section-title"><i class="fas fa-video"></i> Films récents</h2>
@@ -44,6 +92,7 @@
     </div>
 </section>
 
+<!-- Séries Récents -->
 <section class="content-section">
     <div class="section-header">
         <h2 class="section-title"><i class="fas fa-tv"></i> Séries récentes</h2>
@@ -65,4 +114,43 @@
     </div>
 </section>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    // Hero Slider
+    const slides = document.querySelectorAll('.hero-slide');
+    const dots = document.querySelectorAll('.hero-dot');
+    const prevBtn = document.getElementById('hero-prev');
+    const nextBtn = document.getElementById('hero-next');
+    if (!slides.length) return;
+
+    let current = 0;
+    let autoTimer = null;
+
+    function goToSlide(idx) {
+        slides[current].classList.remove('active');
+        if (dots[current]) dots[current].classList.remove('active');
+        current = (idx + slides.length) % slides.length;
+        slides[current].classList.add('active');
+        if (dots[current]) dots[current].classList.add('active');
+    }
+
+    function nextSlide() { goToSlide(current + 1); }
+    function prevSlide() { goToSlide(current - 1); }
+
+    if (nextBtn) nextBtn.addEventListener('click', () => { nextSlide(); resetAuto(); });
+    if (prevBtn) prevBtn.addEventListener('click', () => { prevSlide(); resetAuto(); });
+
+    dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => { goToSlide(i); resetAuto(); });
+    });
+
+    function startAuto() { autoTimer = setInterval(nextSlide, 6000); }
+    function resetAuto() { clearInterval(autoTimer); startAuto(); }
+
+    startAuto();
+})();
+</script>
 {% endblock %}

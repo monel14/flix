@@ -156,6 +156,201 @@ img { display: block; max-width: 100%; }
     padding: 24px 16px 48px;
 }
 
+/* ── Carrousel Hero Slider (Accueil) ─────────────── */
+.hero-slider-section {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 36px;
+    background: #000;
+    box-shadow: var(--shadow);
+}
+.hero-slides-wrapper {
+    position: relative;
+    min-height: 380px;
+}
+.hero-slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .6s ease-in-out;
+    padding: 40px;
+}
+.hero-slide.active {
+    position: relative;
+    opacity: 1;
+    pointer-events: auto;
+}
+.hero-slide-backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center 20%;
+    filter: brightness(0.65);
+}
+.hero-slide-backdrop::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(15,15,19,0.95) 0%, rgba(15,15,19,0.4) 60%, transparent 100%),
+                linear-gradient(90deg, rgba(15,15,19,0.9) 0%, transparent 70%);
+}
+.hero-slide-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+}
+.hero-slide-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.badge--brand {
+    background: var(--brand);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+}
+.hero-meta-item {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.hero-slide-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+.hero-slide-synopsis {
+    font-size: 14px;
+    color: #d1d1e0;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.hero-slide-actions {
+    display: flex;
+    gap: 12px;
+}
+.hero-slide-actions .btn-play {
+    width: auto;
+    padding: 10px 28px;
+}
+.hero-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: 1px solid var(--line);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .2s, transform .15s;
+}
+.hero-nav:hover {
+    background: var(--brand);
+    transform: translateY(-50%) scale(1.1);
+}
+.hero-nav--prev { left: 16px; }
+.hero-nav--next { right: 16px; }
+.hero-dots {
+    position: absolute;
+    bottom: 16px;
+    right: 24px;
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+}
+.hero-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    border: none;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+}
+.hero-dot.active {
+    background: var(--brand);
+    transform: scale(1.3);
+}
+
+/* ── Top Tabs ────────────────────────────────────── */
+.top-tabs {
+    display: flex;
+    background: var(--surface2);
+    padding: 3px;
+    border-radius: var(--radius-sm);
+    gap: 2px;
+}
+.top-tab {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    border-radius: var(--radius-sm);
+    transition: background .15s, color .15s;
+}
+.top-tab:hover { color: var(--text); }
+.top-tab.active {
+    background: var(--brand);
+    color: #fff;
+}
+
+/* ── Barre de Genres (Pills) ─────────────────────── */
+.genres-filter-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 14px;
+    margin-bottom: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface2) transparent;
+}
+.genres-filter-bar::-webkit-scrollbar { height: 4px; }
+.genres-filter-bar::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+.genre-pill {
+    padding: 6px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 20px;
+    white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.genre-pill:hover {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: rgba(255,255,255,0.2);
+}
+.genre-pill.active {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+}
+
 /* ── Sections ────────────────────────────────────── */
 .content-section { margin-bottom: 48px; }
 
@@ -268,14 +463,13 @@ img { display: block; max-width: 100%; }
     color: var(--muted);
 }
 
-/* ── Hero section ────────────────────────────────── */
+/* ── Hero section (Tendances) ────────────────────── */
 .hero-section {
     margin-bottom: 40px;
     background: linear-gradient(180deg, var(--surface) 0%, transparent 100%);
     padding: 20px;
     border-radius: var(--radius);
 }
-.hero-inner {}
 
 /* ── Détail film ─────────────────────────────────── */
 .detail-layout {
@@ -356,11 +550,13 @@ img { display: block; max-width: 100%; }
 .genre-tag {
     background: var(--surface);
     border: 1px solid var(--line);
-    padding: 3px 10px;
-    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    border-radius: 20px;
     font-size: 12px;
     color: var(--muted);
+    transition: background .15s, color .15s;
 }
+.genre-tag:hover { background: var(--surface2); color: var(--text); }
 
 .detail-synopsis {
     font-size: 14px;
@@ -420,6 +616,13 @@ img { display: block; max-width: 100%; }
     transition: background .15s, border-color .15s;
 }
 .episode-card:hover { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+/* ── Titres Similaires (#related) ────────────────── */
+.related-section {
+    margin-top: 48px;
+    border-top: 1px solid var(--line);
+    padding-top: 32px;
+}
 
 /* ── Player ──────────────────────────────────────── */
 .player-layout { display: flex; flex-direction: column; gap: 16px; }
@@ -605,6 +808,12 @@ img { display: block; max-width: 100%; }
     .main-nav a { padding: 12px 20px; border-radius: 0; }
 
     .search-bar { max-width: none; }
+
+    .hero-slides-wrapper { min-height: 320px; }
+    .hero-slide { padding: 20px; }
+    .hero-slide-title { font-size: 1.5rem; }
+    .hero-slide-synopsis { font-size: 13px; -webkit-line-clamp: 2; }
+    .hero-nav { display: none; }
 
     .detail-body { flex-direction: column; align-items: center; text-align: center; }
     .detail-poster { width: 160px; }

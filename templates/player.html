@@ -52,14 +52,14 @@
         </iframe>
     </div>
 
-    <!-- Liste épisodes (séries) -->
+    <!-- Liste épisodes (séries dans l'ordre chronologique) -->
     {% if episodes %}
     <div class="player-episodes">
         <h3 class="section-title"><i class="fas fa-list"></i> Épisodes</h3>
         <div class="ep-list">
-            {% for ep in episodes | reverse %}
+            {% for ep in episodes %}
             <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}"
-               class="ep-list-item {% if ep.episode_id == episode_id %}ep-list-item--active{% endif %}">
+               class="ep-list-item {% if str(ep.episode_id) == str(episode_id) %}ep-list-item--active{% endif %}">
                 {{ ep.title }}
             </a>
             {% endfor %}

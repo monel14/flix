@@ -7,6 +7,32 @@ from bs4 import BeautifulSoup
 
 
 # ---------------------------------------------------------------------------
+# Genres supportés par Coflix
+# ---------------------------------------------------------------------------
+
+AVAILABLE_GENRES = [
+    {"slug": "action", "label": "Action"},
+    {"slug": "animation", "label": "Animation"},
+    {"slug": "aventure", "label": "Aventure"},
+    {"slug": "comedie", "label": "Comédie"},
+    {"slug": "crime", "label": "Crime"},
+    {"slug": "documentaire", "label": "Documentaire"},
+    {"slug": "drame", "label": "Drame"},
+    {"slug": "famille", "label": "Famille"},
+    {"slug": "fantastique", "label": "Fantastique"},
+    {"slug": "guerre", "label": "Guerre"},
+    {"slug": "histoire", "label": "Histoire"},
+    {"slug": "horreur", "label": "Horreur"},
+    {"slug": "musique", "label": "Musique"},
+    {"slug": "mystere", "label": "Mystère"},
+    {"slug": "romance", "label": "Romance"},
+    {"slug": "science-fiction", "label": "Science-Fiction"},
+    {"slug": "thriller", "label": "Thriller"},
+    {"slug": "western", "label": "Western"},
+]
+
+
+# ---------------------------------------------------------------------------
 # Types
 # ---------------------------------------------------------------------------
 
@@ -17,6 +43,16 @@ class CoflixItem(TypedDict):
     image: str
     version: str    # VF / VOSTFR / TrueFrench
     type: str       # "movie" | "series"
+
+
+class CoflixHeroItem(TypedDict):
+    title: str
+    slug: str
+    url: str
+    image: str
+    synopsis: str
+    year: str
+    version: str
 
 
 class CoflixDetail(TypedDict):
@@ -33,6 +69,7 @@ class CoflixDetail(TypedDict):
     status: str
     movie_id: str       # ID interne coflix pour les listes AJAX (data-id)
     episode_id: str     # ID d'épisode / streaming pour le player (data-ep-name)
+    related: list[CoflixItem]
 
 
 class CoflixEpisode(TypedDict):
@@ -71,10 +108,55 @@ def _extract_image(card) -> str:
     return ""
 
 
+def parse_coflix_hero(html: str) -> list[CoflixHeroItem]:
+    """Parse les slides à la une du #slider-main sur la page d'accueil."""
+    soup = BeautifulSoup(html, "html.parser")
+    items: list[CoflixHeroItem] = []
+
+    for slide in soup.select("#slider-main .slide"):
+        link = slide.select_one("a[href*='/film/']")
+        if not link:
+            continue
+        href = re.sub(r"/ep-\d+$", "", link.get("href", ""))
+        if not href:
+            continue
+
+        title_tag = slide.select_one(".title.d-title, .title, h2")
+        title = (title_tag.get("data-jp") or title_tag.text.strip()) if title_tag else ""
+
+        thumb = slide.get("data-thumb", "")
+        if not thumb:
+            img = slide.select_one("img")
+            thumb = img.get("src", "") if img else ""
+        if thumb:
+            thumb = thumb.replace("/w300/", "/w500/")
+
+        syn_tag = slide.select_one(".synopsis, .content p, p")
+        synopsis = syn_tag.text.strip() if syn_tag else ""
+
+        year_tag = slide.select_one(".year, .meta .year")
+        year = year_tag.text.strip() if year_tag else ""
+
+        version_tag = slide.select_one(".version, .badge, .meta .quality")
+        version = version_tag.text.strip() if version_tag else ""
+
+        items.append(CoflixHeroItem(
+            title=title,
+            slug=_extract_slug(href),
+            url=href,
+            image=thumb,
+            synopsis=synopsis,
+            year=year,
+            version=version,
+        ))
+
+    return items
+
+
 def parse_coflix_list(html: str, section: str) -> list[CoflixItem]:
     """Parse une page /movies/ ou /series/."""
     soup = BeautifulSoup(html, "html.parser")
-    content_type = "movie" if section == "movies" else "series"
+    content_type = "movie" if "movie" in section.lower() or "film" in section.lower() else "series"
     items: list[CoflixItem] = []
 
     for card in soup.select("div.item"):
@@ -129,7 +211,7 @@ def parse_coflix_top(html: str) -> list[CoflixItem]:
 
 
 def parse_coflix_detail(html: str, slug: str) -> CoflixDetail:
-    """Parse la page de détail d'un film ou d'une série."""
+    """Parse la page de détail d'un film ou d'une série avec ses contenus similaires."""
     soup = BeautifulSoup(html, "html.parser")
 
     watch = soup.select_one("#watch-page")
@@ -177,6 +259,28 @@ def parse_coflix_detail(html: str, slug: str) -> CoflixDetail:
 
     item_type = "series" if content_type.lower() == "series" else "movie"
 
+    # Extraction des films/séries liés (Recommandations / #related)
+    related_items: list[CoflixItem] = []
+    for card in soup.select("#related div.item"):
+        link = card.select_one("a.ani.poster, a.poster, a[href*='/film/']")
+        if not link:
+            continue
+        href = re.sub(r"/ep-\d+$", "", link.get("href", ""))
+        if not href:
+            continue
+        title_tag = card.select_one(".name.d-title, a.name.d-title, .d-title")
+        r_title = (title_tag.get("data-jp") or title_tag.text.strip()) if title_tag else ""
+        version_tag = card.select_one(".version")
+        r_version = version_tag.text.strip() if version_tag else ""
+        related_items.append(CoflixItem(
+            title=r_title,
+            slug=_extract_slug(href),
+            url=href,
+            image=_extract_image(card),
+            version=r_version,
+            type=item_type,
+        ))
+
     return CoflixDetail(
         title=title,
         slug=slug,
@@ -191,6 +295,7 @@ def parse_coflix_detail(html: str, slug: str) -> CoflixDetail:
         status=status,
         movie_id=movie_id,
         episode_id=episode_id,
+        related=related_items,
     )
 
 

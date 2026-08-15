@@ -17,9 +17,13 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent
 
 
 async def load_detail(slug: str) -> dict:
-    """Charge les détails d'un film ou d'une série avec ses épisodes."""
+    """Charge les détails d'un film ou d'une série avec ses épisodes et contenus liés."""
     html = await coflix_get_html(f"/film/{slug}")
     detail = parse_coflix_detail(html, slug)
+
+    # Si aucun movie_id n'a été trouvé (ex: redirection vers la page d'accueil par le site source)
+    if not detail.get("movie_id"):
+        raise CoflixNotFoundError(f"Film ou série introuvable : {slug}")
 
     # Si c'est une série, on charge les épisodes
     if detail["type"] == "series" and detail["movie_id"]:
@@ -65,11 +69,12 @@ async def film_detail(request: Request, slug: str) -> HTMLResponse:
         logger.warning("Erreur détail %s : %s", slug, exc)
         raise HTTPException(status_code=502, detail="Source indisponible")
 
-    if not data or not data.get("title"):
+    if not data or not data.get("title") or not data.get("movie_id"):
         raise HTTPException(status_code=404, detail="Film introuvable")
 
     return templates.TemplateResponse(request, "detail.html", {
         "request": request,
         "film": data,
         "slug": slug,
+        "related": data.get("related", []),
     })
