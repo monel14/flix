@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if current_ep %}{{ film.title }} — {{ current_ep.title }}{% else %}{{ film.title }}{% endif %} — Coflix
+{% endblock %}
+
+{% block content %}
+<div class="player-layout">
+
+    <!-- Titre + navigation épisodes -->
+    <div class="player-topbar">
+        <a href="/film/{{ slug }}" class="player-back"><i class="fas fa-arrow-left"></i> {{ film.title }}</a>
+        {% if current_ep %}
+        <span class="player-ep-label">{{ current_ep.title }}</span>
+        {% endif %}
+        <div class="player-nav-btns">
+            {% if prev_ep %}
+            <a href="/regarder/{{ slug }}/ep-{{ prev_ep.episode_id }}" class="btn-nav" title="{{ prev_ep.title }}">
+                <i class="fas fa-step-backward"></i> Précédent
+            </a>
+            {% endif %}
+            {% if next_ep %}
+            <a href="/regarder/{{ slug }}/ep-{{ next_ep.episode_id }}" class="btn-nav" title="{{ next_ep.title }}">
+                Suivant <i class="fas fa-step-forward"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sélection du serveur -->
+    <div class="server-bar">
+        <span class="server-label"><i class="fas fa-server"></i> Serveur :</span>
+        {% for srv in servers %}
+        <button class="server-btn {% if loop.first %}active{% endif %}"
+                data-link="{{ srv.server_link }}"
+                data-idx="{{ loop.index0 }}">
+            {{ srv.server_name }}
+            {% if srv.version %}<small>{{ srv.version }}</small>{% endif %}
+        </button>
+        {% endfor %}
+    </div>
+
+    <!-- Iframe lecteur -->
+    <div class="player-wrapper">
+        <iframe id="player-frame"
+                src="{{ default_server.server_link if default_server else '' }}"
+                allowfullscreen
+                allow="autoplay; fullscreen"
+                frameborder="0"
+                scrolling="no">
+        </iframe>
+    </div>
+
+    <!-- Liste épisodes (séries) -->
+    {% if episodes %}
+    <div class="player-episodes">
+        <h3 class="section-title"><i class="fas fa-list"></i> Épisodes</h3>
+        <div class="ep-list">
+            {% for ep in episodes | reverse %}
+            <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}"
+               class="ep-list-item {% if ep.episode_id == episode_id %}ep-list-item--active{% endif %}">
+                {{ ep.title }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const frame = document.getElementById('player-frame');
+    const btns = document.querySelectorAll('.server-btn');
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            frame.src = btn.dataset.link;
+        });
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}{{ film.title }} — Coflix{% endblock %}
+{% block description %}{{ film.synopsis[:155] if film.synopsis else 'Regarder ' ~ film.title ~ ' en streaming gratuit.' }}{% endblock %}
+
+{% block content %}
+<div class="detail-layout">
+
+    <!-- Backdrop flou -->
+    {% if film.image %}
+    <div class="detail-backdrop" style="background-image: url('{{ film.image }}')"></div>
+    {% endif %}
+
+    <div class="detail-body">
+        <!-- Poster + infos -->
+        <aside class="detail-aside">
+            <img class="detail-poster" src="{{ film.image }}" alt="{{ film.title }}" loading="eager">
+
+            {% if film.type == 'movie' and film.first_episode_id %}
+            <a href="/regarder/{{ slug }}/ep-{{ film.first_episode_id }}" class="btn-play btn-play--big">
+                <i class="fas fa-play"></i> Regarder
+            </a>
+            {% elif film.type == 'series' and film.first_episode_id %}
+            <a href="/regarder/{{ slug }}/ep-{{ film.first_episode_id }}" class="btn-play btn-play--big">
+                <i class="fas fa-play"></i> Épisode 1
+            </a>
+            {% endif %}
+        </aside>
+
+        <!-- Métadonnées -->
+        <section class="detail-info">
+            <h1 class="detail-title">{{ film.title }}</h1>
+
+            <div class="detail-meta">
+                {% if film.year %}<span class="meta-chip"><i class="fas fa-calendar"></i> {{ film.year }}</span>{% endif %}
+                {% if film.version %}<span class="meta-chip meta-chip--version">{{ film.version }}</span>{% endif %}
+                {% if film.status %}<span class="meta-chip">{{ film.status }}</span>{% endif %}
+                {% if film.content_type %}<span class="meta-chip">{{ film.content_type }}</span>{% endif %}
+            </div>
+
+            {% if film.genres %}
+            <div class="detail-genres">
+                {% for g in film.genres %}
+                <span class="genre-tag">{{ g }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if film.synopsis %}
+            <p class="detail-synopsis">{{ film.synopsis }}</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <!-- Épisodes (séries uniquement) -->
+    {% if film.type == 'series' and film.episodes %}
+    <section class="episodes-section">
+        <h2 class="section-title"><i class="fas fa-list"></i> Épisodes ({{ film.episodes | length }})</h2>
+
+        {% set seasons = film.episodes | groupby('season') %}
+        {% for season_num, eps in seasons %}
+        <div class="season-block">
+            <h3 class="season-title">Saison {{ season_num }}</h3>
+            <div class="episodes-grid">
+                {% for ep in eps | reverse %}
+                <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}" class="episode-card">
+                    <span class="ep-num">{{ ep.title }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+</div>
+{% endblock %}

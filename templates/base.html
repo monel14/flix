@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>{% block title %}Coflix — Streaming Gratuit{% endblock %}</title>
+    <meta name="description" content="{% block description %}Films et séries en streaming gratuit VF/VOSTFR.{% endblock %}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<header class="site-header">
+    <div class="header-inner">
+        <a class="brand" href="/">
+            <i class="fas fa-film"></i>
+            <span>Co<b>flix</b></span>
+        </a>
+
+        <form class="search-bar" action="/recherche" method="get" id="search-form" autocomplete="off">
+            <input type="text" name="q" id="search-input" placeholder="Rechercher un film, une série…"
+                   value="{% block search_value %}{% endblock %}">
+            <button type="submit" aria-label="Rechercher"><i class="fas fa-search"></i></button>
+            <div id="search-dropdown" class="search-dropdown" hidden></div>
+        </form>
+
+        <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false">
+            <i class="fas fa-bars"></i>
+        </button>
+        <nav class="main-nav" id="main-nav">
+            <a href="/">Accueil</a>
+            <a href="/films">Films</a>
+            <a href="/series">Séries</a>
+        </nav>
+    </div>
+</header>
+
+<main class="site-main">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    <p>© 2026 Coflix — Usage personnel uniquement.</p>
+</footer>
+
+<script>
+(function () {
+    // Hamburger
+    const toggle = document.getElementById('nav-toggle');
+    const nav = document.getElementById('main-nav');
+    if (toggle && nav) {
+        toggle.addEventListener('click', () => {
+            const open = nav.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', open);
+        });
+        document.addEventListener('click', e => {
+            if (!toggle.contains(e.target) && !nav.contains(e.target)) {
+                nav.classList.remove('open');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    // Autocomplete recherche
+    const input = document.getElementById('search-input');
+    const dropdown = document.getElementById('search-dropdown');
+    if (!input || !dropdown) return;
+
+    let timer = null;
+
+    input.addEventListener('input', () => {
+        clearTimeout(timer);
+        const q = input.value.trim();
+        if (q.length < 2) { dropdown.hidden = true; return; }
+        timer = setTimeout(() => {
+            fetch(`/api/search?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(data => {
+                    const results = data.results || [];
+                    if (!results.length) { dropdown.hidden = true; return; }
+                    dropdown.innerHTML = results.map(r => `
+                        <a href="/film/${r.slug}" class="dd-item">
+                            <img src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">
+                            <div>
+                                <span class="dd-title">${r.title}</span>
+                                <span class="dd-type">${r.type === 'series' ? 'Série' : 'Film'}</span>
+                            </div>
+                        </a>`).join('');
+                    dropdown.hidden = false;
+                })
+                .catch(() => { dropdown.hidden = true; });
+        }, 300);
+    });
+
+    document.addEventListener('click', e => {
+        if (!document.getElementById('search-form').contains(e.target)) {
+            dropdown.hidden = true;
+        }
+    });
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

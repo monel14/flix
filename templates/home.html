@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Coflix — Films & Séries en Streaming Gratuit{% endblock %}
+
+{% block content %}
+
+{% if top %}
+<section class="hero-section">
+    <div class="hero-inner">
+        <h2 class="section-title"><i class="fas fa-fire"></i> Tendances du jour</h2>
+        <div class="cards-row" id="top-carousel">
+            {% for item in top %}
+            <a href="/film/{{ item.slug }}" class="card card-sm">
+                <div class="card-poster">
+                    <img src="{{ item.image }}" alt="{{ item.title }}" loading="{% if loop.index <= 5 %}eager{% else %}lazy{% endif %}">
+                    {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
+                </div>
+                <p class="card-title">{{ item.title }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-video"></i> Films récents</h2>
+        <a href="/films" class="see-all">Voir tout <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="cards-grid">
+        {% for item in recent_movies %}
+        <a href="/film/{{ item.slug }}" class="card">
+            <div class="card-poster">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
+                <div class="card-overlay"><i class="fas fa-play"></i></div>
+            </div>
+            <p class="card-title">{{ item.title }}</p>
+        </a>
+        {% else %}
+        <p class="empty-msg">Aucun film disponible pour le moment.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-tv"></i> Séries récentes</h2>
+        <a href="/series" class="see-all">Voir tout <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="cards-grid">
+        {% for item in recent_series %}
+        <a href="/film/{{ item.slug }}" class="card">
+            <div class="card-poster">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
+                <div class="card-overlay"><i class="fas fa-play"></i></div>
+            </div>
+            <p class="card-title">{{ item.title }}</p>
+        </a>
+        {% else %}
+        <p class="empty-msg">Aucune série disponible pour le moment.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

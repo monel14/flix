@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Erreur {{ status_code }} — Coflix{% endblock %}
+{% block content %}
+<div class="error-page">
+    <div class="error-code">{{ status_code }}</div>
+    <p class="error-message">{{ message }}</p>
+    <a href="/" class="btn-play">← Retour à l'accueil</a>
+</div>
+{% endblock %}

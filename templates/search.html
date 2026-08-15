@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Résultats pour "' ~ query ~ '"' if query else 'Recherche' }} — Coflix{% endblock %}
+{% block search_value %}{{ query }}{% endblock %}
+
+{% block content %}
+<section class="content-section">
+    <div class="section-header">
+        <h1 class="section-title">
+            {% if query %}
+            Résultats pour <em>« {{ query }} »</em>
+            {% else %}
+            Recherche
+            {% endif %}
+        </h1>
+        {% if results %}
+        <span class="results-count">{{ results | length }} résultat(s)</span>
+        {% endif %}
+    </div>
+
+    {% if error %}
+    <p class="error-msg"><i class="fas fa-exclamation-triangle"></i> {{ error }}</p>
+    {% endif %}
+
+    {% if not query %}
+    <p class="empty-msg">Tape un titre dans la barre de recherche pour commencer.</p>
+    {% elif not results and not error %}
+    <p class="empty-msg">Aucun résultat pour <strong>{{ query }}</strong>.</p>
+    {% else %}
+    <div class="cards-grid">
+        {% for item in results %}
+        <a href="/film/{{ item.slug }}" class="card">
+            <div class="card-poster">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
+                <div class="card-overlay"><i class="fas fa-play"></i></div>
+            </div>
+            <p class="card-title">{{ item.title }}</p>
+            <p class="card-type">{{ 'Série' if item.type == 'series' else 'Film' }}</p>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

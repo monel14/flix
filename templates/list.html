@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section_label }} — Coflix{% endblock %}
+
+{% block content %}
+<section class="content-section">
+    <div class="section-header">
+        <h1 class="section-title">
+            <i class="fas fa-{% if section == 'films' %}video{% else %}tv{% endif %}"></i>
+            {{ section_label }}
+        </h1>
+        <nav class="pagination-inline" aria-label="Pagination">
+            {% if prev_url %}<a href="{{ prev_url }}" class="btn-page"><i class="fas fa-chevron-left"></i></a>{% endif %}
+            <span>Page {{ current_page }} / {{ last_page }}</span>
+            {% if next_url %}<a href="{{ next_url }}" class="btn-page"><i class="fas fa-chevron-right"></i></a>{% endif %}
+        </nav>
+    </div>
+
+    <div class="cards-grid">
+        {% for item in items %}
+        <a href="/film/{{ item.slug }}" class="card">
+            <div class="card-poster">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {% if item.version %}<span class="badge">{{ item.version }}</span>{% endif %}
+                <div class="card-overlay"><i class="fas fa-play"></i></div>
+            </div>
+            <p class="card-title">{{ item.title }}</p>
+        </a>
+        {% else %}
+        <p class="empty-msg">Aucun contenu trouvé.</p>
+        {% endfor %}
+    </div>
+
+    {% if prev_url or next_url %}
+    <nav class="pagination" aria-label="Pagination">
+        {% if prev_url %}<a href="{{ prev_url }}" class="btn-page">← Précédent</a>{% endif %}
+        <span class="page-info">Page {{ current_page }} / {{ last_page }}</span>
+        {% if next_url %}<a href="{{ next_url }}" class="btn-page">Suivant →</a>{% endif %}
+    </nav>
+    {% endif %}
+</section>
+{% endblock %}
