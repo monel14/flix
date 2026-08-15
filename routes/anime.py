@@ -1,0 +1,199 @@
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+
+from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
+from scraper.voiranime_client import (
+    VoiranimeFetchError,
+    VoiranimeNotFoundError,
+    voiranime_get_html,
+)
+from scraper.voiranime_parser import (
+    VOIRANIME_GENRES,
+    get_voiranime_last_page,
+    parse_voiranime_detail,
+    parse_voiranime_list,
+    parse_voiranime_servers,
+)
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+
+
+async def _load_animes_list(page: int = 1, genre: str | None = None, sort: str = "latest") -> dict:
+    """Charge la liste paginée des animés (Nouveaux épisodes de la page d'accueil par défaut, A-Z ou filtre par genre)."""
+    if genre:
+        path = f"/anime-genre/{genre}/" if page == 1 else f"/anime-genre/{genre}/page/{page}/"
+    elif sort in ("all", "az"):
+        path = "/liste-danimes/" if page == 1 else f"/liste-danimes/page/{page}/"
+    else:
+        # Par défaut : Nouveaux épisodes de la page d'accueil https://voir-anime.to/
+        path = "/" if page == 1 else f"/page/{page}/"
+
+    html = await voiranime_get_html(path)
+    items = parse_voiranime_list(html)
+    last_page = get_voiranime_last_page(html)
+    return {"items": items, "last_page": last_page}
+
+
+async def _load_anime_detail(slug: str) -> dict:
+    """Charge la fiche détaillée d'un animé et ses épisodes."""
+    html = await voiranime_get_html(f"/anime/{slug}/")
+    detail = parse_voiranime_detail(html, slug)
+    if not detail.get("title") or not detail.get("episodes"):
+        if not detail.get("title"):
+            raise VoiranimeNotFoundError(f"Animé introuvable : {slug}")
+    return dict(detail)
+
+
+async def _load_anime_servers(slug: str, episode_slug: str) -> list:
+    """Charge les serveurs vidéo d'un épisode d'animé."""
+    html = await voiranime_get_html(f"/anime/{slug}/{episode_slug}/")
+    return parse_voiranime_servers(html)
+
+
+@router.get("/animes", response_class=HTMLResponse)
+async def animes_list(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    genre: str | None = Query(default=None),
+    sort: str = Query(default="latest", pattern="^(latest|az|all)$"),
+) -> HTMLResponse:
+    """Catalogue des Animés Japonais (Nouveaux épisodes par défaut, A-Z ou par genre)."""
+    cache_key = f"list:animes:{genre}:{page}" if genre else f"list:animes:{sort}:{page}"
+    try:
+        data = await cache.get_or_set(
+            cache_key, HOME_TTL, lambda: _load_animes_list(page, genre, sort)
+        )
+    except VoiranimeFetchError as exc:
+        logger.warning("Erreur liste animes p%d genre=%s sort=%s : %s", page, genre, sort, exc)
+        data = {"items": [], "last_page": 1}
+
+    # Calcul des paramètres de pagination
+    params = []
+    if genre:
+        params.append(f"genre={genre}")
+    elif sort != "latest":
+        params.append(f"sort={sort}")
+    query_str = f"&{'&'.join(params)}" if params else ""
+
+    prev_url = f"/animes?page={page - 1}{query_str}" if page > 1 else None
+    next_url = f"/animes?page={page + 1}{query_str}" if page < data.get("last_page", 1) else None
+
+    # Libellé de section
+    if genre:
+        genre_label = next((g["label"] for g in VOIRANIME_GENRES if g["slug"] == genre), genre)
+        section_label = f"Animés — {genre_label}"
+    elif sort in ("all", "az"):
+        section_label = "Animés — Tous les titres (A-Z)"
+    else:
+        section_label = "Animés — Nouveaux Épisodes & Sorties Récentes"
+
+    return templates.TemplateResponse(request, "list.html", {
+        "request": request,
+        "items": data.get("items", []),
+        "section": "animes",
+        "section_label": section_label,
+        "current_page": page,
+        "last_page": data.get("last_page", 1),
+        "prev_url": prev_url,
+        "next_url": next_url,
+        "genres": VOIRANIME_GENRES,
+        "current_genre": genre,
+        "current_sort": sort,
+        "base_path": "/animes",
+    })
+
+
+@router.get("/anime/{slug}", response_class=HTMLResponse)
+async def anime_detail(request: Request, slug: str) -> HTMLResponse:
+    """Fiche détaillée d'un animé avec liste des épisodes."""
+    try:
+        data = await cache.get_or_set(
+            f"detail:anime:{slug}", DETAIL_TTL, lambda: _load_anime_detail(slug)
+        )
+    except VoiranimeNotFoundError:
+        raise HTTPException(status_code=404, detail="Animé introuvable")
+    except VoiranimeFetchError as exc:
+        logger.warning("Erreur détail anime %s : %s", slug, exc)
+        raise HTTPException(status_code=502, detail="Source Animé indisponible")
+
+    if not data or not data.get("title"):
+        raise HTTPException(status_code=404, detail="Animé introuvable")
+
+    return templates.TemplateResponse(request, "anime_detail.html", {
+        "request": request,
+        "anime": data,
+        "slug": slug,
+    })
+
+
+@router.get("/regarder-anime/{slug}/{episode_slug}", response_class=HTMLResponse)
+async def anime_player(request: Request, slug: str, episode_slug: str) -> HTMLResponse:
+    """Lecteur vidéo d'un épisode d'animé."""
+    try:
+        anime = await cache.get_or_set(
+            f"detail:anime:{slug}",
+            DETAIL_TTL,
+            lambda: _load_anime_detail(slug),
+        )
+    except VoiranimeNotFoundError:
+        raise HTTPException(status_code=404, detail="Animé introuvable")
+    except VoiranimeFetchError as exc:
+        logger.warning("Erreur player anime %s : %s", slug, exc)
+        raise HTTPException(status_code=502, detail="Source Animé indisponible")
+
+    try:
+        servers = await cache.get_or_set(
+            f"servers:anime:{slug}:{episode_slug}",
+            PLAYER_TTL,
+            lambda: _load_anime_servers(slug, episode_slug),
+        )
+    except VoiranimeFetchError as exc:
+        logger.warning("Erreur chargement serveurs anime %s/%s : %s", slug, episode_slug, exc)
+        servers = []
+
+    if not servers:
+        raise HTTPException(
+            status_code=404,
+            detail="Aucun lecteur disponible pour cet épisode d'animé.",
+        )
+
+    episodes = anime.get("episodes", [])
+    current_ep = next((e for e in episodes if e["episode_id"] == episode_slug), None)
+    ep_index = next((i for i, e in enumerate(episodes) if e["episode_id"] == episode_slug), -1)
+    prev_ep = episodes[ep_index - 1] if ep_index > 0 else None
+    next_ep = episodes[ep_index + 1] if ep_index >= 0 and ep_index + 1 < len(episodes) else None
+
+    return templates.TemplateResponse(request, "anime_player.html", {
+        "request": request,
+        "anime": anime,
+        "slug": slug,
+        "episode_slug": episode_slug,
+        "servers": servers,
+        "current_ep": current_ep,
+        "episodes": episodes,
+        "prev_ep": prev_ep,
+        "next_ep": next_ep,
+        "default_server": servers[0] if servers else None,
+    })
+
+
+@router.get("/api/anime/servers/{slug}/{episode_slug}", response_class=JSONResponse)
+async def api_anime_servers(slug: str, episode_slug: str) -> JSONResponse:
+    """API JSON pour récupérer les serveurs d'un épisode d'animé."""
+    try:
+        servers = await cache.get_or_set(
+            f"servers:anime:{slug}:{episode_slug}",
+            PLAYER_TTL,
+            lambda: _load_anime_servers(slug, episode_slug),
+        )
+        return JSONResponse({"servers": servers})
+    except VoiranimeFetchError as exc:
+        return JSONResponse({"servers": [], "error": str(exc)}, status_code=502)
