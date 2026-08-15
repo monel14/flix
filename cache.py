@@ -1,8 +1,15 @@
+from __future__ import annotations
+
 import inspect
 import json
+import logging
 import sqlite3
 import time
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = Path(__file__).resolve().parent / "cache.db"
 
@@ -13,22 +20,36 @@ EPISODE_TTL = 10 * 60   # 10 min — liste des épisodes
 PLAYER_TTL = 5 * 60     # 5 min  — liens de streaming (expirent vite)
 SEARCH_TTL = 10 * 60    # 10 min — résultats de recherche
 
+# TTL de prolongation en cas d'erreur de la source (Stale fallback)
+STALE_ERROR_EXTEND_TTL = 5 * 60  # 5 min
 
-def _conn() -> sqlite3.Connection:
+
+@contextmanager
+def _conn():
     conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute(
         "CREATE TABLE IF NOT EXISTS cache "
-        "(key TEXT PRIMARY KEY, data TEXT, expires REAL)"
+        "(key TEXT PRIMARY KEY, data TEXT, expires REAL, updated_at REAL)"
     )
+    # Migration douce si l'ancienne table n'avait pas encore updated_at
+    try:
+        conn.execute("ALTER TABLE cache ADD COLUMN updated_at REAL")
+    except sqlite3.OperationalError:
+        pass
+
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_cache_expires ON cache(expires)"
     )
-    return conn
+    try:
+        yield conn
+        conn.commit()
+    finally:
+        conn.close()
 
 
 class _Cache:
-    def get(self, key: str):
+    def get(self, key: str) -> Any | None:
         """Récupère une valeur en cache si non expirée."""
         with _conn() as conn:
             row = conn.execute(
@@ -41,40 +62,107 @@ class _Cache:
                     return None
         return None
 
-    def set(self, key: str, data, ttl: int) -> None:
+    def get_stale(self, key: str) -> dict | None:
+        """Récupère la dernière donnée connue en cache, même si expirée."""
+        with _conn() as conn:
+            row = conn.execute(
+                "SELECT data, expires, updated_at FROM cache WHERE key=?", (key,)
+            ).fetchone()
+            if row:
+                try:
+                    return {
+                        "data": json.loads(row[0]),
+                        "expires": row[1],
+                        "updated_at": row[2] if len(row) > 2 and row[2] is not None else row[1],
+                    }
+                except json.JSONDecodeError:
+                    return None
+        return None
+
+    def set(self, key: str, data: Any, ttl: int) -> None:
         """Enregistre une valeur avec un TTL."""
+        now = time.time()
         with _conn() as conn:
             conn.execute(
-                "INSERT OR REPLACE INTO cache (key, data, expires) VALUES (?, ?, ?)",
-                (key, json.dumps(data, ensure_ascii=False), time.time() + ttl),
+                "INSERT OR REPLACE INTO cache (key, data, expires, updated_at) VALUES (?, ?, ?, ?)",
+                (key, json.dumps(data, ensure_ascii=False), now + ttl, now),
             )
 
-    async def get_or_set(self, key: str, ttl: int, loader):
-        """Récupère depuis le cache ou exécute le loader sans bloquer la connexion SQLite."""
-        cached_data = self.get(key)
-        if cached_data is not None:
-            return cached_data
+    async def get_or_set(self, key: str, ttl: int, loader, allow_stale_on_error: bool = True) -> Any:
+        """
+        Récupère depuis le cache ou exécute le loader.
+        Si la source échoue (panne, changement de code, erreur réseau),
+        renvoie la dernière version connue en cache (Stale-on-Error) pour garantir la continuité de service.
+        """
+        stale_entry = self.get_stale(key) if allow_stale_on_error else None
 
-        # Support loaders sync et async sans garder la connexion SQLite ouverte
-        if inspect.iscoroutinefunction(loader):
-            data = await loader()
-        else:
-            data = loader()
-            if inspect.iscoroutine(data):
-                data = await data
+        # 1. Donnée encore valide en cache -> retour immédiat (0 ms)
+        if stale_entry and stale_entry["expires"] > time.time():
+            return stale_entry["data"]
 
-        self.set(key, data, ttl)
-        return data
+        # 2. Donnée expirée ou inexistante -> tentative de re-scraping
+        try:
+            if inspect.iscoroutinefunction(loader):
+                data = await loader()
+            else:
+                data = loader()
+                if inspect.iscoroutine(data):
+                    data = await data
+
+            # Vérification de sécurité : si le loader renvoie une structure vide inattendue
+            # alors qu'on avait une version antérieure riche (ex: changement de balises CSS sur la source)
+            is_empty = False
+            if isinstance(data, list) and not data and stale_entry and stale_entry.get("data"):
+                is_empty = True
+            elif isinstance(data, dict):
+                items = data.get("items")
+                if isinstance(items, list) and not items and stale_entry and isinstance(stale_entry.get("data"), dict) and stale_entry["data"].get("items"):
+                    is_empty = True
+
+            if is_empty and stale_entry:
+                logger.warning(
+                    "Re-scraping de '%s' a renvoyé des données vides, conservation de la version précédente en cache.",
+                    key,
+                )
+                self.set(key, stale_entry["data"], STALE_ERROR_EXTEND_TTL)
+                return stale_entry["data"]
+
+            # Enregistrement de la nouvelle donnée fraîche
+            self.set(key, data, ttl)
+            return data
+
+        except Exception as exc:
+            # 3. Filet de sécurité (Stale-on-Error) : en cas d'erreur de la source, on réutilise l'ancien cache
+            if allow_stale_on_error and stale_entry and stale_entry.get("data") is not None:
+                logger.warning(
+                    "Échec de la mise à jour pour '%s' (%s). Utilisation du cache de secours existant.",
+                    key,
+                    exc,
+                )
+                # On prolonge légèrement l'expiration pour éviter de re-tenter la source à chaque requête
+                self.set(key, stale_entry["data"], STALE_ERROR_EXTEND_TTL)
+                return stale_entry["data"]
+
+            # Si aucune donnée de secours n'existe, on propage l'exception
+            raise
 
     def invalidate(self, key: str) -> None:
         """Invalide une clé spécifique."""
         with _conn() as conn:
             conn.execute("DELETE FROM cache WHERE key=?", (key,))
 
-    def purge_expired(self) -> int:
-        """Supprime toutes les entrées expirées pour garder la base légère."""
+    def purge_expired(self, keep_archive_days: int = 30) -> int:
+        """
+        Supprime uniquement les entrées très anciennes et temporaires (ex: recherche, liens éphémères),
+        tout en préservant les fiches de films et séries comme archive permanente.
+        """
+        threshold = time.time() - (keep_archive_days * 24 * 3600)
         with _conn() as conn:
-            cur = conn.execute("DELETE FROM cache WHERE expires < ?", (time.time(),))
+            # On ne supprime que les recherches ou vieux liens temporaires dont la date dépasse le seuil
+            cur = conn.execute(
+                "DELETE FROM cache WHERE (key LIKE 'search:%' OR key LIKE 'servers:%') AND expires < ?",
+                (threshold,),
+            )
             return cur.rowcount
 
     def clear(self) -> None:
