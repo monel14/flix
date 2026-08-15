@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -12,12 +13,23 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from cache import cache
+from routes import detail, home, player, search
 from scraper.coflix_client import close_coflix_client
-from routes import home, detail, player, search
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger = logging.getLogger("coflix")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Nettoyage automatique du cache expiré au démarrage
+    try:
+        purged = cache.purge_expired()
+        if purged > 0:
+            logger.info("Cache nettoyé au démarrage : %d entrée(s) expirée(s) supprimée(s)", purged)
+    except Exception as exc:
+        logger.warning("Impossible de purger le cache : %s", exc)
     yield
     await close_coflix_client()
 
@@ -58,6 +70,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 @app.exception_handler(Exception)
 async def server_error_handler(request: Request, exc: Exception):
+    logger.exception("Erreur serveur non gérée sur %s : %s", request.url.path, exc)
     wants_html = "text/html" in (request.headers.get("accept") or "")
     if wants_html:
         return templates.TemplateResponse(

@@ -17,7 +17,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent
 
 
 async def _load_search(query: str) -> list:
-    html = await coflix_get_html(f"/filter?keyword={query}")
+    html = await coflix_get_html("/filter", params={"keyword": query})
     return parse_coflix_search(html)
 
 
@@ -27,15 +27,16 @@ async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
     results = []
     error = None
 
-    if q.strip():
+    cleaned_q = q.strip()
+    if cleaned_q:
         try:
             results = await cache.get_or_set(
-                f"search:{q.lower().strip()}",
+                f"search:{cleaned_q.lower()}",
                 SEARCH_TTL,
-                lambda: _load_search(q.strip()),
+                lambda: _load_search(cleaned_q),
             )
         except CoflixFetchError as exc:
-            logger.warning("Erreur recherche '%s' : %s", q, exc)
+            logger.warning("Erreur recherche '%s' : %s", cleaned_q, exc)
             error = "La recherche a échoué. Réessaie dans un instant."
 
     return templates.TemplateResponse(request, "search.html", {
@@ -49,13 +50,14 @@ async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
 @router.get("/api/search", response_class=JSONResponse)
 async def api_search(q: str = Query(default="")) -> JSONResponse:
     """API JSON pour l'autocomplétion de la barre de recherche."""
-    if len(q.strip()) < 2:
+    cleaned_q = q.strip()
+    if len(cleaned_q) < 2:
         return JSONResponse({"results": []})
     try:
         results = await cache.get_or_set(
-            f"search:{q.lower().strip()}",
+            f"search:{cleaned_q.lower()}",
             SEARCH_TTL,
-            lambda: _load_search(q.strip()),
+            lambda: _load_search(cleaned_q),
         )
         # Format léger pour l'autocomplétion
         lite = [

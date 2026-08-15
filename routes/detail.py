@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from cache import DETAIL_TTL, EPISODE_TTL, cache
+from cache import DETAIL_TTL, cache
 from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_get_html, coflix_get_json
 from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
 
@@ -16,7 +16,8 @@ router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 
 
-async def _load_detail(slug: str) -> dict:
+async def load_detail(slug: str) -> dict:
+    """Charge les détails d'un film ou d'une série avec ses épisodes."""
     html = await coflix_get_html(f"/film/{slug}")
     detail = parse_coflix_detail(html, slug)
 
@@ -24,7 +25,8 @@ async def _load_detail(slug: str) -> dict:
     if detail["type"] == "series" and detail["movie_id"]:
         try:
             ep_json = await coflix_get_json(
-                f"/ajax/episode/list-episode?movieId={detail['movie_id']}"
+                "/ajax/episode/list-episode",
+                params={"movieId": detail["movie_id"]},
             )
             detail["episodes"] = parse_coflix_episodes(ep_json)  # type: ignore[assignment]
         except CoflixFetchError as exc:
@@ -33,12 +35,15 @@ async def _load_detail(slug: str) -> dict:
     else:
         detail["episodes"] = []  # type: ignore[assignment]
 
-    # Premier épisode pour les séries ; pour les films on utilise le movie_id directement comme episode_id
+    # Déterminer le premier épisode ou l'ID de streaming du film
     first_ep = detail["episodes"][0] if detail.get("episodes") else None  # type: ignore[index]
     if first_ep:
         detail["first_episode_id"] = first_ep["episode_id"]  # type: ignore[assignment]
-        detail["first_episode_url"] = first_ep["url"]  # type: ignore[assignment]
-    elif detail["type"] == "movie" and detail["movie_id"]:
+        detail["first_episode_url"] = f"/regarder/{slug}/ep-{first_ep['episode_id']}"  # type: ignore[assignment]
+    elif detail.get("episode_id"):
+        detail["first_episode_id"] = detail["episode_id"]  # type: ignore[assignment]
+        detail["first_episode_url"] = f"/regarder/{slug}/ep-{detail['episode_id']}"  # type: ignore[assignment]
+    elif detail.get("movie_id"):
         detail["first_episode_id"] = detail["movie_id"]  # type: ignore[assignment]
         detail["first_episode_url"] = f"/regarder/{slug}/ep-{detail['movie_id']}"  # type: ignore[assignment]
     else:
@@ -52,7 +57,7 @@ async def _load_detail(slug: str) -> dict:
 async def film_detail(request: Request, slug: str) -> HTMLResponse:
     try:
         data = await cache.get_or_set(
-            f"detail:{slug}", DETAIL_TTL, lambda: _load_detail(slug)
+            f"detail:{slug}", DETAIL_TTL, lambda: load_detail(slug)
         )
     except CoflixNotFoundError:
         raise HTTPException(status_code=404, detail="Film introuvable")

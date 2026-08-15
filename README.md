@@ -4,18 +4,18 @@ Interface web locale pour parcourir et regarder des films et séries en streamin
 
 ## Fonctionnalités
 
-- Page d'accueil avec les films/séries récents et le top du jour
+- Page d'accueil avec les films/séries récents et le top tendances du jour (chargement concurrent)
 - Listes paginées de films et de séries
 - Recherche full-text avec autocomplétion (API JSON)
 - Page de détail : affiche, synopsis, genres, année, statut, liste d'épisodes
-- Player avec sélection de serveur et navigation épisode précédent/suivant
-- Cache SQLite persistant pour limiter les requêtes vers la source
+- Player avec sélection de serveur, sécurisation sandbox et navigation épisode précédent/suivant
+- Cache SQLite persistant (mode WAL) avec TTL par ressource et purge automatique des données expirées
 
 ## Stack technique
 
 | Composant | Choix |
 |---|---|
-| Langage | Python 3.x |
+| Langage | Python 3.10+ |
 | Framework web | FastAPI 0.115 |
 | Serveur ASGI | Uvicorn 0.30 |
 | Client HTTP async | httpx 0.28 |
@@ -29,8 +29,8 @@ Interface web locale pour parcourir et regarder des films et séries en streamin
 ```
 coflix/
 ├── main.py              # Point d'entrée FastAPI : app, routers, lifespan
-├── cache.py             # Cache SQLite avec TTL par type de ressource
-├── .env                 # Variables d'environnement
+├── cache.py             # Cache SQLite avec TTL et purge automatique
+├── .env.example         # Exemple de variables d'environnement
 ├── requirements.txt     # Dépendances Python
 │
 ├── routes/
@@ -43,7 +43,7 @@ coflix/
 │   ├── coflix_client.py # Client HTTP async singleton (retry/backoff)
 │   └── coflix_parser.py # Parseurs BeautifulSoup (listes, détail, épisodes, serveurs)
 │
-├── templates/           # 7 templates Jinja2
+├── templates/           # Templates Jinja2
 └── static/
     └── style.css        # CSS principal
 ```
@@ -83,20 +83,22 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Configurer les variables d'environnement
-cp .env.example .env  # ou éditer .env directement
+cp .env.example .env
 ```
 
 ## Configuration
 
-Créer un fichier `.env` à la racine du projet :
+Créer ou éditer le fichier `.env` à la racine du projet :
 
 ```env
 BASE_URL=http://localhost:8001
+COFLIX_SOURCE_URL=https://coflix.wiki
 ```
 
 | Variable | Description | Défaut |
 |---|---|---|
 | `BASE_URL` | URL de base de l'application | `http://localhost:8001` |
+| `COFLIX_SOURCE_URL` | URL du site source Coflix (miroir) | `https://coflix.wiki` |
 
 ## Démarrage
 
@@ -118,10 +120,10 @@ Le cache SQLite (`cache.db`) est créé automatiquement au premier démarrage. L
 | Liens de streaming | 5 minutes |
 | Résultats de recherche | 10 minutes |
 
-Pour vider le cache, supprimer le fichier `cache.db`.
+Pour vider le cache manuellement, supprimer le fichier `cache.db`. Les entrées expirées sont également purgées automatiquement au démarrage de l'application.
 
 ## Notes
 
-- Le scraper cible `coflix.wiki` avec un mécanisme de retry (3 tentatives, backoff exponentiel) pour absorber les erreurs réseau et les rate limits (HTTP 429).
+- Le scraper cible le site source avec un mécanisme de retry (3 tentatives, backoff exponentiel) pour absorber les erreurs réseau et les rate limits (HTTP 429).
 - Les vidéos sont lues depuis des hébergeurs tiers via `<iframe>` ; aucun contenu vidéo n'est stocké localement.
 - Ce projet est destiné à un usage personnel et local.

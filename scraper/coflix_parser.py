@@ -31,7 +31,8 @@ class CoflixDetail(TypedDict):
     genres: list[str]
     year: str
     status: str
-    movie_id: str       # ID interne coflix pour les appels AJAX
+    movie_id: str       # ID interne coflix pour les listes AJAX (data-id)
+    episode_id: str     # ID d'épisode / streaming pour le player (data-ep-name)
 
 
 class CoflixEpisode(TypedDict):
@@ -135,6 +136,19 @@ def parse_coflix_detail(html: str, slug: str) -> CoflixDetail:
     movie_id = watch.get("data-id", "") if watch else ""
     detail_url = watch.get("data-url", f"https://coflix.wiki/film/{slug}") if watch else ""
 
+    # Extraction de l'ID d'épisode / lecteur (data-ep-name sur #watch-page ou URL /ep-XXXX)
+    episode_id = ""
+    if watch:
+        episode_id = (
+            watch.get("data-ep-name", "")
+            or watch.get("data-episode-id", "")
+            or watch.get("data-ep-id", "")
+        )
+    if not episode_id:
+        m_ep = re.search(rf"/film/{re.escape(slug)}/ep-(\d+)", html) or re.search(rf"{re.escape(slug)}/ep-(\d+)", html)
+        if m_ep:
+            episode_id = m_ep.group(1)
+
     h1 = soup.select_one("h1.title.d-title, h1.d-title, h1.title")
     title = (h1.get("data-jp") or h1.text.strip()) if h1 else slug
 
@@ -176,6 +190,7 @@ def parse_coflix_detail(html: str, slug: str) -> CoflixDetail:
         year=year,
         status=status,
         movie_id=movie_id,
+        episode_id=episode_id,
     )
 
 
@@ -215,14 +230,16 @@ def parse_coflix_servers(json_data: dict) -> list[CoflixServer]:
         return []
 
     servers = []
-    for item in message:
+    for idx, item in enumerate(message, 1):
         if not isinstance(item, dict):
             continue
         link = item.get("server_link", "")
         if not link:
             continue
+        name = item.get("server_name")
+        server_name = name.strip() if (isinstance(name, str) and name.strip()) else f"Serveur #{idx}"
         servers.append(CoflixServer(
-            server_name=item.get("server_name") or "Server #1",
+            server_name=server_name,
             server_link=link,
             server_type=item.get("server_type", "embed"),
             version=item.get("version", ""),

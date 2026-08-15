@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from pathlib import Path
 
@@ -8,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from cache import HOME_TTL, cache
-from scraper.coflix_client import CoflixFetchError, coflix_get_html, coflix_get_json
+from scraper.coflix_client import CoflixFetchError, coflix_get_html
 from scraper.coflix_parser import (
     get_last_page,
     parse_coflix_list,
@@ -30,42 +31,53 @@ async def _load_home(section: str, page: int) -> dict:
 
 async def _load_top() -> list:
     try:
-        html = await coflix_get_json("/ajax/movie/top?type=day")
-        # L'endpoint renvoie du HTML brut, pas du JSON
-        return []
-    except Exception:
-        pass
-    try:
         raw = await coflix_get_html("/ajax/movie/top?type=day")
         return parse_coflix_top(raw)
-    except Exception:
+    except Exception as exc:
+        logger.warning("Erreur chargement top tendances : %s", exc)
         return []
 
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request) -> HTMLResponse:
-    """Page d'accueil : films récents + top du jour."""
-    try:
-        movies_data = await cache.get_or_set(
-            "home:movies:1", HOME_TTL, lambda: _load_home("movies", 1)
-        )
-        series_data = await cache.get_or_set(
-            "home:series:1", HOME_TTL, lambda: _load_home("series", 1)
-        )
-        top = await cache.get_or_set(
-            "home:top", HOME_TTL, _load_top
-        )
-    except CoflixFetchError as exc:
-        logger.warning("Erreur chargement accueil : %s", exc)
-        movies_data = {"items": [], "last_page": 1}
-        series_data = {"items": [], "last_page": 1}
-        top = []
+    """Page d'accueil : films récents + séries récentes + top du jour en parallèle."""
+    async def fetch_movies():
+        try:
+            return await cache.get_or_set(
+                "home:movies:1", HOME_TTL, lambda: _load_home("movies", 1)
+            )
+        except CoflixFetchError as exc:
+            logger.warning("Erreur chargement films accueil : %s", exc)
+            return {"items": [], "last_page": 1}
+
+    async def fetch_series():
+        try:
+            return await cache.get_or_set(
+                "home:series:1", HOME_TTL, lambda: _load_home("series", 1)
+            )
+        except CoflixFetchError as exc:
+            logger.warning("Erreur chargement séries accueil : %s", exc)
+            return {"items": [], "last_page": 1}
+
+    async def fetch_top():
+        try:
+            return await cache.get_or_set("home:top", HOME_TTL, _load_top)
+        except CoflixFetchError as exc:
+            logger.warning("Erreur chargement top accueil : %s", exc)
+            return []
+
+    # Chargement concurrent des 3 sections
+    movies_data, series_data, top = await asyncio.gather(
+        fetch_movies(),
+        fetch_series(),
+        fetch_top(),
+    )
 
     return templates.TemplateResponse(request, "home.html", {
         "request": request,
-        "recent_movies": movies_data["items"][:24],
-        "recent_series": series_data["items"][:24],
-        "top": top[:10],
+        "recent_movies": movies_data.get("items", [])[:24],
+        "recent_series": series_data.get("items", [])[:24],
+        "top": top[:10] if isinstance(top, list) else [],
     })
 
 
@@ -82,13 +94,13 @@ async def movies_list(request: Request, page: int = Query(default=1, ge=1)) -> H
 
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
-        "items": data["items"],
+        "items": data.get("items", []),
         "section": "films",
         "section_label": "Films",
         "current_page": page,
-        "last_page": data["last_page"],
+        "last_page": data.get("last_page", 1),
         "prev_url": f"/films?page={page - 1}" if page > 1 else None,
-        "next_url": f"/films?page={page + 1}" if page < data["last_page"] else None,
+        "next_url": f"/films?page={page + 1}" if page < data.get("last_page", 1) else None,
     })
 
 
@@ -105,11 +117,11 @@ async def series_list(request: Request, page: int = Query(default=1, ge=1)) -> H
 
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
-        "items": data["items"],
+        "items": data.get("items", []),
         "section": "series",
         "section_label": "Séries",
         "current_page": page,
-        "last_page": data["last_page"],
+        "last_page": data.get("last_page", 1),
         "prev_url": f"/series?page={page - 1}" if page > 1 else None,
-        "next_url": f"/series?page={page + 1}" if page < data["last_page"] else None,
+        "next_url": f"/series?page={page + 1}" if page < data.get("last_page", 1) else None,
     })

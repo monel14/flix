@@ -8,8 +8,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from cache import DETAIL_TTL, PLAYER_TTL, cache
-from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_get_html, coflix_get_json
-from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes, parse_coflix_servers
+from routes.detail import load_detail
+from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_get_json
+from scraper.coflix_parser import parse_coflix_servers
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -17,7 +18,10 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent
 
 
 async def _load_servers(episode_id: str) -> list:
-    json_data = await coflix_get_json(f"/ajax/episode/player?episode_id={episode_id}")
+    json_data = await coflix_get_json(
+        "/ajax/episode/player",
+        params={"episode_id": episode_id},
+    )
     return parse_coflix_servers(json_data)
 
 
@@ -29,7 +33,7 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
         film = await cache.get_or_set(
             f"detail:{slug}",
             DETAIL_TTL,
-            lambda: _load_detail_for_player(slug),
+            lambda: load_detail(slug),
         )
     except CoflixNotFoundError:
         raise HTTPException(status_code=404, detail="Film introuvable")
@@ -48,6 +52,22 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
         logger.warning("Erreur chargement serveurs ep %s : %s", episode_id, exc)
         servers = []
 
+    # Fallback si l'URL appelait un ID incorrect (ex: movie_id au lieu de l'ID d'épisode streaming)
+    if not servers:
+        alt_ep_id = film.get("episode_id") or film.get("first_episode_id")
+        if alt_ep_id and str(alt_ep_id) != str(episode_id):
+            logger.info("Tentative de fallback serveurs avec alt_ep_id=%s pour slug=%s", alt_ep_id, slug)
+            try:
+                servers = await cache.get_or_set(
+                    f"servers:{alt_ep_id}",
+                    PLAYER_TTL,
+                    lambda: _load_servers(str(alt_ep_id)),
+                )
+                if servers:
+                    episode_id = str(alt_ep_id)
+            except CoflixFetchError as exc:
+                logger.warning("Erreur fallback serveurs ep %s : %s", alt_ep_id, exc)
+
     if not servers:
         raise HTTPException(
             status_code=404,
@@ -58,10 +78,10 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
     episodes = film.get("episodes", [])
 
     # Épisode courant
-    current_ep = next((e for e in episodes if e["episode_id"] == episode_id), None)
+    current_ep = next((e for e in episodes if str(e["episode_id"]) == str(episode_id)), None)
 
     # Épisode précédent / suivant
-    ep_index = next((i for i, e in enumerate(episodes) if e["episode_id"] == episode_id), -1)
+    ep_index = next((i for i, e in enumerate(episodes) if str(e["episode_id"]) == str(episode_id)), -1)
     prev_ep = episodes[ep_index + 1] if ep_index >= 0 and ep_index + 1 < len(episodes) else None
     next_ep = episodes[ep_index - 1] if ep_index > 0 else None
 
@@ -92,35 +112,3 @@ async def api_servers(episode_id: str) -> JSONResponse:
     except CoflixFetchError as exc:
         logger.warning("API servers erreur %s : %s", episode_id, exc)
         return JSONResponse({"servers": [], "error": str(exc)}, status_code=502)
-
-
-async def _load_detail_for_player(slug: str) -> dict:
-    """Charge les détails + épisodes pour le player (même logique que detail.py)."""
-    from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
-
-    html = await coflix_get_html(f"/film/{slug}")
-    detail = parse_coflix_detail(html, slug)
-
-    if detail["type"] == "series" and detail["movie_id"]:
-        try:
-            ep_json = await coflix_get_json(
-                f"/ajax/episode/list-episode?movieId={detail['movie_id']}"
-            )
-            detail["episodes"] = parse_coflix_episodes(ep_json)  # type: ignore[assignment]
-        except CoflixFetchError:
-            detail["episodes"] = []  # type: ignore[assignment]
-    else:
-        detail["episodes"] = []  # type: ignore[assignment]
-
-    first_ep = detail["episodes"][0] if detail.get("episodes") else None  # type: ignore[index]
-    if first_ep:
-        detail["first_episode_id"] = first_ep["episode_id"]  # type: ignore[assignment]
-        detail["first_episode_url"] = first_ep["url"]  # type: ignore[assignment]
-    elif detail["type"] == "movie" and detail["movie_id"]:
-        detail["first_episode_id"] = detail["movie_id"]  # type: ignore[assignment]
-        detail["first_episode_url"] = f"/regarder/{slug}/ep-{detail['movie_id']}"  # type: ignore[assignment]
-    else:
-        detail["first_episode_id"] = None  # type: ignore[assignment]
-        detail["first_episode_url"] = None  # type: ignore[assignment]
-
-    return dict(detail)

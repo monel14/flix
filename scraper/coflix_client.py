@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 
 import httpx
 
-BASE_URL = "https://coflix.wiki"
+SOURCE_URL = os.getenv("COFLIX_SOURCE_URL", "https://coflix.wiki").rstrip("/")
 TIMEOUT_SECONDS = 15
 
 logger = logging.getLogger(__name__)
 
 _http_client: httpx.AsyncClient | None = None
+_client_loop: asyncio.AbstractEventLoop | None = None
 
 
 class CoflixFetchError(RuntimeError):
@@ -22,9 +24,14 @@ class CoflixNotFoundError(CoflixFetchError):
 
 
 def get_coflix_client() -> httpx.AsyncClient:
-    """Retourne le client HTTP async singleton pour coflix.wiki."""
-    global _http_client
-    if _http_client is None:
+    """Retourne le client HTTP async singleton pour le site source lié à la boucle d'événements courante."""
+    global _http_client, _client_loop
+    try:
+        current_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        current_loop = None
+
+    if _http_client is None or _http_client.is_closed or _client_loop != current_loop:
         _http_client = httpx.AsyncClient(
             headers={
                 "User-Agent": (
@@ -34,31 +41,34 @@ def get_coflix_client() -> httpx.AsyncClient:
                 ),
                 "Accept": "text/html,application/xhtml+xml,*/*;q=0.9",
                 "Accept-Language": "fr-FR,fr;q=0.9",
-                "Referer": BASE_URL + "/",
+                "Referer": SOURCE_URL + "/",
             },
             timeout=TIMEOUT_SECONDS,
             follow_redirects=True,
         )
+        _client_loop = current_loop
     return _http_client
 
 
 async def close_coflix_client() -> None:
-    global _http_client
-    if _http_client is not None:
+    """Ferme la session HTTP persistante."""
+    global _http_client, _client_loop
+    if _http_client is not None and not _http_client.is_closed:
         await _http_client.aclose()
-        _http_client = None
+    _http_client = None
+    _client_loop = None
 
 
-async def coflix_get_html(path: str) -> str:
-    """GET HTML depuis coflix.wiki avec retry + backoff."""
-    url = path if path.startswith("http") else BASE_URL + path
+async def coflix_get_html(path: str, params: dict | None = None) -> str:
+    """GET HTML depuis le site source avec retry + backoff."""
+    url = path if path.startswith("http") else SOURCE_URL + path
     client = get_coflix_client()
     backoff = 3.0
 
     for attempt in range(3):
         logger.info("Coflix fetch %s (attempt %d/3)", url, attempt + 1)
         try:
-            r = await client.get(url)
+            r = await client.get(url, params=params)
             if r.status_code == 429:
                 logger.warning("Coflix 429 pour %s, attente %.1fs", url, backoff)
                 await asyncio.sleep(backoff)
@@ -85,15 +95,16 @@ async def coflix_get_html(path: str) -> str:
     raise CoflixFetchError(f"Échec après 3 tentatives pour {url}")
 
 
-async def coflix_get_json(path: str) -> dict:
-    """GET JSON depuis l'API AJAX de coflix.wiki."""
-    url = path if path.startswith("http") else BASE_URL + path
+async def coflix_get_json(path: str, params: dict | None = None) -> dict:
+    """GET JSON depuis l'API AJAX du site source."""
+    url = path if path.startswith("http") else SOURCE_URL + path
     client = get_coflix_client()
 
     for attempt in range(3):
         try:
             r = await client.get(
                 url,
+                params=params,
                 headers={"X-Requested-With": "XMLHttpRequest"},
             )
             r.raise_for_status()
