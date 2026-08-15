@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -44,6 +44,17 @@ static_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+templates.env.globals["str"] = str
+
+
+# ---------------------------------------------------------------------------
+# Gestion des requêtes CDN / Scripts tiers embarqués
+# ---------------------------------------------------------------------------
+
+@app.get("/cdn-cgi/{path:path}")
+async def cdn_cgi_fallback(path: str):
+    """Réponse silencieuse pour les scripts Cloudflare relatifs exécutés par des iframes tierces."""
+    return Response(status_code=204)
 
 
 # ---------------------------------------------------------------------------

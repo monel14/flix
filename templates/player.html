@@ -67,7 +67,7 @@
         <div class="playlist-rail">
             {% for ep in episodes %}
             <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}"
-               class="playlist-ep-chip {% if str(ep.episode_id) == str(episode_id) %}active{% endif %}">
+               class="playlist-ep-chip {% if ep.episode_id|string == episode_id|string %}active{% endif %}">
                 {{ ep.title }}
             </a>
             {% endfor %}
