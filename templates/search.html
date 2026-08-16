@@ -30,7 +30,7 @@
     {% if not query %}
     <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
         <i class="fas fa-compass" style="font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3;"></i>
-        <p style="font-size: 1.1rem; font-weight: 600;">Tapez un nom de film, série ou K-Drama pour explorer.</p>
+        <p style="font-size: 1.1rem; font-weight: 600;">Tapez un nom de film, série, K-Drama ou animé pour explorer.</p>
     </div>
     {% elif not results and not error %}
     <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
@@ -41,7 +41,7 @@
     {% else %}
     <div class="cards-grid">
         {% for item in results %}
-        <a href="{% if item.type == 'drama' %}/drama/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
+        <a href="{% if item.type == 'drama' %}/drama/{{ item.slug }}{% elif item.type == 'anime' %}/anime/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                 {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
@@ -49,7 +49,7 @@
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-sub">{{ 'K-Drama' if item.type == 'drama' else ('Série' if item.type == 'series' else 'Film') }}</p>
+                <p class="card-sub">{{ 'Animé' if item.type == 'anime' else ('K-Drama' if item.type == 'drama' else ('Série' if item.type == 'series' else 'Film')) }}</p>
             </div>
         </a>
         {% endfor %}

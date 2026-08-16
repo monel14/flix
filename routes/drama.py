@@ -63,10 +63,11 @@ async def dramas_list(
     request: Request,
     page: int = Query(default=1, ge=1),
     genre: str | None = Query(default=None),
+    version: str | None = Query(default=None, pattern="^(all|vf|vostfr)$"),
     sort: str = Query(default="latest", pattern="^(latest|az|all)$"),
 ) -> HTMLResponse:
-    """Catalogue des K-Dramas (Nouveaux épisodes de la page d'accueil par défaut, ou filtrable par genre / A-Z)."""
-    cache_key = f"list:dramas:{genre}:{page}" if genre else f"list:dramas:{sort}:{page}"
+    """Catalogue des K-Dramas (filtrable par Version VF/VOSTFR, Genre et Nouveautés / A-Z)."""
+    cache_key = f"list:dramas:{genre}:{sort}:{page}" if genre else f"list:dramas:{sort}:{page}"
     try:
         data = await cache.get_or_set(
             cache_key, HOME_TTL, lambda: _load_dramas_list(page, genre, sort)
@@ -75,12 +76,22 @@ async def dramas_list(
         logger.warning("Erreur liste dramas p%d genre=%s sort=%s : %s", page, genre, sort, exc)
         data = {"items": [], "last_page": 1}
 
+    items = data.get("items", [])
+
+    # Filtrage par Version Linguistique (VF ou VOSTFR)
+    if version == "vf":
+        items = [it for it in items if it.get("version") == "VF"]
+    elif version == "vostfr":
+        items = [it for it in items if it.get("version") == "VOSTFR"]
+
     # Calcul des paramètres de pagination
     params = []
     if genre:
         params.append(f"genre={genre}")
-    elif sort != "latest":
+    if sort != "latest":
         params.append(f"sort={sort}")
+    if version and version != "all":
+        params.append(f"version={version}")
     query_str = f"&{'&'.join(params)}" if params else ""
 
     prev_url = f"/dramas?page={page - 1}{query_str}" if page > 1 else None
@@ -95,9 +106,14 @@ async def dramas_list(
     else:
         section_label = "K-Dramas — Nouveaux Épisodes & Sorties Récentes"
 
+    if version == "vf":
+        section_label += " (VF)"
+    elif version == "vostfr":
+        section_label += " (VOSTFR)"
+
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
-        "items": data.get("items", []),
+        "items": items,
         "section": "dramas",
         "section_label": section_label,
         "current_page": page,
@@ -107,6 +123,7 @@ async def dramas_list(
         "genres": VOIRDRAMA_GENRES,
         "current_genre": genre,
         "current_sort": sort,
+        "current_version": version or "all",
         "base_path": "/dramas",
     })
 

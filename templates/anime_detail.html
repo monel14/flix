@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ anime.title }} — Animé en Streaming HD — Coflix{% endblock %}
+{% block description %}{{ anime.synopsis[:155] if anime.synopsis else 'Regarder ' ~ anime.title ~ ' en streaming VF et VOSTFR HD gratuit.' }}{% endblock %}
+
+{% block content %}
+<!-- 1. CINEMATIC ANIME HERO BANNER -->
+<div class="detail-hero-wrapper">
+    {% if anime.image %}
+    <div class="detail-backdrop-blur" style="background-image: url('{{ anime.image }}');"></div>
+    {% endif %}
+
+    <div class="detail-content-grid">
+        <!-- Colonne Affiche & Action -->
+        <div class="detail-poster-column">
+            <img class="detail-poster-img" src="{{ anime.image }}" alt="{{ anime.title }}" loading="eager">
+
+            {% if anime.first_episode_id %}
+            <a href="/regarder-anime/{{ slug }}/{{ anime.first_episode_id }}" class="btn-liquid btn-liquid--primary btn-liquid--big">
+                <i class="fas fa-play"></i> Lancer l'Épisode 1
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Colonne Informations & Métadonnées -->
+        <div class="detail-meta-column">
+            <div class="detail-chips-row">
+                <span class="badge-liquid badge-liquid--brand"><i class="fas fa-dragon"></i> ANIMÉ</span>
+                {% if anime.version %}<span class="badge-liquid">{{ anime.version }}</span>{% endif %}
+                {% if anime.year %}<span class="detail-meta-chip"><i class="fas fa-calendar"></i> {{ anime.year }}</span>{% endif %}
+                {% if anime.status %}<span class="detail-meta-chip"><i class="fas fa-circle-check"></i> {{ anime.status }}</span>{% endif %}
+            </div>
+
+            <h1 class="detail-main-title">{{ anime.title }}</h1>
+
+            {% if anime.genres %}
+            <div class="detail-genres-row">
+                {% for g in anime.genres %}
+                <a href="/animes?genre={{ g | lower | replace(' ', '-') }}" class="detail-genre-badge">
+                    {{ g }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if anime.synopsis %}
+            <p class="detail-synopsis-text">{{ anime.synopsis }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 2. LISTE DES ÉPISODES DE L'ANIMÉ -->
+{% if anime.episodes %}
+<section class="episodes-section-block">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-list-ol"></i> Épisodes Disponibles ({{ anime.episodes | length }})</h2>
+    </div>
+
+    <div class="episodes-grid-layout">
+        {% for ep in anime.episodes %}
+        <a href="/regarder-anime/{{ slug }}/{{ ep.episode_id }}" class="episode-btn-card">
+            <span>{{ ep.title }}</span>
+            <i class="fas fa-play"></i>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

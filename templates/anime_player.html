@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-{% if current_ep %}{{ film.title }} — {{ current_ep.title }}{% else %}{{ film.title }}{% endif %} — Streaming — Coflix
+{% if current_ep %}{{ anime.title }} — {{ current_ep.title }}{% else %}{{ anime.title }}{% endif %} — Animé Streaming — Coflix
 {% endblock %}
 
 {% block content %}
@@ -10,11 +10,11 @@
     <!-- 1. BARRE SUPÉRIEURE DU LECTEUR -->
     <div class="player-header-bar">
         <div class="player-title-info">
-            <a href="/film/{{ slug }}" class="player-back-btn" title="Retour à la fiche">
+            <a href="/anime/{{ slug }}" class="player-back-btn" title="Retour à l'animé">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div>
-                <h1 class="player-media-title">{{ film.title }}</h1>
+                <h1 class="player-media-title">{{ anime.title }}</h1>
                 {% if current_ep %}
                 <span class="player-ep-pill">{{ current_ep.title }}</span>
                 {% endif %}
@@ -23,12 +23,12 @@
 
         <div class="player-nav-controls">
             {% if prev_ep %}
-            <a href="/regarder/{{ slug }}/ep-{{ prev_ep.episode_id }}" class="player-ctrl-btn" title="{{ prev_ep.title }}">
+            <a href="/regarder-anime/{{ slug }}/{{ prev_ep.episode_id }}" class="player-ctrl-btn" title="{{ prev_ep.title }}">
                 <i class="fas fa-backward-step"></i> Précédent
             </a>
             {% endif %}
             {% if next_ep %}
-            <a href="/regarder/{{ slug }}/ep-{{ next_ep.episode_id }}" class="player-ctrl-btn" style="background: var(--brand);" title="{{ next_ep.title }}">
+            <a href="/regarder-anime/{{ slug }}/{{ next_ep.episode_id }}" class="player-ctrl-btn" style="background: var(--brand);" title="{{ next_ep.title }}">
                 Suivant <i class="fas fa-forward-step"></i>
             </a>
             {% endif %}
@@ -37,13 +37,12 @@
 
     <!-- 2. SÉLECTEUR DE SERVEURS VIDÉO -->
     <div class="servers-selector-bar">
-        <span class="server-lbl"><i class="fas fa-server"></i> Source :</span>
+        <span class="server-lbl"><i class="fas fa-server"></i> Lecteur :</span>
         {% for srv in servers %}
         <button class="server-pill-btn {% if loop.first %}active{% endif %}"
                 data-link="{{ srv.server_link }}"
                 data-idx="{{ loop.index0 }}">
             <i class="fas fa-bolt"></i> {{ srv.server_name }}
-            {% if srv.version %}<small>({{ srv.version }})</small>{% endif %}
         </button>
         {% endfor %}
     </div>
@@ -60,14 +59,14 @@
         </iframe>
     </div>
 
-    <!-- 4. PLAYLIST DES ÉPISODES (Séries) -->
+    <!-- 4. PLAYLIST DES ÉPISODES DE L'ANIMÉ -->
     {% if episodes %}
     <div class="player-playlist-box">
-        <h2 class="playlist-heading"><i class="fas fa-list-ol"></i> Tous les épisodes</h2>
+        <h2 class="playlist-heading"><i class="fas fa-list-ol"></i> Tous les épisodes de l'animé</h2>
         <div class="playlist-rail">
             {% for ep in episodes %}
-            <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}"
-               class="playlist-ep-chip {% if ep.episode_id|string == episode_id|string %}active{% endif %}">
+            <a href="/regarder-anime/{{ slug }}/{{ ep.episode_id }}"
+               class="playlist-ep-chip {% if ep.episode_id|string == episode_slug|string %}active{% endif %}">
                 {{ ep.title }}
             </a>
             {% endfor %}

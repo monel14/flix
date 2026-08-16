@@ -13,6 +13,8 @@ from scraper.coflix_client import CoflixFetchError, coflix_get_html
 from scraper.coflix_parser import parse_coflix_search
 from scraper.voirdrama_client import VoirdramaFetchError, voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_search
+from scraper.voiranime_client import VoiranimeFetchError, voiranime_get_html
+from scraper.voiranime_parser import parse_voiranime_search
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -20,7 +22,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent
 
 
 async def _load_search_all(query: str) -> list:
-    """Effectue une recherche concurrente sur Coflix et Voirdrama."""
+    """Recherche concurrente sur Coflix (films/séries), Voirdrama (dramas) et Voiranime (animés)."""
     async def search_coflix():
         try:
             html = await coflix_get_html("/filter", params={"keyword": query})
@@ -37,26 +39,36 @@ async def _load_search_all(query: str) -> list:
             logger.warning("Erreur recherche Voirdrama '%s' : %s", query, exc)
             return []
 
-    coflix_results, drama_results = await asyncio.gather(
+    async def search_voiranime():
+        try:
+            html = await voiranime_get_html(f"/?s={query}&post_type=wp-manga")
+            return parse_voiranime_search(html)
+        except Exception as exc:
+            logger.warning("Erreur recherche Voiranime '%s' : %s", query, exc)
+            return []
+
+    coflix_res, drama_res, anime_res = await asyncio.gather(
         search_coflix(),
         search_voirdrama(),
+        search_voiranime(),
     )
 
-    # Entrelacer / fusionner les résultats
     combined = []
-    max_len = max(len(coflix_results), len(drama_results))
+    max_len = max(len(coflix_res), len(drama_res), len(anime_res))
     for i in range(max_len):
-        if i < len(coflix_results):
-            combined.append(coflix_results[i])
-        if i < len(drama_results):
-            combined.append(drama_results[i])
+        if i < len(coflix_res):
+            combined.append(coflix_res[i])
+        if i < len(drama_res):
+            combined.append(drama_res[i])
+        if i < len(anime_res):
+            combined.append(anime_res[i])
 
     return combined
 
 
 @router.get("/recherche", response_class=HTMLResponse)
 async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
-    """Page de résultats de recherche unifiée (Films, Séries, K-Dramas)."""
+    """Page de résultats unifiée (Films, Séries, K-Dramas, Animés)."""
     results = []
     error = None
 
@@ -92,16 +104,23 @@ async def api_search(q: str = Query(default="")) -> JSONResponse:
             SEARCH_TTL,
             lambda: _load_search_all(cleaned_q),
         )
-        lite = [
-            {
+        lite = []
+        for r in results[:15]:
+            t = r.get("type", "movie")
+            if t == "drama":
+                link = f"/drama/{r['slug']}"
+            elif t == "anime":
+                link = f"/anime/{r['slug']}"
+            else:
+                link = f"/film/{r['slug']}"
+
+            lite.append({
                 "title": r["title"],
                 "slug": r["slug"],
                 "image": r["image"],
-                "type": r["type"],
-                "url": f"/drama/{r['slug']}" if r.get("type") == "drama" else f"/film/{r['slug']}",
-            }
-            for r in results[:12]
-        ]
+                "type": t,
+                "url": link,
+            })
         return JSONResponse({"results": lite})
     except Exception:
         return JSONResponse({"results": []})

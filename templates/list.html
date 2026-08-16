@@ -6,7 +6,7 @@
 <section class="content-section">
     <div class="section-header">
         <h1 class="section-title">
-            <i class="fas fa-{% if section == 'films' %}clapperboard{% elif section == 'dramas' %}earth-asia{% else %}tv{% endif %}"></i>
+            <i class="fas fa-{% if section == 'films' %}clapperboard{% elif section == 'dramas' %}earth-asia{% elif section == 'animes' %}dragon{% else %}tv{% endif %}"></i>
             {{ section_label }}
         </h1>
         <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">
@@ -14,14 +14,47 @@
         </div>
     </div>
 
-    <!-- Barre de défilement des Genres -->
+    <!-- Filtres par Version Linguistique (TOUS / VOSTFR / VF) -->
+    <div class="version-filter-tabs">
+        <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=all"
+           class="version-tab-btn {% if not current_version or current_version == 'all' %}active{% endif %}">
+            <i class="fas fa-globe"></i> Toutes versions
+        </a>
+        <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=vostfr"
+           class="version-tab-btn {% if current_version == 'vostfr' %}active--vostfr{% endif %}">
+            <i class="fas fa-closed-captioning"></i> VOSTFR (Japonais/Coréen)
+        </a>
+        <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=vf"
+           class="version-tab-btn {% if current_version == 'vf' %}active{% endif %}">
+            <i class="fas fa-microphone"></i> VF (Doublage Français)
+        </a>
+    </div>
+
+    <!-- Barre de défilement des Genres et Tris -->
     {% if genres %}
     <div class="genres-scroll-bar">
-        <a href="{{ base_path }}" class="genre-chip {% if not current_genre %}active{% endif %}">
+        {% if section == 'dramas' %}
+        <a href="/dramas{% if current_version and current_version != 'all' %}?version={{ current_version }}{% endif %}" class="genre-chip {% if not current_genre and (not current_sort or current_sort == 'latest') %}active{% endif %}">
+            <i class="fas fa-fire"></i> Dernières Sorties
+        </a>
+        <a href="/dramas?sort=az{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}" class="genre-chip {% if current_sort == 'az' %}active{% endif %}">
+            <i class="fas fa-arrow-down-a-z"></i> Tous (A-Z)
+        </a>
+        {% elif section == 'animes' %}
+        <a href="/animes{% if current_version and current_version != 'all' %}?version={{ current_version }}{% endif %}" class="genre-chip {% if not current_genre and (not current_sort or current_sort == 'latest') %}active{% endif %}">
+            <i class="fas fa-fire"></i> Nouveaux Épisodes
+        </a>
+        <a href="/animes?sort=az{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}" class="genre-chip {% if current_sort == 'az' %}active{% endif %}">
+            <i class="fas fa-arrow-down-a-z"></i> Tous les Animés (A-Z)
+        </a>
+        {% else %}
+        <a href="{{ base_path }}{% if current_version and current_version != 'all' %}?version={{ current_version }}{% endif %}" class="genre-chip {% if not current_genre %}active{% endif %}">
             <i class="fas fa-layer-group"></i> Tous les genres
         </a>
+        {% endif %}
+
         {% for g in genres %}
-        <a href="{{ base_path }}?genre={{ g.slug }}"
+        <a href="{{ base_path }}?genre={{ g.slug }}{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}"
            class="genre-chip {% if current_genre == g.slug %}active{% endif %}">
             {{ g.label }}
         </a>
@@ -29,24 +62,35 @@
     </div>
     {% endif %}
 
-    <!-- Grille des Affiches -->
+    <!-- Grille des Affiches avec Badges Distincts VF / VOSTFR -->
     <div class="cards-grid">
         {% for item in items %}
-        <a href="{% if item.type == 'drama' or section == 'dramas' %}/drama/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
+        <a href="{% if item.type == 'drama' or section == 'dramas' %}/drama/{{ item.slug }}{% elif item.type == 'anime' or section == 'animes' %}/anime/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                
+                <!-- Badge Distinctif VF / VOSTFR -->
+                {% if item.version == 'VF' %}
+                <span class="card-badge card-badge--vf">
+                    <i class="fas fa-microphone"></i> VF{% if item.latest_episode %} • Ép. {{ item.latest_episode }}{% endif %}
+                </span>
+                {% else %}
+                <span class="card-badge card-badge--vostfr">
+                    <i class="fas fa-closed-captioning"></i> VOSTFR{% if item.latest_episode %} • Ép. {{ item.latest_episode }}{% endif %}
+                </span>
+                {% endif %}
+                
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-sub">{{ 'K-Drama' if (item.type == 'drama' or section == 'dramas') else ('Série' if item.type == 'series' else 'Film') }}</p>
+                <p class="card-sub">{{ 'Animé' if (item.type == 'anime' or section == 'animes') else ('K-Drama' if (item.type == 'drama' or section == 'dramas') else ('Série' if item.type == 'series' else 'Film')) }}</p>
             </div>
         </a>
         {% else %}
         <div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted);">
             <i class="fas fa-film" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.3;"></i>
-            <p>Aucun titre trouvé dans cette catégorie.</p>
+            <p>Aucun titre trouvé avec ces critères de filtre.</p>
         </div>
         {% endfor %}
     </div>

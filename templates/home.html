@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Coflix — Regarder Films, Séries & K-Dramas en Streaming Gratuit HD{% endblock %}
+{% block title %}Coflix — Regarder Films, Séries, K-Dramas & Animés en Streaming HD{% endblock %}
 
 {% block content %}
 
@@ -77,7 +77,37 @@
 {% endif %}
 
 
-<!-- 3. K-DRAMAS POPULAIRES (Rail Défilant) -->
+<!-- 3. ANIMÉS JAPONAIS (Rail Défilant) -->
+{% if popular_animes %}
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-dragon"></i> Animés Japonais Populaires</h2>
+        <a href="/animes" class="see-all-link">Explorer tout <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="cards-rail">
+        {% for item in popular_animes %}
+        <a href="/anime/{{ item.slug }}" class="stream-card" style="width: 170px;">
+            <div class="card-poster-wrap">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {% if item.latest_episode %}
+                <span class="card-badge card-badge--vf">Ép. {{ item.latest_episode }}</span>
+                {% elif item.version %}
+                <span class="card-badge card-badge--vf">{{ item.version }}</span>
+                {% endif %}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
+            </div>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+                <p class="card-sub"><i class="fas fa-dragon"></i> Animé</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+
+<!-- 4. K-DRAMAS POPULAIRES (Rail Défilant) -->
 {% if popular_dramas %}
 <section class="content-section">
     <div class="section-header">
@@ -89,7 +119,11 @@
         <a href="/drama/{{ item.slug }}" class="stream-card" style="width: 170px;">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {% if item.latest_episode %}
+                <span class="card-badge card-badge--vf">Ép. {{ item.latest_episode }}</span>
+                {% elif item.version %}
                 <span class="card-badge card-badge--vf">{{ item.version }}</span>
+                {% endif %}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">
@@ -103,7 +137,7 @@
 {% endif %}
 
 
-<!-- 4. FILMS RÉCENTS (Rail Défilant) -->
+<!-- 5. FILMS RÉCENTS (Rail Défilant) -->
 <section class="content-section">
     <div class="section-header">
         <h2 class="section-title"><i class="fas fa-clapperboard"></i> Derniers Films Ajoutés</h2>
@@ -129,7 +163,7 @@
 </section>
 
 
-<!-- 5. SÉRIES RÉCENTES (Rail Défilant) -->
+<!-- 6. SÉRIES RÉCENTES (Rail Défilant) -->
 <section class="content-section">
     <div class="section-header">
         <h2 class="section-title"><i class="fas fa-tv"></i> Séries Populaires & Nouveautés</h2>

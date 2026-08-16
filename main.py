@@ -15,9 +15,10 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
-from routes import detail, drama, home, player, search
+from routes import anime, detail, drama, home, player, search
 from scraper.coflix_client import close_coflix_client
 from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_client
+from scraper.voiranime_client import close_voiranime_client, get_voiranime_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("coflix")
@@ -35,6 +36,7 @@ async def lifespan(app: FastAPI):
     yield
     await close_coflix_client()
     await close_voirdrama_client()
+    await close_voiranime_client()
 
 
 app = FastAPI(title="Coflix", lifespan=lifespan)
@@ -51,7 +53,7 @@ templates.env.globals["str"] = str
 
 
 # ---------------------------------------------------------------------------
-# Proxy d'images (Contournement de la protection anti-hotlink 403 de voirdrama)
+# Proxy d'images (Contournement de la protection anti-hotlink 403)
 # ---------------------------------------------------------------------------
 
 @app.get("/api/image-proxy")
@@ -60,11 +62,18 @@ async def image_proxy(url: str = Query(...)):
     if not url.startswith("http://") and not url.startswith("https://"):
         raise HTTPException(status_code=400, detail="Invalid URL")
 
-    # Déterminer le Referer adapté
-    referer = "https://voirdrama.to/" if "voirdrama" in url else "https://coflix.wiki/"
+    # Déterminer le bon Referer selon la source
+    if "voirdrama" in url:
+        referer = "https://voirdrama.to/"
+        client = get_voirdrama_client()
+    elif "voir-anime" in url:
+        referer = "https://voir-anime.to/"
+        client = get_voiranime_client()
+    else:
+        referer = "https://coflix.wiki/"
+        client = get_voirdrama_client()
 
     try:
-        client = get_voirdrama_client()
         r = await client.get(
             url,
             headers={
@@ -149,4 +158,5 @@ app.include_router(home.router)
 app.include_router(detail.router)
 app.include_router(player.router)
 app.include_router(drama.router)
+app.include_router(anime.router)
 app.include_router(search.router)

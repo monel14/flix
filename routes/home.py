@@ -19,6 +19,8 @@ from scraper.coflix_parser import (
 )
 from scraper.voirdrama_client import voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_list
+from scraper.voiranime_client import voiranime_get_html
+from scraper.voiranime_parser import parse_voiranime_list
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -26,7 +28,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent
 
 
 async def _load_home_section(section: str, page: int = 1, genre: str | None = None) -> dict:
-    """Charge une liste paginée de films ou séries (avec support de filtre par genre)."""
+    """Charge une liste paginée de films ou séries."""
     if genre:
         path = f"/{section}/{genre}/" if page == 1 else f"/{section}/{genre}/?page={page}"
     else:
@@ -59,9 +61,9 @@ async def _load_top(top_type: str = "day") -> list:
 
 
 async def _load_popular_dramas() -> list:
-    """Charge les K-Dramas populaires / récents depuis voirdrama.to."""
+    """Charge les K-Dramas populaires / récents."""
     try:
-        html = await voirdrama_get_html("/nouveaux-ajouts/")
+        html = await voirdrama_get_html("/")
         items = parse_voirdrama_list(html)
         if not items:
             html_all = await voirdrama_get_html("/liste-dramas/")
@@ -72,9 +74,23 @@ async def _load_popular_dramas() -> list:
         return []
 
 
+async def _load_popular_animes() -> list:
+    """Charge les Animés japonais populaires / récents."""
+    try:
+        html = await voiranime_get_html("/")
+        items = parse_voiranime_list(html)
+        if not items:
+            html_all = await voiranime_get_html("/liste-danimes/")
+            items = parse_voiranime_list(html_all)
+        return items[:18]
+    except Exception as exc:
+        logger.warning("Erreur chargement Animés accueil : %s", exc)
+        return []
+
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request, top_filter: str = Query(default="day", pattern="^(day|week|month)$")) -> HTMLResponse:
-    """Page d'accueil : carrousel hero + films récents + séries récentes + top tendances + K-Dramas."""
+    """Page d'accueil multi-sources : hero + films + séries + K-Dramas + Animés + top tendances."""
     async def fetch_hero():
         try:
             return await cache.get_or_set("home:hero", HOME_TTL, _load_hero)
@@ -111,13 +127,20 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         except Exception:
             return []
 
-    # Chargement concurrent des 5 composants d'accueil
-    hero_slides, movies_data, series_data, top, popular_dramas = await asyncio.gather(
+    async def fetch_animes():
+        try:
+            return await cache.get_or_set("home:animes:popular", HOME_TTL, _load_popular_animes)
+        except Exception:
+            return []
+
+    # Chargement concurrent des 6 composants
+    hero_slides, movies_data, series_data, top, popular_dramas, popular_animes = await asyncio.gather(
         fetch_hero(),
         fetch_movies(),
         fetch_series(),
         fetch_top(),
         fetch_dramas(),
+        fetch_animes(),
     )
 
     return templates.TemplateResponse(request, "home.html", {
@@ -126,6 +149,7 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         "recent_movies": movies_data.get("items", [])[:24],
         "recent_series": series_data.get("items", [])[:24],
         "popular_dramas": popular_dramas if isinstance(popular_dramas, list) else [],
+        "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
         "top": top[:10] if isinstance(top, list) else [],
         "top_filter": top_filter,
     })
@@ -136,8 +160,9 @@ async def movies_list(
     request: Request,
     page: int = Query(default=1, ge=1),
     genre: str | None = Query(default=None),
+    version: str | None = Query(default=None, pattern="^(all|vf|vostfr)$"),
 ) -> HTMLResponse:
-    """Liste paginée des films (filtrable par genre)."""
+    """Liste paginée des films."""
     cache_key = f"list:movies:{genre}:{page}" if genre else f"list:movies:{page}"
     try:
         data = await cache.get_or_set(
@@ -147,16 +172,28 @@ async def movies_list(
         logger.warning("Erreur liste films p%d genre=%s : %s", page, genre, exc)
         data = {"items": [], "last_page": 1}
 
-    genre_param = f"&genre={genre}" if genre else ""
-    prev_url = f"/films?page={page - 1}{genre_param}" if page > 1 else None
-    next_url = f"/films?page={page + 1}{genre_param}" if page < data.get("last_page", 1) else None
+    items = data.get("items", [])
+    if version == "vf":
+        items = [it for it in items if "vf" in it.get("version", "").lower() or "french" in it.get("version", "").lower()]
+    elif version == "vostfr":
+        items = [it for it in items if "vostfr" in it.get("version", "").lower() or "vo" in it.get("version", "").lower()]
+
+    params = []
+    if genre:
+        params.append(f"genre={genre}")
+    if version and version != "all":
+        params.append(f"version={version}")
+    query_str = f"&{'&'.join(params)}" if params else ""
+
+    prev_url = f"/films?page={page - 1}{query_str}" if page > 1 else None
+    next_url = f"/films?page={page + 1}{query_str}" if page < data.get("last_page", 1) else None
 
     genre_label = next((g["label"] for g in AVAILABLE_GENRES if g["slug"] == genre), None) if genre else None
     section_label = f"Films — {genre_label}" if genre_label else "Films"
 
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
-        "items": data.get("items", []),
+        "items": items,
         "section": "films",
         "section_label": section_label,
         "current_page": page,
@@ -165,6 +202,7 @@ async def movies_list(
         "next_url": next_url,
         "genres": AVAILABLE_GENRES,
         "current_genre": genre,
+        "current_version": version or "all",
         "base_path": "/films",
     })
 
@@ -174,8 +212,9 @@ async def series_list(
     request: Request,
     page: int = Query(default=1, ge=1),
     genre: str | None = Query(default=None),
+    version: str | None = Query(default=None, pattern="^(all|vf|vostfr)$"),
 ) -> HTMLResponse:
-    """Liste paginée des séries (filtrable par genre)."""
+    """Liste paginée des séries."""
     cache_key = f"list:series:{genre}:{page}" if genre else f"list:series:{page}"
     try:
         data = await cache.get_or_set(
@@ -185,16 +224,28 @@ async def series_list(
         logger.warning("Erreur liste séries p%d genre=%s : %s", page, genre, exc)
         data = {"items": [], "last_page": 1}
 
-    genre_param = f"&genre={genre}" if genre else ""
-    prev_url = f"/series?page={page - 1}{genre_param}" if page > 1 else None
-    next_url = f"/series?page={page + 1}{genre_param}" if page < data.get("last_page", 1) else None
+    items = data.get("items", [])
+    if version == "vf":
+        items = [it for it in items if "vf" in it.get("version", "").lower() or "french" in it.get("version", "").lower()]
+    elif version == "vostfr":
+        items = [it for it in items if "vostfr" in it.get("version", "").lower() or "vo" in it.get("version", "").lower()]
+
+    params = []
+    if genre:
+        params.append(f"genre={genre}")
+    if version and version != "all":
+        params.append(f"version={version}")
+    query_str = f"&{'&'.join(params)}" if params else ""
+
+    prev_url = f"/series?page={page - 1}{query_str}" if page > 1 else None
+    next_url = f"/series?page={page + 1}{query_str}" if page < data.get("last_page", 1) else None
 
     genre_label = next((g["label"] for g in AVAILABLE_GENRES if g["slug"] == genre), None) if genre else None
     section_label = f"Séries — {genre_label}" if genre_label else "Séries"
 
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
-        "items": data.get("items", []),
+        "items": items,
         "section": "series",
         "section_label": section_label,
         "current_page": page,
@@ -203,5 +254,6 @@ async def series_list(
         "next_url": next_url,
         "genres": AVAILABLE_GENRES,
         "current_genre": genre,
+        "current_version": version or "all",
         "base_path": "/series",
     })
