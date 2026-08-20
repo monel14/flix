@@ -67,7 +67,7 @@ async def _load_search_all(query: str) -> list:
 
 
 @router.get("/recherche", response_class=HTMLResponse)
-async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
+async def search(request: Request, q: str = Query(default="", max_length=100)) -> HTMLResponse:
     """Page de résultats unifiée (Films, Séries, K-Dramas, Animés)."""
     results = []
     error = None
@@ -93,7 +93,7 @@ async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
 
 
 @router.get("/api/search", response_class=JSONResponse)
-async def api_search(q: str = Query(default="")) -> JSONResponse:
+async def api_search(q: str = Query(default="", max_length=100)) -> JSONResponse:
     """API JSON unifiée pour l'autocomplétion."""
     cleaned_q = q.strip()
     if len(cleaned_q) < 2:
