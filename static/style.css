@@ -1168,6 +1168,46 @@ img {
     border: none;
 }
 
+/* Façade anti-redirections : bouton play par-dessus l'iframe tant qu'elle n'est pas chargée */
+.player-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgba(10, 12, 18, 0.72);
+    cursor: pointer;
+}
+.player-overlay[hidden] {
+    display: none;
+}
+.player-overlay-play {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s ease;
+}
+.player-overlay:hover .player-overlay-play,
+.player-overlay:focus .player-overlay-play {
+    transform: scale(1.08);
+}
+.player-overlay-note {
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
 /* Player Episode Rail (Quick Jump) */
 .player-playlist-box {
     background: var(--bg-surface);

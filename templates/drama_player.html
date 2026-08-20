@@ -50,7 +50,7 @@
     <!-- 3. CADRE CINÉMA THEATER (Iframe) -->
     <div class="theater-frame-box">
         <iframe id="player-frame"
-                src="{{ default_server.server_link if default_server else '' }}"
+                data-src="{{ default_server.server_link if default_server else '' }}"
                 allowfullscreen
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 sandbox="allow-scripts allow-same-origin allow-presentation"
@@ -58,6 +58,14 @@
                 frameborder="0"
                 scrolling="no">
         </iframe>
+        <!-- Façade anti-redirections : l'iframe (et ses scripts pub) ne charge
+             qu'après le clic explicite de l'utilisateur. Le sandbox ci-dessus
+             bloque window.open / target=_blank / navigation top. -->
+        <div id="player-overlay" class="player-overlay" role="button" tabindex="0"
+             aria-label="Lancer la lecture">
+            <div class="player-overlay-play"><i class="fas fa-play" aria-hidden="true"></i></div>
+            <div class="player-overlay-note">Cliquer pour lancer le lecteur</div>
+        </div>
     </div>
 
     <!-- 4. PLAYLIST DES ÉPISODES DU DRAMA -->
@@ -83,12 +91,34 @@
 (function () {
     const frame = document.getElementById('player-frame');
     const btns = document.querySelectorAll('.server-pill-btn');
+    const overlay = document.getElementById('player-overlay');
 
+    function activatePlayer(link) {
+        if (!link) return;
+        frame.dataset.src = link;
+        frame.src = link;
+        if (overlay) overlay.hidden = true;
+    }
+
+    // 1. Façade : rien ne charge tant que l'utilisateur n'a pas cliqué
+    if (overlay && frame) {
+        const initial = frame.dataset.src || '';
+        if (!initial) overlay.hidden = true; // aucun serveur : pas de façade
+        overlay.addEventListener('click', () => activatePlayer(initial));
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                activatePlayer(initial);
+            }
+        });
+    }
+
+    // 2. Changement de serveur : chargement direct (clic utilisateur explicite)
     btns.forEach(btn => {
         btn.addEventListener('click', () => {
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            frame.src = btn.dataset.link;
+            activatePlayer(btn.dataset.link);
         });
     });
 })();
