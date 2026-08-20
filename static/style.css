@@ -472,6 +472,38 @@ img {
     background: rgba(255, 255, 255, 0.22);
     transform: translateY(-2px);
 }
+
+/* Onglets de versions sur la fiche (VF / VOSTFR) — modèle French Stream */
+.version-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.version-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-md, 10px);
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none;
+    color: var(--text-muted, #9aa4b2);
+    background: var(--bg-surface, #141824);
+    border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+    transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.version-switch-btn:hover {
+    transform: translateY(-1px);
+    color: #fff;
+}
+.version-switch-btn.active {
+    background: var(--brand, #e50914);
+    color: #fff;
+    border-color: transparent;
+}
+
 .btn-stream--big {
     font-size: 1.05rem;
     padding: 14px 34px;

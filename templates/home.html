@@ -66,7 +66,8 @@
             <div class="top-card-inner">
                 <div class="card-poster-wrap">
                     <img src="{{ item.image }}" alt="{{ item.title }}" loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}">
-                    {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                    {% set versions = item.versions if item.versions else ([item.version] if item.version else []) %}
+                    {% for v in versions[:2] %}<span class="card-badge card-badge--vf">{{ v }}</span>{% endfor %}
                     <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
                 </div>
             </div>
@@ -91,9 +92,9 @@
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                 {% if item.latest_episode %}
                 <span class="card-badge card-badge--vf">Ép. {{ item.latest_episode }}</span>
-                {% elif item.version %}
-                <span class="card-badge card-badge--vf">{{ item.version }}</span>
                 {% endif %}
+                {% set versions = item.versions if item.versions else ([item.version] if item.version else []) %}
+                {% for v in versions[:2] %}<span class="card-badge card-badge--vf">{{ v }}</span>{% endfor %}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">
@@ -121,9 +122,9 @@
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                 {% if item.latest_episode %}
                 <span class="card-badge card-badge--vf">Ép. {{ item.latest_episode }}</span>
-                {% elif item.version %}
-                <span class="card-badge card-badge--vf">{{ item.version }}</span>
                 {% endif %}
+                {% set versions = item.versions if item.versions else ([item.version] if item.version else []) %}
+                {% for v in versions[:2] %}<span class="card-badge card-badge--vf">{{ v }}</span>{% endfor %}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">

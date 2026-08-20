@@ -15,6 +15,22 @@
         <div class="detail-poster-column">
             <img class="detail-poster-img" src="{{ film.image }}" alt="{{ film.title }}" loading="eager">
 
+            {% if version_links %}
+            <!-- Onglets de versions (VF / VOSTFR) — une seule fiche, plusieurs versions -->
+            <div class="version-switcher" role="tablist" aria-label="Versions disponibles">
+                {% for vl in version_links %}
+                <a href="/film/{{ vl.slug }}" role="tab"
+                   class="version-switch-btn {% if vl.active %}active{% endif %}">
+                    {% if 'VF' == vl.label or vl.label in ('FRENCH', 'TRUEFRENCH') %}
+                    <i class="fas fa-microphone" aria-hidden="true"></i> {{ vl.label }}
+                    {% else %}
+                    <i class="fas fa-closed-captioning" aria-hidden="true"></i> {{ vl.label }}
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             {% if film.first_episode_id %}
             <a href="/regarder/{{ slug }}/ep-{{ film.first_episode_id }}" class="btn-stream btn-stream--primary btn-stream--big">
                 <i class="fas fa-play"></i> {{ 'Lire l\'épisode 1' if film.type == 'series' else 'Lancer le film' }}

@@ -21,6 +21,7 @@ from scraper.voirdrama_client import voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_list
 from scraper.voiranime_client import voiranime_get_html
 from scraper.voiranime_parser import parse_voiranime_list
+from services.dedup import merge_variants
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -146,11 +147,11 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
     return templates.TemplateResponse(request, "home.html", {
         "request": request,
         "hero_slides": hero_slides if isinstance(hero_slides, list) else [],
-        "recent_movies": movies_data.get("items", [])[:24],
-        "recent_series": series_data.get("items", [])[:24],
+        "recent_movies": merge_variants(movies_data.get("items", []))[:24],
+        "recent_series": merge_variants(series_data.get("items", []))[:24],
         "popular_dramas": popular_dramas if isinstance(popular_dramas, list) else [],
         "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
-        "top": top[:10] if isinstance(top, list) else [],
+        "top": merge_variants(top)[:10] if isinstance(top, list) else [],
         "top_filter": top_filter,
     })
 
@@ -172,11 +173,11 @@ async def movies_list(
         logger.warning("Erreur liste films p%d genre=%s : %s", page, genre, exc)
         data = {"items": [], "last_page": 1}
 
-    items = data.get("items", [])
+    items = merge_variants(data.get("items", []))
     if version == "vf":
-        items = [it for it in items if "vf" in it.get("version", "").lower() or "french" in it.get("version", "").lower()]
+        items = [it for it in items if any("vf" in (v or "").lower() or "french" in (v or "").lower() for v in it.get("versions", [it.get("version", "")]))]
     elif version == "vostfr":
-        items = [it for it in items if "vostfr" in it.get("version", "").lower() or "vo" in it.get("version", "").lower()]
+        items = [it for it in items if any("vostfr" in (v or "").lower() or (v or "").lower() == "vo" for v in it.get("versions", [it.get("version", "")]))]
 
     params = []
     if genre:
@@ -224,11 +225,11 @@ async def series_list(
         logger.warning("Erreur liste séries p%d genre=%s : %s", page, genre, exc)
         data = {"items": [], "last_page": 1}
 
-    items = data.get("items", [])
+    items = merge_variants(data.get("items", []))
     if version == "vf":
-        items = [it for it in items if "vf" in it.get("version", "").lower() or "french" in it.get("version", "").lower()]
+        items = [it for it in items if any("vf" in (v or "").lower() or "french" in (v or "").lower() for v in it.get("versions", [it.get("version", "")]))]
     elif version == "vostfr":
-        items = [it for it in items if "vostfr" in it.get("version", "").lower() or "vo" in it.get("version", "").lower()]
+        items = [it for it in items if any("vostfr" in (v or "").lower() or (v or "").lower() == "vo" for v in it.get("versions", [it.get("version", "")]))]
 
     params = []
     if genre:

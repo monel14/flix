@@ -69,16 +69,19 @@
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                 
-                <!-- Badge Distinctif VF / VOSTFR -->
-                {% if item.version == 'VF' %}
-                <span class="card-badge card-badge--vf">
-                    <i class="fas fa-microphone"></i> VF{% if item.latest_episode %} • Ép. {{ item.latest_episode }}{% endif %}
-                </span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr">
-                    <i class="fas fa-closed-captioning"></i> VOSTFR{% if item.latest_episode %} • Ép. {{ item.latest_episode }}{% endif %}
-                </span>
-                {% endif %}
+                <!-- Badges Distinctifs VF / VOSTFR (une carte = toutes les versions) -->
+                {% set versions = item.versions if item.versions else ([item.version] if item.version else []) %}
+                {% for v in versions[:2] %}
+                    {% if v == 'VF' or v in ('FRENCH', 'TRUEFRENCH') %}
+                    <span class="card-badge card-badge--vf">
+                        <i class="fas fa-microphone"></i> {{ v }}{% if item.latest_episode and loop.index == 1 %} • Ép. {{ item.latest_episode }}{% endif %}
+                    </span>
+                    {% else %}
+                    <span class="card-badge card-badge--vostfr">
+                        <i class="fas fa-closed-captioning"></i> {{ v }}{% if item.latest_episode and loop.index == 1 %} • Ép. {{ item.latest_episode }}{% endif %}
+                    </span>
+                    {% endif %}
+                {% endfor %}
                 
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>

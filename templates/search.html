@@ -44,7 +44,8 @@
         <a href="{% if item.type == 'drama' %}/drama/{{ item.slug }}{% elif item.type == 'anime' %}/anime/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                {% set versions = item.versions if item.versions else ([item.version] if item.version else []) %}
+                {% for v in versions[:2] %}<span class="card-badge card-badge--vf">{{ v }}</span>{% endfor %}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">

@@ -12,6 +12,7 @@ from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_
 from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
 from scraper.voirdrama_client import VoirdramaNotFoundError, voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_detail
+from services.dedup import canonical_slug, sibling_slugs, version_label
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -59,19 +60,58 @@ async def load_detail(slug: str) -> dict:
     return dict(detail)
 
 
+async def _variant_exists(slug: str) -> bool:
+    """Vérifie (avec cache) qu'une variante de slug existe réellement côté source."""
+    try:
+        html = await coflix_get_html(f"/film/{slug}")
+        detail = parse_coflix_detail(html, slug)
+        return bool(detail.get("movie_id"))
+    except Exception:
+        return False
+
+
 @router.get("/film/{slug}", response_class=HTMLResponse)
 async def film_detail(request: Request, slug: str):
     # 1. Tentative de chargement depuis Coflix (Films / Séries)
+    version_links = []
     try:
         data = await cache.get_or_set(
             f"detail:{slug}", DETAIL_TTL, lambda: load_detail(slug)
         )
         if data and data.get("title") and data.get("movie_id"):
+            # Onglets de versions (VF / VOSTFR) — modèle French Stream :
+            # si ce slug porte un suffixe de version, on sonde ses variantes sœurs.
+            base = canonical_slug(slug)
+            if base and base != slug:
+                version_links.append({
+                    "label": version_label(slug) or "Actuel",
+                    "slug": slug,
+                    "active": True,
+                })
+                for sib in sibling_slugs(slug):
+                    try:
+                        exists = await cache.get_or_set(
+                            f"variant:{sib}",
+                            DETAIL_TTL,
+                            lambda s=sib: _variant_exists(s),
+                        )
+                    except Exception:
+                        exists = False
+                    if exists:
+                        version_links.append({
+                            "label": version_label(sib) or sib,
+                            "slug": sib,
+                            "active": False,
+                        })
+            if len(version_links) < 2:
+                version_links = []
+
             return templates.TemplateResponse(request, "detail.html", {
                 "request": request,
                 "film": data,
                 "slug": slug,
                 "related": data.get("related", []),
+                "version_links": version_links,
             })
     except (CoflixNotFoundError, CoflixFetchError):
         pass
