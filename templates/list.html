@@ -6,108 +6,109 @@
 <section class="content-section">
     <div class="section-header">
         <h1 class="section-title">
-            <i class="fas fa-{% if section == 'films' %}clapperboard{% elif section == 'dramas' %}earth-asia{% elif section == 'animes' %}dragon{% else %}tv{% endif %}"></i>
             {{ section_label }}
         </h1>
-        <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">
+        <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim);">
             Page {{ current_page }} sur {{ last_page }}
         </div>
     </div>
 
-    <!-- Filtres par Version Linguistique (TOUS / VOSTFR / VF) -->
-    <div class="version-filter-tabs">
-        <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=all"
-           class="version-tab-btn {% if not current_version or current_version == 'all' %}active{% endif %}">
-            <i class="fas fa-globe"></i> Toutes versions
-        </a>
-        <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=vostfr"
-           class="version-tab-btn {% if current_version == 'vostfr' %}active--vostfr{% endif %}">
-            <i class="fas fa-closed-captioning"></i> VOSTFR (Japonais/Coréen)
-        </a>
-        <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=vf"
-           class="version-tab-btn {% if current_version == 'vf' %}active{% endif %}">
-            <i class="fas fa-microphone"></i> VF (Doublage Français)
-        </a>
+    <!-- Toolbar Compacte : Version + Genre + Tri (Chantier 4) -->
+    <div class="catalog-toolbar">
+        <!-- Groupe 1 : Version Linguistique -->
+        <div class="toolbar-group">
+            <span class="toolbar-label">Langue :</span>
+            <div class="version-segment-control">
+                <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=all"
+                   class="version-segment-btn {% if not current_version or current_version == 'all' %}active{% endif %}">
+                    Toutes
+                </a>
+                <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=vostfr"
+                   class="version-segment-btn {% if current_version == 'vostfr' %}active{% endif %}">
+                    VOSTFR
+                </a>
+                <a href="{{ base_path }}?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort and current_sort != 'latest' %}sort={{ current_sort }}&{% endif %}version=vf"
+                   class="version-segment-btn {% if current_version == 'vf' %}active{% endif %}">
+                    VF
+                </a>
+            </div>
+        </div>
+
+        <!-- Groupe 2 : Sélecteur de Genre Déroulant & Tri -->
+        <div class="toolbar-group">
+            {% if genres %}
+            <span class="toolbar-label">Genre :</span>
+            <select class="genre-dropdown-select" onchange="if (this.value) window.location.href=this.value;">
+                <option value="{{ base_path }}{% if current_version and current_version != 'all' %}?version={{ current_version }}{% endif %}{% if current_sort and current_sort != 'latest' %}&sort={{ current_sort }}{% endif %}"
+                        {% if not current_genre %}selected{% endif %}>
+                    Tous les genres ({{ genres | length }})
+                </option>
+                {% for g in genres %}
+                <option value="{{ base_path }}?genre={{ g.slug }}{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}{% if current_sort and current_sort != 'latest' %}&sort={{ current_sort }}{% endif %}"
+                        {% if current_genre == g.slug %}selected{% endif %}>
+                    {{ g.label }}
+                </option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            {% if section == 'dramas' or section == 'animes' %}
+            <div class="sort-segment-control">
+                <a href="{{ base_path }}{% if current_genre %}?genre={{ current_genre }}{% endif %}{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}"
+                   class="sort-segment-btn {% if not current_sort or current_sort == 'latest' %}active{% endif %}" title="Nouveaux épisodes">
+                    Nouveautés
+                </a>
+                <a href="{{ base_path }}?sort=az{% if current_genre %}&genre={{ current_genre }}{% endif %}{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}"
+                   class="sort-segment-btn {% if current_sort == 'az' %}active{% endif %}" title="Ordre alphabétique">
+                    A-Z
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Barre de défilement des Genres et Tris -->
-    {% if genres %}
-    <div class="genres-scroll-bar">
-        {% if section == 'dramas' %}
-        <a href="/dramas{% if current_version and current_version != 'all' %}?version={{ current_version }}{% endif %}" class="genre-chip {% if not current_genre and (not current_sort or current_sort == 'latest') %}active{% endif %}">
-            <i class="fas fa-fire"></i> Dernières Sorties
-        </a>
-        <a href="/dramas?sort=az{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}" class="genre-chip {% if current_sort == 'az' %}active{% endif %}">
-            <i class="fas fa-arrow-down-a-z"></i> Tous (A-Z)
-        </a>
-        {% elif section == 'animes' %}
-        <a href="/animes{% if current_version and current_version != 'all' %}?version={{ current_version }}{% endif %}" class="genre-chip {% if not current_genre and (not current_sort or current_sort == 'latest') %}active{% endif %}">
-            <i class="fas fa-fire"></i> Nouveaux Épisodes
-        </a>
-        <a href="/animes?sort=az{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}" class="genre-chip {% if current_sort == 'az' %}active{% endif %}">
-            <i class="fas fa-arrow-down-a-z"></i> Tous les Animés (A-Z)
-        </a>
-        {% else %}
-        <a href="{{ base_path }}{% if current_version and current_version != 'all' %}?version={{ current_version }}{% endif %}" class="genre-chip {% if not current_genre %}active{% endif %}">
-            <i class="fas fa-layer-group"></i> Tous les genres
-        </a>
-        {% endif %}
-
-        {% for g in genres %}
-        <a href="{{ base_path }}?genre={{ g.slug }}{% if current_version and current_version != 'all' %}&version={{ current_version }}{% endif %}"
-           class="genre-chip {% if current_genre == g.slug %}active{% endif %}">
-            {{ g.label }}
-        </a>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- Grille des Affiches avec Badges Distincts VF / VOSTFR -->
+    <!-- Grille des Affiches (Chantier 1 — Sans boîtes opaques) -->
     <div class="cards-grid">
         {% for item in items %}
         <a href="{% if item.type == 'drama' or section == 'dramas' %}/drama/{{ item.slug }}{% elif item.type == 'anime' or section == 'animes' %}/anime/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                 
-                <!-- Badges : version(s) unifiée(s) + dernier épisode -->
-                {% set versions = item.versions if item.versions else ([item.version] if item.version else []) %}
-                {% set has_vf = ('VF' in versions) or ('FRENCH' in versions) or ('TRUEFRENCH' in versions) %}
-                {% set has_vo = ('VOSTFR' in versions) or ('VO' in versions) %}
-                {% if versions %}
-                <div class="card-badges">
-                    {% if has_vf and has_vo %}
-                    <span class="card-badge card-badge--multi"><i class="fas fa-microphone"></i> VF&nbsp;+ <i class="fas fa-closed-captioning"></i> VOSTFR</span>
-                    {% elif has_vf %}
-                    <span class="card-badge card-badge--vf"><i class="fas fa-microphone"></i> VF</span>
-                    {% elif has_vo %}
-                    <span class="card-badge card-badge--vostfr"><i class="fas fa-closed-captioning"></i> VOSTFR</span>
-                    {% endif %}
-                    {% if item.latest_episode %}
-                    <span class="card-badge card-badge--ep">{% if item.total_episodes %}Ep {{ item.latest_episode }} sur {{ item.total_episodes }}{% else %}Ép. {{ item.latest_episode }}{% endif %}</span>
-                    {% endif %}
-                </div>
-                {% elif item.latest_episode %}
-                <div class="card-badges">
-                    <span class="card-badge card-badge--ep">{% if item.total_episodes %}Ep {{ item.latest_episode }} sur {{ item.total_episodes }}{% else %}Ép. {{ item.latest_episode }}{% endif %}</span>
-                </div>
+                <!-- Micro-Badge Sobre -->
+                {% if item.version == 'VF' %}
+                <span class="card-badge card-badge--vf">VF</span>
+                {% else %}
+                <span class="card-badge card-badge--vostfr">VOSTFR</span>
                 {% endif %}
                 
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-sub">{{ 'Animé' if (item.type == 'anime' or section == 'animes') else ('K-Drama' if (item.type == 'drama' or section == 'dramas') else ('Série' if item.type == 'series' else 'Film')) }}</p>
+                <p class="card-meta-line">
+                    {% if item.latest_episode %}
+                    <span>Ép. {{ item.latest_episode }}</span>
+                    {% elif section == 'films' %}
+                    <span>Film</span>
+                    {% elif section == 'series' %}
+                    <span>Série</span>
+                    {% elif section == 'dramas' %}
+                    <span>K-Drama</span>
+                    {% elif section == 'animes' %}
+                    <span>Animé</span>
+                    {% endif %}
+                </p>
             </div>
         </a>
         {% else %}
-        <div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted);">
-            <i class="fas fa-film" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.3;"></i>
+        <div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-dim);">
+            <i class="fas fa-film" style="font-size: 2.5rem; margin-bottom: 12px; opacity: 0.3;"></i>
             <p>Aucun titre trouvé avec ces critères de filtre.</p>
         </div>
         {% endfor %}
     </div>
 
-    <!-- Pagination Moderne -->
+    <!-- Pagination -->
     {% if prev_url or next_url %}
     <nav class="pagination-container" aria-label="Pagination">
         {% if prev_url %}

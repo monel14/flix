@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
 import json
 import logging
@@ -50,23 +49,6 @@ def _conn():
 
 
 class _Cache:
-    # Verrous par clé pour éviter le "thundering herd" : quand une clé expire,
-    # un seul scraper part, les autres requêtes attendent le résultat.
-    _locks: dict[str, asyncio.Lock] = {}
-
-    @staticmethod
-    def _key_lock(key: str) -> asyncio.Lock:
-        lock = _Cache._locks.get(key)
-        if lock is None:
-            lock = _Cache._locks[key] = asyncio.Lock()
-        return lock
-
-    @staticmethod
-    def _release_key_lock(key: str) -> None:
-        lock = _Cache._locks.get(key)
-        if lock is not None and not lock.locked():
-            _Cache._locks.pop(key, None)
-
     def get(self, key: str) -> Any | None:
         """Récupère une valeur en cache si non expirée."""
         with _conn() as conn:
@@ -111,71 +93,58 @@ class _Cache:
         Récupère depuis le cache ou exécute le loader.
         Si la source échoue (panne, changement de code, erreur réseau),
         renvoie la dernière version connue en cache (Stale-on-Error) pour garantir la continuité de service.
-
-        - Les opérations SQLite (bloquantes) tournent dans un thread.
-        - Un verrou par clé évite que N requêtes simultanées déclenchent N scrapes.
         """
-        lock = self._key_lock(key)
-        async with lock:
-            try:
-                # Lecture (SQLite) hors de la boucle d'événements
-                stale_entry = (
-                    await asyncio.to_thread(self.get_stale, key)
-                    if allow_stale_on_error
-                    else None
+        stale_entry = self.get_stale(key) if allow_stale_on_error else None
+
+        # 1. Donnée encore valide en cache -> retour immédiat (0 ms)
+        if stale_entry and stale_entry["expires"] > time.time():
+            return stale_entry["data"]
+
+        # 2. Donnée expirée ou inexistante -> tentative de re-scraping
+        try:
+            if inspect.iscoroutinefunction(loader):
+                data = await loader()
+            else:
+                data = loader()
+                if inspect.iscoroutine(data):
+                    data = await data
+
+            # Vérification de sécurité : si le loader renvoie une structure vide inattendue
+            # alors qu'on avait une version antérieure riche (ex: changement de balises CSS sur la source)
+            is_empty = False
+            if isinstance(data, list) and not data and stale_entry and stale_entry.get("data"):
+                is_empty = True
+            elif isinstance(data, dict):
+                items = data.get("items")
+                if isinstance(items, list) and not items and stale_entry and isinstance(stale_entry.get("data"), dict) and stale_entry["data"].get("items"):
+                    is_empty = True
+
+            if is_empty and stale_entry:
+                logger.warning(
+                    "Re-scraping de '%s' a renvoyé des données vides, conservation de la version précédente en cache.",
+                    key,
                 )
+                self.set(key, stale_entry["data"], STALE_ERROR_EXTEND_TTL)
+                return stale_entry["data"]
 
-                # 1. Donnée encore valide en cache -> retour immédiat (0 ms)
-                if stale_entry and stale_entry["expires"] > time.time():
-                    return stale_entry["data"]
+            # Enregistrement de la nouvelle donnée fraîche
+            self.set(key, data, ttl)
+            return data
 
-                # 2. Donnée expirée ou inexistante -> tentative de re-scraping
-                try:
-                    if inspect.iscoroutinefunction(loader):
-                        data = await loader()
-                    else:
-                        data = loader()
-                        if inspect.iscoroutine(data):
-                            data = await data
+        except Exception as exc:
+            # 3. Filet de sécurité (Stale-on-Error) : en cas d'erreur de la source, on réutilise l'ancien cache
+            if allow_stale_on_error and stale_entry and stale_entry.get("data") is not None:
+                logger.warning(
+                    "Échec de la mise à jour pour '%s' (%s). Utilisation du cache de secours existant.",
+                    key,
+                    exc,
+                )
+                # On prolonge légèrement l'expiration pour éviter de re-tenter la source à chaque requête
+                self.set(key, stale_entry["data"], STALE_ERROR_EXTEND_TTL)
+                return stale_entry["data"]
 
-                    # Vérification de sécurité : si le loader renvoie une structure vide inattendue
-                    # alors qu'on avait une version antérieure riche (ex: changement de balises CSS sur la source)
-                    is_empty = False
-                    if isinstance(data, list) and not data and stale_entry and stale_entry.get("data"):
-                        is_empty = True
-                    elif isinstance(data, dict):
-                        items = data.get("items")
-                        if isinstance(items, list) and not items and stale_entry and isinstance(stale_entry.get("data"), dict) and stale_entry["data"].get("items"):
-                            is_empty = True
-
-                    if is_empty and stale_entry:
-                        logger.warning(
-                            "Re-scraping de '%s' a renvoyé des données vides, conservation de la version précédente en cache.",
-                            key,
-                        )
-                        await asyncio.to_thread(self.set, key, stale_entry["data"], STALE_ERROR_EXTEND_TTL)
-                        return stale_entry["data"]
-
-                    # Enregistrement de la nouvelle donnée fraîche
-                    await asyncio.to_thread(self.set, key, data, ttl)
-                    return data
-
-                except Exception as exc:
-                    # 3. Filet de sécurité (Stale-on-Error) : en cas d'erreur de la source, on réutilise l'ancien cache
-                    if allow_stale_on_error and stale_entry and stale_entry.get("data") is not None:
-                        logger.warning(
-                            "Échec de la mise à jour pour '%s' (%s). Utilisation du cache de secours existant.",
-                            key,
-                            exc,
-                        )
-                        # On prolonge légèrement l'expiration pour éviter de re-tenter la source à chaque requête
-                        await asyncio.to_thread(self.set, key, stale_entry["data"], STALE_ERROR_EXTEND_TTL)
-                        return stale_entry["data"]
-
-                    # Si aucune donnée de secours n'existe, on propage l'exception
-                    raise
-            finally:
-                self._release_key_lock(key)
+            # Si aucune donnée de secours n'existe, on propage l'exception
+            raise
 
     def invalidate(self, key: str) -> None:
         """Invalide une clé spécifique."""
@@ -184,14 +153,15 @@ class _Cache:
 
     def purge_expired(self, keep_archive_days: int = 30) -> int:
         """
-        Supprime les entrées expirées, en préservant les fiches de films et séries
-        (clés `detail:*`) comme archive permanente.
+        Supprime uniquement les entrées très anciennes et temporaires (ex: recherche, liens éphémères),
+        tout en préservant les fiches de films et séries comme archive permanente.
         """
-        now = time.time()
+        threshold = time.time() - (keep_archive_days * 24 * 3600)
         with _conn() as conn:
+            # On ne supprime que les recherches ou vieux liens temporaires dont la date dépasse le seuil
             cur = conn.execute(
-                "DELETE FROM cache WHERE expires < ? AND key NOT LIKE 'detail:%'",
-                (now,),
+                "DELETE FROM cache WHERE (key LIKE 'search:%' OR key LIKE 'servers:%') AND expires < ?",
+                (threshold,),
             )
             return cur.rowcount
 

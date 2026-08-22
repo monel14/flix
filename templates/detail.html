@@ -1,50 +1,47 @@
 {% extends "base.html" %}
 
-{% block title %}{{ film.title }} — Regarder en Streaming HD — Nokaflix{% endblock %}
-{% block description %}{{ film.synopsis[:155] if film.synopsis else 'Regarder ' ~ film.title ~ ' en streaming gratuit VF et VOSTFR.' }}{% endblock %}
+{% block title %}{{ film.title }} — Streaming HD — Nokaflix{% endblock %}
+{% block og_title %}{{ film.title }} en Streaming VF & VOSTFR HD — Nokaflix{% endblock %}
+{% block og_description %}{{ film.synopsis[:160] if film.synopsis else 'Regarder ' ~ film.title ~ ' en streaming gratuit.' }}{% endblock %}
+{% block og_image %}{{ film.image }}{% endblock %}
 
 {% block content %}
-<!-- 1. CINEMATIC DETAIL HERO BANNER -->
-<div class="detail-hero-wrapper">
+<!-- 1. CINEMATIC DETAIL HERO BANNER (Chantier 5 — Pleine Page Non Enfermée) -->
+<div class="detail-cinematic-header">
     {% if film.image %}
-    <div class="detail-backdrop-blur" style="background-image: url('{{ film.image }}');"></div>
+    <div class="detail-backdrop-full" style="background-image: url('{{ film.image }}');"></div>
     {% endif %}
 
-    <div class="detail-content-grid">
+    <div class="detail-layout-content">
         <!-- Colonne Affiche & Actions -->
         <div class="detail-poster-column">
             <img class="detail-poster-img" src="{{ film.image }}" alt="{{ film.title }}" loading="eager">
 
-            {% if version_links %}
-            <!-- Onglets de versions (VF / VOSTFR) — une seule fiche, plusieurs versions -->
-            <div class="version-switcher" role="tablist" aria-label="Versions disponibles">
-                {% for vl in version_links %}
-                <a href="/film/{{ vl.slug }}" role="tab"
-                   class="version-switch-btn {% if vl.active %}active{% endif %}">
-                    {% if 'VF' == vl.label or vl.label in ('FRENCH', 'TRUEFRENCH') %}
-                    <i class="fas fa-microphone" aria-hidden="true"></i> {{ vl.label }}
-                    {% else %}
-                    <i class="fas fa-closed-captioning" aria-hidden="true"></i> {{ vl.label }}
-                    {% endif %}
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                {% if film.first_episode_id %}
+                <a href="/regarder/{{ slug }}/ep-{{ film.first_episode_id }}" class="btn-cta btn-cta--primary btn-cta--big" style="width: 100%;">
+                    <i class="fas fa-play"></i> {{ 'Épisode 1' if film.type == 'series' else 'Regarder' }}
                 </a>
-                {% endfor %}
+                {% endif %}
+                
+                <button id="watchlist-btn" class="btn-cta btn-cta--secondary" style="width: 100%;">
+                    <i class="fas fa-plus"></i> <span>Ajouter à ma liste</span>
+                </button>
             </div>
-            {% endif %}
-
-            {% if film.first_episode_id %}
-            <a href="/regarder/{{ slug }}/ep-{{ film.first_episode_id }}" class="btn-stream btn-stream--primary btn-stream--big">
-                <i class="fas fa-play"></i> {{ 'Lire l\'épisode 1' if film.type == 'series' else 'Lancer le film' }}
-            </a>
-            {% endif %}
         </div>
 
         <!-- Colonne Informations & Métadonnées -->
         <div class="detail-meta-column">
             <div class="detail-chips-row">
-                <span class="badge-stream badge-stream--brand">{{ 'SÉRIE' if film.type == 'series' else 'FILM' }}</span>
-                {% if film.version %}<span class="badge-stream">{{ film.version }}</span>{% endif %}
-                {% if film.year %}<span class="detail-meta-chip"><i class="fas fa-calendar"></i> {{ film.year }}</span>{% endif %}
-                {% if film.status %}<span class="detail-meta-chip"><i class="fas fa-circle-check"></i> {{ film.status }}</span>{% endif %}
+                {% if film.version == 'VF' %}
+                <span class="card-badge card-badge--vf" style="position: static;">VF</span>
+                {% else %}
+                <span class="card-badge card-badge--vostfr" style="position: static;">{{ film.version or 'VOSTFR' }}</span>
+                {% endif %}
+
+                {% if film.year %}<span class="detail-meta-chip">• {{ film.year }}</span>{% endif %}
+                {% if film.content_type %}<span class="detail-meta-chip">• {{ film.content_type }}</span>{% endif %}
+                {% if film.status %}<span class="detail-meta-chip">• {{ film.status }}</span>{% endif %}
             </div>
 
             <h1 class="detail-main-title">{{ film.title }}</h1>
@@ -70,7 +67,7 @@
 {% if film.type == 'series' and film.episodes %}
 <section class="episodes-section-block">
     <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-list-ul"></i> Liste des Épisodes ({{ film.episodes | length }})</h2>
+        <h2 class="section-title">Épisodes Disponibles ({{ film.episodes | length }})</h2>
     </div>
 
     {% set seasons = film.episodes | groupby('season') %}
@@ -96,14 +93,18 @@
 {% if related %}
 <section class="content-section">
     <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-sparkles"></i> Vous aimerez aussi</h2>
+        <h2 class="section-title">Vous aimerez aussi</h2>
     </div>
     <div class="cards-rail">
         {% for item in related %}
-        <a href="/film/{{ item.slug }}" class="stream-card" style="width: 160px;">
+        <a href="/film/{{ item.slug }}" class="stream-card" style="width: 150px;">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                {% if item.version == 'VF' %}
+                <span class="card-badge card-badge--vf">VF</span>
+                {% else %}
+                <span class="card-badge card-badge--vostfr">VOSTFR</span>
+                {% endif %}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">
@@ -115,4 +116,41 @@
 </section>
 {% endif %}
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const btn = document.getElementById('watchlist-btn');
+    if (!btn || !window.NokaflixWatchlist) return;
+
+    const movieObj = {
+        title: "{{ film.title | replace('\"', '\\\"') }}",
+        slug: "{{ slug }}",
+        image: "{{ film.image }}",
+        version: "{{ film.version }}",
+        type: "{{ film.type }}"
+    };
+
+    function updateBtn() {
+        const inList = window.NokaflixWatchlist.has(movieObj.slug);
+        if (inList) {
+            btn.innerHTML = '<i class="fas fa-check"></i> <span>Dans ma liste</span>';
+            btn.classList.add('btn-cta--brand');
+            btn.classList.remove('btn-cta--secondary');
+        } else {
+            btn.innerHTML = '<i class="fas fa-plus"></i> <span>Ajouter à ma liste</span>';
+            btn.classList.remove('btn-cta--brand');
+            btn.classList.add('btn-cta--secondary');
+        }
+    }
+
+    btn.addEventListener('click', () => {
+        window.NokaflixWatchlist.toggle(movieObj);
+        updateBtn();
+    });
+
+    updateBtn();
+})();
+</script>
 {% endblock %}

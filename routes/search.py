@@ -15,7 +15,6 @@ from scraper.voirdrama_client import VoirdramaFetchError, voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_search
 from scraper.voiranime_client import VoiranimeFetchError, voiranime_get_html
 from scraper.voiranime_parser import parse_voiranime_search
-from services.dedup import merge_variants
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -54,9 +53,6 @@ async def _load_search_all(query: str) -> list:
         search_voiranime(),
     )
 
-    # Fusion des variantes VF/VOSTFR des résultats coflix (un titre = une entrée)
-    coflix_res = merge_variants(coflix_res)
-
     combined = []
     max_len = max(len(coflix_res), len(drama_res), len(anime_res))
     for i in range(max_len):
@@ -71,7 +67,7 @@ async def _load_search_all(query: str) -> list:
 
 
 @router.get("/recherche", response_class=HTMLResponse)
-async def search(request: Request, q: str = Query(default="", max_length=100)) -> HTMLResponse:
+async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
     """Page de résultats unifiée (Films, Séries, K-Dramas, Animés)."""
     results = []
     error = None
@@ -97,7 +93,7 @@ async def search(request: Request, q: str = Query(default="", max_length=100)) -
 
 
 @router.get("/api/search", response_class=JSONResponse)
-async def api_search(q: str = Query(default="", max_length=100)) -> JSONResponse:
+async def api_search(q: str = Query(default="")) -> JSONResponse:
     """API JSON unifiée pour l'autocomplétion."""
     cleaned_q = q.strip()
     if len(cleaned_q) < 2:

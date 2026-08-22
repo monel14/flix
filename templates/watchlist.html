@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Ma Liste — Nokaflix{% endblock %}
+
+{% block content %}
+<section class="content-section">
+    <div class="section-header">
+        <h1 class="section-title">
+            <i class="fas fa-bookmark"></i>
+            Ma Liste de Favoris
+        </h1>
+        <div id="watchlist-count" style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">
+            0 titre(s) enregistré(s)
+        </div>
+    </div>
+
+    <!-- Filtres par catégorie dans Ma Liste -->
+    <div class="genres-scroll-bar" id="watchlist-filter-bar" style="display: none;">
+        <button class="genre-chip active" data-filter="all">Tous</button>
+        <button class="genre-chip" data-filter="movie">Films</button>
+        <button class="genre-chip" data-filter="series">Séries</button>
+        <button class="genre-chip" data-filter="drama">K-Dramas</button>
+        <button class="genre-chip" data-filter="anime">Animés</button>
+    </div>
+
+    <!-- Grille des Favoris -->
+    <div class="cards-grid" id="watchlist-grid">
+        <!-- Rempli dynamiquement par JS depuis localStorage -->
+    </div>
+
+    <!-- État vide (Aucun favori) -->
+    <div id="watchlist-empty" style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <i class="fas fa-bookmark" style="font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3;"></i>
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 8px;">Votre liste est vide</h2>
+        <p style="font-size: 0.92rem; max-width: 440px; margin: 0 auto 24px; line-height: 1.6;">
+            Ajoutez des films, séries, K-Dramas ou animés à votre liste en cliquant sur le bouton <strong>« + Ma Liste »</strong> sur la fiche d'un titre.
+        </p>
+        <a href="/" class="btn-cta btn-cta--primary">
+            <i class="fas fa-compass"></i> Découvrir des titres
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    function loadWatchlist(filter = 'all') {
+        const list = window.NokaflixWatchlist ? window.NokaflixWatchlist.get() : [];
+        const grid = document.getElementById('watchlist-grid');
+        const empty = document.getElementById('watchlist-empty');
+        const count = document.getElementById('watchlist-count');
+        const filterBar = document.getElementById('watchlist-filter-bar');
+        if (!grid || !empty) return;
+
+        if (!list || list.length === 0) {
+            grid.innerHTML = '';
+            empty.style.display = 'block';
+            filterBar.style.display = 'none';
+            if (count) count.textContent = '0 titre enregistré';
+            return;
+        }
+
+        empty.style.display = 'none';
+        filterBar.style.display = 'flex';
+        
+        const filtered = filter === 'all' ? list : list.filter(item => item.type === filter);
+        if (count) count.textContent = `${filtered.length} titre(s) enregistré(s)`;
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 32px; text-align: center; color: var(--text-muted);">Aucun titre dans cette catégorie.</div>';
+            return;
+        }
+
+        grid.innerHTML = filtered.map(item => {
+            let typeLabel = 'Film';
+            let targetUrl = `/film/${item.slug}`;
+            if (item.type === 'drama') { typeLabel = 'K-Drama'; targetUrl = `/drama/${item.slug}`; }
+            else if (item.type === 'anime') { typeLabel = 'Animé'; targetUrl = `/anime/${item.slug}`; }
+            else if (item.type === 'series') { typeLabel = 'Série'; }
+
+            return `
+            <div class="stream-card" style="position: relative;">
+                <a href="${targetUrl}">
+                    <div class="card-poster-wrap">
+                        <img src="${item.image}" alt="${item.title}" loading="lazy">
+                        ${item.version ? `<span class="card-badge card-badge--vf">${item.version}</span>` : ''}
+                        <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
+                    </div>
+                </a>
+                <div class="card-details" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="min-width: 0; flex: 1;">
+                        <a href="${targetUrl}"><p class="card-title">${item.title}</p></a>
+                        <p class="card-sub">${typeLabel}</p>
+                    </div>
+                    <button class="remove-fav-btn" data-slug="${item.slug}" title="Retirer de ma liste" style="background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; font-size: 0.9rem;">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
+
+        // Supprimer un élément
+        document.querySelectorAll('.remove-fav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const slug = btn.dataset.slug;
+                window.NokaflixWatchlist.remove(slug);
+                loadWatchlist(filter);
+            });
+        });
+    }
+
+    // Gestion des filtres
+    document.querySelectorAll('#watchlist-filter-bar button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#watchlist-filter-bar button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadWatchlist(btn.dataset.filter);
+        });
+    });
+
+    loadWatchlist();
+})();
+</script>
+{% endblock %}

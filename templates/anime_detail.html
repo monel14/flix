@@ -1,34 +1,46 @@
 {% extends "base.html" %}
 
 {% block title %}{{ anime.title }} — Animé en Streaming HD — Nokaflix{% endblock %}
-{% block description %}{{ anime.synopsis[:155] if anime.synopsis else 'Regarder ' ~ anime.title ~ ' en streaming VF et VOSTFR HD gratuit.' }}{% endblock %}
+{% block og_title %}{{ anime.title }} Animé en Streaming VF & VOSTFR — Nokaflix{% endblock %}
+{% block og_description %}{{ anime.synopsis[:160] if anime.synopsis else 'Regarder ' ~ anime.title ~ ' en streaming gratuit.' }}{% endblock %}
+{% block og_image %}{{ anime.image }}{% endblock %}
 
 {% block content %}
-<!-- 1. CINEMATIC ANIME HERO BANNER -->
-<div class="detail-hero-wrapper">
+<!-- 1. CINEMATIC ANIME HERO BANNER (Pleine Page) -->
+<div class="detail-cinematic-header">
     {% if anime.image %}
-    <div class="detail-backdrop-blur" style="background-image: url('{{ anime.image }}');"></div>
+    <div class="detail-backdrop-full" style="background-image: url('{{ anime.image }}');"></div>
     {% endif %}
 
-    <div class="detail-content-grid">
+    <div class="detail-layout-content">
         <!-- Colonne Affiche & Action -->
         <div class="detail-poster-column">
             <img class="detail-poster-img" src="{{ anime.image }}" alt="{{ anime.title }}" loading="eager">
 
-            {% if anime.first_episode_id %}
-            <a href="/regarder-anime/{{ slug }}/{{ anime.first_episode_id }}" class="btn-liquid btn-liquid--primary btn-liquid--big">
-                <i class="fas fa-play"></i> Lancer l'Épisode 1
-            </a>
-            {% endif %}
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                {% if anime.first_episode_id %}
+                <a href="/regarder-anime/{{ slug }}/{{ anime.first_episode_id }}" class="btn-cta btn-cta--primary btn-cta--big" style="width: 100%;">
+                    <i class="fas fa-play"></i> Lancer l'Épisode 1
+                </a>
+                {% endif %}
+
+                <button id="watchlist-btn" class="btn-cta btn-cta--secondary" style="width: 100%;">
+                    <i class="fas fa-plus"></i> <span>Ajouter à ma liste</span>
+                </button>
+            </div>
         </div>
 
         <!-- Colonne Informations & Métadonnées -->
         <div class="detail-meta-column">
             <div class="detail-chips-row">
-                <span class="badge-liquid badge-liquid--brand"><i class="fas fa-dragon"></i> ANIMÉ</span>
-                {% if anime.version %}<span class="badge-liquid">{{ anime.version }}</span>{% endif %}
-                {% if anime.year %}<span class="detail-meta-chip"><i class="fas fa-calendar"></i> {{ anime.year }}</span>{% endif %}
-                {% if anime.status %}<span class="detail-meta-chip"><i class="fas fa-circle-check"></i> {{ anime.status }}</span>{% endif %}
+                <span class="card-badge card-badge--vf" style="position: static;">ANIMÉ</span>
+                {% if anime.version == 'VF' %}
+                <span class="card-badge card-badge--vf" style="position: static;">VF</span>
+                {% else %}
+                <span class="card-badge card-badge--vostfr" style="position: static;">VOSTFR</span>
+                {% endif %}
+                {% if anime.year %}<span class="detail-meta-chip">• {{ anime.year }}</span>{% endif %}
+                {% if anime.status %}<span class="detail-meta-chip">• {{ anime.status }}</span>{% endif %}
             </div>
 
             <h1 class="detail-main-title">{{ anime.title }}</h1>
@@ -54,7 +66,7 @@
 {% if anime.episodes %}
 <section class="episodes-section-block">
     <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-list-ol"></i> Épisodes Disponibles ({{ anime.episodes | length }})</h2>
+        <h2 class="section-title">Épisodes Disponibles ({{ anime.episodes | length }})</h2>
     </div>
 
     <div class="episodes-grid-layout">
@@ -68,4 +80,41 @@
 </section>
 {% endif %}
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const btn = document.getElementById('watchlist-btn');
+    if (!btn || !window.NokaflixWatchlist) return;
+
+    const animeObj = {
+        title: "{{ anime.title | replace('\"', '\\\"') }}",
+        slug: "{{ slug }}",
+        image: "{{ anime.image }}",
+        version: "{{ anime.version }}",
+        type: "anime"
+    };
+
+    function updateBtn() {
+        const inList = window.NokaflixWatchlist.has(animeObj.slug);
+        if (inList) {
+            btn.innerHTML = '<i class="fas fa-check"></i> <span>Dans ma liste</span>';
+            btn.classList.add('btn-cta--brand');
+            btn.classList.remove('btn-cta--secondary');
+        } else {
+            btn.innerHTML = '<i class="fas fa-plus"></i> <span>Ajouter à ma liste</span>';
+            btn.classList.remove('btn-cta--brand');
+            btn.classList.add('btn-cta--secondary');
+        }
+    }
+
+    btn.addEventListener('click', () => {
+        window.NokaflixWatchlist.toggle(animeObj);
+        updateBtn();
+    });
+
+    updateBtn();
+})();
+</script>
 {% endblock %}

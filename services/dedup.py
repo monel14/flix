@@ -75,7 +75,6 @@ def merge_variants(items: list[dict]) -> list[dict]:
         pref_cur = _PREFERENCE.get(cur_v.lower(), 99) if cur_v else 99
         pref_new = _PREFERENCE.get(v.lower(), 99) if v else 99
         if pref_new < pref_cur:
-            # cette variante devient le représentant (VF prioritaire)
             old_versions = entry.get("versions", [])
             for k, val in it.items():
                 entry[k] = val
@@ -83,7 +82,7 @@ def merge_variants(items: list[dict]) -> list[dict]:
         versions = entry.setdefault("versions", [])
         if v and v not in versions:
             versions.append(v)
-    # Ordre d'affichage des badges : VF en premier, puis les autres
+            
     for entry in grouped.values():
         entry["versions"] = sorted(
             entry.get("versions", []),

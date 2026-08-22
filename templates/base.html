@@ -4,13 +4,25 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <title>{% block title %}Nokaflix — Streaming Films, Séries, K-Dramas & Animés VF/VOSTFR{% endblock %}</title>
-    <meta name="description" content="{% block description %}Plateforme de streaming gratuit pour regarder des films, séries, K-Dramas et animés japonais en VF et VOSTFR HD.{% endblock %}">
+    <title>{% block title %}Nokaflix — Streaming Films, Séries, K-Dramas & Animés HD{% endblock %}</title>
+    <meta name="description" content="{% block description %}Plateforme Nokaflix de streaming gratuit pour regarder des films, séries, K-Dramas et animés en VF et VOSTFR HD.{% endblock %}">
+    
+    <!-- OpenGraph & Social Sharing Meta Tags -->
+    <meta property="og:site_name" content="Nokaflix">
+    <meta property="og:title" content="{% block og_title %}Nokaflix — Films, Séries, K-Dramas & Animés en Streaming HD{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Regardez des milliers de films, séries, K-Dramas et animés en streaming gratuit VF et VOSTFR sans coupure.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1200{% endblock %}">
+    <meta property="og:type" content="video.movie">
+    
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Nokaflix — Streaming Gratuit HD{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR.{% endblock %}">
     
     <!-- Google Font Plus Jakarta Sans & Font Awesome 6 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
     <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
@@ -18,31 +30,34 @@
 </head>
 <body>
 
-<!-- Header / Navigation Bar (Frosted Glass) -->
+<!-- Header / Navigation Bar -->
 <header class="site-header" id="site-header">
     <div class="header-inner">
-        <!-- Logo -->
+        <!-- Logo Nokaflix -->
         <a class="brand" href="/">
             <div class="brand-icon"><i class="fas fa-play"></i></div>
-            <span>Noka<b>Flix</b></span>
+            <span>Noka<b>flix</b></span>
         </a>
 
         <!-- Desktop Navigation -->
         <nav class="main-nav">
             <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
-                <i class="fas fa-house"></i> Accueil
+                Accueil
             </a>
             <a href="/films" class="nav-link {% if request.url.path.startswith('/films') %}active{% endif %}">
-                <i class="fas fa-film"></i> Films
+                Films
             </a>
             <a href="/series" class="nav-link {% if request.url.path.startswith('/series') %}active{% endif %}">
-                <i class="fas fa-tv"></i> Séries
+                Séries
             </a>
             <a href="/dramas" class="nav-link {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
-                <i class="fas fa-earth-asia"></i> K-Dramas
+                K-Dramas
             </a>
             <a href="/animes" class="nav-link {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
-                <i class="fas fa-dragon"></i> Animés
+                Animés
+            </a>
+            <a href="/ma-liste" class="nav-link {% if request.url.path == '/ma-liste' %}active{% endif %}">
+                <i class="fas fa-bookmark" style="font-size: 0.8rem;"></i> Ma Liste
             </a>
         </nav>
 
@@ -50,7 +65,7 @@
         <form class="search-bar" action="/recherche" method="get" id="search-form" autocomplete="off">
             <div class="search-input-wrapper">
                 <i class="fas fa-magnifying-glass search-icon"></i>
-                <input type="text" name="q" id="search-input" placeholder="Films, séries, K-Dramas, animés…"
+                <input type="text" name="q" id="search-input" placeholder="Films, séries, animés…"
                        value="{% block search_value %}{% endblock %}">
             </div>
             <div id="search-dropdown" class="search-dropdown" hidden></div>
@@ -73,77 +88,193 @@
         <i class="fas fa-film"></i>
         <span>Films</span>
     </a>
-    <a href="/series" class="mobile-tab {% if request.url.path.startswith('/series') %}active{% endif %}">
-        <i class="fas fa-tv"></i>
-        <span>Séries</span>
-    </a>
     <a href="/dramas" class="mobile-tab {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
         <i class="fas fa-earth-asia"></i>
-        <span>K-dramas</span>
+        <span>Dramas</span>
     </a>
     <a href="/animes" class="mobile-tab {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
         <i class="fas fa-dragon"></i>
         <span>Animés</span>
     </a>
-     
+    <a href="/ma-liste" class="mobile-tab {% if request.url.path == '/ma-liste' %}active{% endif %}">
+        <i class="fas fa-bookmark"></i>
+        <span>Ma Liste</span>
+    </a>
+    <a href="/recherche" class="mobile-tab {% if request.url.path == '/recherche' %}active{% endif %}">
+        <i class="fas fa-magnifying-glass"></i>
+        <span>Recherche</span>
+    </a>
 </nav>
+
+<!-- Share Modal Component -->
+<div id="share-modal" class="share-modal-overlay">
+    <div class="share-modal-box">
+        <div class="share-modal-title">
+            <span>Partager ce titre</span>
+            <button class="share-close-btn" id="share-close-btn"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="share-grid">
+            <button class="share-btn-item whatsapp" id="share-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+            <button class="share-btn-item telegram" id="share-telegram"><i class="fab fa-telegram"></i> Telegram</button>
+            <button class="share-btn-item twitter" id="share-twitter"><i class="fab fa-x-twitter"></i> X / Twitter</button>
+            <button class="share-btn-item copy" id="share-copy"><i class="fas fa-link"></i> Copier</button>
+        </div>
+        <div id="share-copied-msg" style="display: none; text-align: center; color: #22c55e; font-size: 0.82rem; font-weight: 600;">
+            <i class="fas fa-check"></i> Lien copié dans le presse-papier !
+        </div>
+    </div>
+</div>
 
 <!-- Footer -->
 <footer class="site-footer">
-    <p>© 2026 Nokaflix </p>
+    <p>© 2026 Nokaflix — Plateforme de streaming multi-sources (Films, Séries, K-Dramas & Animés).</p>
 </footer>
 
-<!-- Global Scripts -->
+<!-- Global Scripts, History & Watchlist Tracker -->
 <script>
 (function () {
+    // 1. Recherche instantanée
     const input = document.getElementById('search-input');
     const dropdown = document.getElementById('search-dropdown');
-    if (!input || !dropdown) return;
+    if (input && dropdown) {
+        let timer = null;
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            const q = input.value.trim();
+            if (q.length < 2) { 
+                dropdown.hidden = true; 
+                return; 
+            }
+            timer = setTimeout(() => {
+                fetch(`/api/search?q=${encodeURIComponent(q)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const results = data.results || [];
+                        if (!results.length) { 
+                            dropdown.hidden = true; 
+                            return; 
+                        }
+                        dropdown.innerHTML = results.map(r => {
+                            let badge = 'Film';
+                            if (r.type === 'drama') badge = 'K-Drama';
+                            else if (r.type === 'anime') badge = 'Animé';
+                            else if (r.type === 'series') badge = 'Série';
 
-    let timer = null;
+                            return `
+                            <a href="${r.url || ('/film/' + r.slug)}" class="dd-item">
+                                <img class="dd-poster" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">
+                                <div class="dd-info">
+                                    <span class="dd-title">${r.title}</span>
+                                    <span class="dd-badge">${badge}</span>
+                                </div>
+                            </a>`;
+                        }).join('');
+                        dropdown.hidden = false;
+                    })
+                    .catch(() => { dropdown.hidden = true; });
+            }, 200);
+        });
 
-    input.addEventListener('input', () => {
-        clearTimeout(timer);
-        const q = input.value.trim();
-        if (q.length < 2) { 
-            dropdown.hidden = true; 
-            return; 
+        document.addEventListener('click', e => {
+            if (!document.getElementById('search-form').contains(e.target)) {
+                dropdown.hidden = true;
+            }
+        });
+    }
+
+    // 2. Gestionnaire d'Historique de visionnage (Continue Watching)
+    window.NokaflixHistory = window.CoflixHistory = {
+        save: function(item) {
+            try {
+                let history = JSON.parse(localStorage.getItem('nokaflix_watch_history') || '[]');
+                history = history.filter(h => h.slug !== item.slug);
+                history.unshift({
+                    title: item.title,
+                    slug: item.slug,
+                    episode_id: item.episode_id,
+                    episode_title: item.episode_title || '',
+                    image: item.image || '',
+                    url: item.url,
+                    type: item.type || 'movie',
+                    updated_at: Date.now()
+                });
+                localStorage.setItem('nokaflix_watch_history', JSON.stringify(history.slice(0, 12)));
+            } catch(e) {}
+        },
+        get: function() {
+            try {
+                return JSON.parse(localStorage.getItem('nokaflix_watch_history') || '[]');
+            } catch(e) { return []; }
         }
-        timer = setTimeout(() => {
-            fetch(`/api/search?q=${encodeURIComponent(q)}`)
-                .then(r => r.json())
-                .then(data => {
-                    const results = data.results || [];
-                    if (!results.length) { 
-                        dropdown.hidden = true; 
-                        return; 
-                    }
-                    dropdown.innerHTML = results.map(r => {
-                        let badgeIcon = '<i class=\"fas fa-film\"></i> Film';
-                        if (r.type === 'drama') badgeIcon = '<i class=\"fas fa-earth-asia\"></i> K-Drama';
-                        else if (r.type === 'anime') badgeIcon = '<i class=\"fas fa-dragon\"></i> Animé';
-                        else if (r.type === 'series') badgeIcon = '<i class=\"fas fa-tv\"></i> Série';
+    };
 
-                        return `
-                        <a href="${r.url || ('/film/' + r.slug)}" class="dd-item">
-                            <img class="dd-poster" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">
-                            <div class="dd-info">
-                                <span class="dd-title">${r.title}</span>
-                                <span class="dd-badge">${badgeIcon}</span>
-                            </div>
-                        </a>`;
-                    }).join('');
-                    dropdown.hidden = false;
-                })
-                .catch(() => { dropdown.hidden = true; });
-        }, 220);
-    });
-
-    document.addEventListener('click', e => {
-        if (!document.getElementById('search-form').contains(e.target)) {
-            dropdown.hidden = true;
+    // 3. Gestionnaire de Favoris (Watchlist / Ma Liste)
+    window.NokaflixWatchlist = {
+        get: function() {
+            try {
+                return JSON.parse(localStorage.getItem('nokaflix_watchlist') || '[]');
+            } catch(e) { return []; }
+        },
+        has: function(slug) {
+            const list = this.get();
+            return list.some(item => item.slug === slug);
+        },
+        add: function(item) {
+            let list = this.get();
+            if (!this.has(item.slug)) {
+                list.unshift(item);
+                localStorage.setItem('nokaflix_watchlist', JSON.stringify(list));
+            }
+        },
+        remove: function(slug) {
+            let list = this.get();
+            list = list.filter(item => item.slug !== slug);
+            localStorage.setItem('nokaflix_watchlist', JSON.stringify(list));
+        },
+        toggle: function(item) {
+            if (this.has(item.slug)) {
+                this.remove(item.slug);
+                return false;
+            } else {
+                this.add(item);
+                return true;
+            }
         }
-    });
+    // 4. Gestionnaire de Partage Social Viral
+    window.openShareModal = function(title, url) {
+        const shareUrl = url || window.location.href;
+        const shareTitle = title || document.title;
+
+        // Si le navigateur supporte l'API native de partage mobile
+        if (navigator.share && /mobile|android|iphone/i.test(navigator.userAgent)) {
+            navigator.share({ title: shareTitle, url: shareUrl }).catch(() => {});
+            return;
+        }
+
+        const modal = document.getElementById('share-modal');
+        const closeBtn = document.getElementById('share-close-btn');
+        const waBtn = document.getElementById('share-whatsapp');
+        const tgBtn = document.getElementById('share-telegram');
+        const twBtn = document.getElementById('share-twitter');
+        const cpBtn = document.getElementById('share-copy');
+        const msg = document.getElementById('share-copied-msg');
+
+        if (!modal) return;
+
+        waBtn.onclick = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`, '_blank');
+        tgBtn.onclick = () => window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`, '_blank');
+        twBtn.onclick = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+        cpBtn.onclick = () => {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                msg.style.display = 'block';
+                setTimeout(() => { msg.style.display = 'none'; }, 2500);
+            });
+        };
+
+        closeBtn.onclick = () => modal.classList.remove('open');
+        modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('open'); };
+        modal.classList.add('open');
+    };
 })();
 </script>
 {% block scripts %}{% endblock %}

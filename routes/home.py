@@ -8,8 +8,7 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from cache import DETAIL_TTL, HOME_TTL, cache
-from routes.detail import load_detail
+from cache import HOME_TTL, cache
 from scraper.coflix_client import CoflixFetchError, coflix_get_html
 from scraper.coflix_parser import (
     AVAILABLE_GENRES,
@@ -30,7 +29,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent
 
 
 async def _load_home_section(section: str, page: int = 1, genre: str | None = None) -> dict:
-    """Charge une liste paginée de films ou séries."""
+    """Charge une liste paginée de films ou séries avec fusion automatique des doublons VF/VOSTFR."""
     if genre:
         path = f"/{section}/{genre}/" if page == 1 else f"/{section}/{genre}/?page={page}"
     else:
@@ -38,8 +37,10 @@ async def _load_home_section(section: str, page: int = 1, genre: str | None = No
 
     html = await coflix_get_html(path)
     items = parse_coflix_list(html, section)
+    # Fusion des doublons de version (ex: black-box-vf et black-box-vostfr)
+    merged_items = merge_variants(items)
     last_page = get_last_page(html)
-    return {"items": items, "last_page": last_page}
+    return {"items": merged_items, "last_page": last_page}
 
 
 async def _load_hero() -> list:
@@ -56,7 +57,8 @@ async def _load_top(top_type: str = "day") -> list:
     """Charge le top tendances (day, week, month)."""
     try:
         raw = await coflix_get_html(f"/ajax/movie/top?type={top_type}")
-        return parse_coflix_top(raw)
+        items = parse_coflix_top(raw)
+        return merge_variants(items)
     except Exception as exc:
         logger.warning("Erreur chargement top tendances (%s) : %s", top_type, exc)
         return []
@@ -88,32 +90,6 @@ async def _load_popular_animes() -> list:
     except Exception as exc:
         logger.warning("Erreur chargement Animés accueil : %s", exc)
         return []
-
-
-async def _enrich_series_episodes(items: list[dict]) -> list[dict]:
-    """Complète les items 'series' avec le dernier épisode et le total
-    (depuis la fiche détail, déjà mise en cache par load_detail).
-    Échec toléré : la carte reste affichée sans info d'épisode."""
-    sem = asyncio.Semaphore(4)
-
-    async def enrich(it: dict) -> dict:
-        if it.get("type") != "series" or not it.get("slug"):
-            return it
-        async with sem:
-            try:
-                d = await cache.get_or_set(
-                    f"detail:{it['slug']}", DETAIL_TTL, lambda: load_detail(it["slug"])
-                )
-                eps = d.get("episodes") or []
-                nums = [int(e["number"]) for e in eps if str(e.get("number") or "").isdigit()]
-                if nums:
-                    it["latest_episode"] = str(max(nums))
-                    it["total_episodes"] = len(eps)
-            except Exception as exc:
-                logger.warning("Enrichissement épisodes %s : %s", it.get("slug"), exc)
-        return it
-
-    return list(await asyncio.gather(*[enrich(i) for i in items]))
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -174,11 +150,11 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
     return templates.TemplateResponse(request, "home.html", {
         "request": request,
         "hero_slides": hero_slides if isinstance(hero_slides, list) else [],
-        "recent_movies": merge_variants(movies_data.get("items", []))[:24],
-        "recent_series": (await _enrich_series_episodes(merge_variants(series_data.get("items", []))))[:24],
+        "recent_movies": movies_data.get("items", [])[:24],
+        "recent_series": series_data.get("items", [])[:24],
         "popular_dramas": popular_dramas if isinstance(popular_dramas, list) else [],
         "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
-        "top": merge_variants(top)[:10] if isinstance(top, list) else [],
+        "top": top[:10] if isinstance(top, list) else [],
         "top_filter": top_filter,
     })
 
@@ -200,11 +176,11 @@ async def movies_list(
         logger.warning("Erreur liste films p%d genre=%s : %s", page, genre, exc)
         data = {"items": [], "last_page": 1}
 
-    items = merge_variants(data.get("items", []))
+    items = data.get("items", [])
     if version == "vf":
-        items = [it for it in items if any("vf" in (v or "").lower() or "french" in (v or "").lower() for v in it.get("versions", [it.get("version", "")]))]
+        items = [it for it in items if "vf" in it.get("version", "").lower() or "french" in it.get("version", "").lower()]
     elif version == "vostfr":
-        items = [it for it in items if any("vostfr" in (v or "").lower() or (v or "").lower() == "vo" for v in it.get("versions", [it.get("version", "")]))]
+        items = [it for it in items if "vostfr" in it.get("version", "").lower() or "vo" in it.get("version", "").lower()]
 
     params = []
     if genre:
@@ -252,12 +228,11 @@ async def series_list(
         logger.warning("Erreur liste séries p%d genre=%s : %s", page, genre, exc)
         data = {"items": [], "last_page": 1}
 
-    items = merge_variants(data.get("items", []))
-    items = await _enrich_series_episodes(items)
+    items = data.get("items", [])
     if version == "vf":
-        items = [it for it in items if any("vf" in (v or "").lower() or "french" in (v or "").lower() for v in it.get("versions", [it.get("version", "")]))]
+        items = [it for it in items if "vf" in it.get("version", "").lower() or "french" in it.get("version", "").lower()]
     elif version == "vostfr":
-        items = [it for it in items if any("vostfr" in (v or "").lower() or (v or "").lower() == "vo" for v in it.get("versions", [it.get("version", "")]))]
+        items = [it for it in items if "vostfr" in it.get("version", "").lower() or "vo" in it.get("version", "").lower()]
 
     params = []
     if genre:

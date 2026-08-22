@@ -1,35 +1,47 @@
 {% extends "base.html" %}
 
 {% block title %}{{ drama.title }} — K-Drama en Streaming HD — Nokaflix{% endblock %}
-{% block description %}{{ drama.synopsis[:155] if drama.synopsis else 'Regarder ' ~ drama.title ~ ' drama coréen en streaming gratuit VOSTFR et VF.' }}{% endblock %}
+{% block og_title %}{{ drama.title }} Drama en Streaming VOSTFR & VF — Nokaflix{% endblock %}
+{% block og_description %}{{ drama.synopsis[:160] if drama.synopsis else 'Regarder ' ~ drama.title ~ ' en streaming gratuit.' }}{% endblock %}
+{% block og_image %}{{ drama.image }}{% endblock %}
 
 {% block content %}
-<!-- 1. CINEMATIC DRAMA HERO BANNER -->
-<div class="detail-hero-wrapper">
+<!-- 1. CINEMATIC DRAMA HERO BANNER (Pleine Page) -->
+<div class="detail-cinematic-header">
     {% if drama.image %}
-    <div class="detail-backdrop-blur" style="background-image: url('{{ drama.image }}');"></div>
+    <div class="detail-backdrop-full" style="background-image: url('{{ drama.image }}');"></div>
     {% endif %}
 
-    <div class="detail-content-grid">
+    <div class="detail-layout-content">
         <!-- Colonne Affiche & Actions -->
         <div class="detail-poster-column">
             <img class="detail-poster-img" src="{{ drama.image }}" alt="{{ drama.title }}" loading="eager">
 
-            {% if drama.first_episode_id %}
-            <a href="/regarder-drama/{{ slug }}/{{ drama.first_episode_id }}" class="btn-liquid btn-liquid--primary btn-liquid--big">
-                <i class="fas fa-play"></i> Lancer l'Épisode 1
-            </a>
-            {% endif %}
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                {% if drama.first_episode_id %}
+                <a href="/regarder-drama/{{ slug }}/{{ drama.first_episode_id }}" class="btn-cta btn-cta--primary btn-cta--big" style="width: 100%;">
+                    <i class="fas fa-play"></i> Lancer l'Épisode 1
+                </a>
+                {% endif %}
+
+                <button id="watchlist-btn" class="btn-cta btn-cta--secondary" style="width: 100%;">
+                    <i class="fas fa-plus"></i> <span>Ajouter à ma liste</span>
+                </button>
+            </div>
         </div>
 
         <!-- Colonne Informations & Métadonnées -->
         <div class="detail-meta-column">
             <div class="detail-chips-row">
-                <span class="badge-liquid badge-liquid--brand"><i class="fas fa-tv"></i> K-DRAMA</span>
-                {% if drama.version %}<span class="badge-liquid">{{ drama.version }}</span>{% endif %}
-                {% if drama.country %}<span class="detail-meta-chip"><i class="fas fa-earth-asia"></i> {{ drama.country }}</span>{% endif %}
-                {% if drama.year %}<span class="detail-meta-chip"><i class="fas fa-calendar"></i> {{ drama.year }}</span>{% endif %}
-                {% if drama.status %}<span class="detail-meta-chip"><i class="fas fa-circle-check"></i> {{ drama.status }}</span>{% endif %}
+                <span class="card-badge card-badge--vf" style="position: static;">K-DRAMA</span>
+                {% if drama.version == 'VF' %}
+                <span class="card-badge card-badge--vf" style="position: static;">VF</span>
+                {% else %}
+                <span class="card-badge card-badge--vostfr" style="position: static;">VOSTFR</span>
+                {% endif %}
+                {% if drama.country %}<span class="detail-meta-chip">• {{ drama.country }}</span>{% endif %}
+                {% if drama.year %}<span class="detail-meta-chip">• {{ drama.year }}</span>{% endif %}
+                {% if drama.status %}<span class="detail-meta-chip">• {{ drama.status }}</span>{% endif %}
             </div>
 
             <h1 class="detail-main-title">{{ drama.title }}</h1>
@@ -55,7 +67,7 @@
 {% if drama.episodes %}
 <section class="episodes-section-block">
     <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-list-ol"></i> Épisodes Disponibles ({{ drama.episodes | length }})</h2>
+        <h2 class="section-title">Épisodes Disponibles ({{ drama.episodes | length }})</h2>
     </div>
 
     <div class="episodes-grid-layout">
@@ -69,4 +81,41 @@
 </section>
 {% endif %}
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const btn = document.getElementById('watchlist-btn');
+    if (!btn || !window.NokaflixWatchlist) return;
+
+    const dramaObj = {
+        title: "{{ drama.title | replace('\"', '\\\"') }}",
+        slug: "{{ slug }}",
+        image: "{{ drama.image }}",
+        version: "{{ drama.version }}",
+        type: "drama"
+    };
+
+    function updateBtn() {
+        const inList = window.NokaflixWatchlist.has(dramaObj.slug);
+        if (inList) {
+            btn.innerHTML = '<i class="fas fa-check"></i> <span>Dans ma liste</span>';
+            btn.classList.add('btn-cta--brand');
+            btn.classList.remove('btn-cta--secondary');
+        } else {
+            btn.innerHTML = '<i class="fas fa-plus"></i> <span>Ajouter à ma liste</span>';
+            btn.classList.remove('btn-cta--brand');
+            btn.classList.add('btn-cta--secondary');
+        }
+    }
+
+    btn.addEventListener('click', () => {
+        window.NokaflixWatchlist.toggle(dramaObj);
+        updateBtn();
+    });
+
+    updateBtn();
+})();
+</script>
 {% endblock %}

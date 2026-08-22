@@ -22,6 +22,9 @@
         </div>
 
         <div class="player-nav-controls">
+            <button id="player-share-btn" class="btn-share" title="Partager ce titre">
+                <i class="fas fa-share-nodes"></i> Partager
+            </button>
             {% if prev_ep %}
             <a href="/regarder-anime/{{ slug }}/{{ prev_ep.episode_id }}" class="player-ctrl-btn" title="{{ prev_ep.title }}">
                 <i class="fas fa-backward-step"></i> Précédent
@@ -48,24 +51,22 @@
     </div>
 
     <!-- 3. CADRE CINÉMA THEATER (Iframe) -->
-    <div class="theater-frame-box">
+    <div class="theater-frame-box" id="theater-box">
         <iframe id="player-frame"
-                data-src="{{ default_server.server_link if default_server else '' }}"
+                src="{{ default_server.server_link if default_server else '' }}"
                 allowfullscreen
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                sandbox="allow-scripts allow-same-origin allow-presentation"
                 referrerpolicy="no-referrer-when-downgrade"
                 frameborder="0"
                 scrolling="no">
         </iframe>
-        <!-- Façade anti-redirections : l'iframe (et ses scripts pub) ne charge
-             qu'après le clic explicite de l'utilisateur. Le sandbox ci-dessus
-             bloque window.open / target=_blank / navigation top. -->
-        <div id="player-overlay" class="player-overlay" role="button" tabindex="0"
-             aria-label="Lancer la lecture">
-            <div class="player-overlay-play"><i class="fas fa-play" aria-hidden="true"></i></div>
-            <div class="player-overlay-note">Cliquer pour lancer le lecteur</div>
-        </div>
+    </div>
+
+    <!-- Guide des Raccourcis Clavier -->
+    <div class="player-shortcuts-bar">
+        <span><span class="shortcut-key">F</span> Plein écran</span>
+        <span><span class="shortcut-key">P</span> Épisode précédent</span>
+        <span><span class="shortcut-key">N</span> Épisode suivant</span>
     </div>
 
     <!-- 4. PLAYLIST DES ÉPISODES DE L'ANIMÉ -->
@@ -90,37 +91,62 @@
 <script>
 (function () {
     const frame = document.getElementById('player-frame');
+    const theaterBox = document.getElementById('theater-box');
     const btns = document.querySelectorAll('.server-pill-btn');
-    const overlay = document.getElementById('player-overlay');
+    const shareBtn = document.getElementById('player-share-btn');
 
-    function activatePlayer(link) {
-        if (!link) return;
-        frame.dataset.src = link;
-        frame.src = link;
-        if (overlay) overlay.hidden = true;
-    }
-
-    // 1. Façade : rien ne charge tant que l'utilisateur n'a pas cliqué
-    if (overlay && frame) {
-        const initial = frame.dataset.src || '';
-        if (!initial) overlay.hidden = true; // aucun serveur : pas de façade
-        overlay.addEventListener('click', () => activatePlayer(initial));
-        overlay.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                activatePlayer(initial);
-            }
-        });
-    }
-
-    // 2. Changement de serveur : chargement direct (clic utilisateur explicite)
     btns.forEach(btn => {
         btn.addEventListener('click', () => {
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            activatePlayer(btn.dataset.link);
+            frame.src = btn.dataset.link;
         });
     });
+
+    if (shareBtn && window.openShareModal) {
+        shareBtn.addEventListener('click', () => {
+            window.openShareModal("{{ anime.title | replace('\"', '\\\"') }}", window.location.href);
+        });
+    }
+
+    // Gestion des raccourcis clavier
+    document.addEventListener('keydown', (e) => {
+        if (['input', 'textarea'].includes(document.activeElement.tagName.toLowerCase())) return;
+        
+        // F -> Plein écran
+        if (e.key === 'f' || e.key === 'F') {
+            if (!document.fullscreenElement) {
+                theaterBox.requestFullscreen().catch(() => frame.requestFullscreen());
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        // N -> Épisode suivant
+        {% if next_ep %}
+        if (e.key === 'n' || e.key === 'N') {
+            window.location.href = "/regarder-anime/{{ slug }}/{{ next_ep.episode_id }}";
+        }
+        {% endif %}
+        // P -> Épisode précédent
+        {% if prev_ep %}
+        if (e.key === 'p' || e.key === 'P') {
+            window.location.href = "/regarder-anime/{{ slug }}/{{ prev_ep.episode_id }}";
+        }
+        {% endif %}
+    });
+
+    // Enregistrement dans l'historique "Reprendre la lecture"
+    if (window.NokaflixHistory) {
+        window.NokaflixHistory.save({
+            title: "{{ anime.title | replace('\"', '\\\"') }}",
+            slug: "{{ slug }}",
+            episode_id: "{{ episode_slug }}",
+            episode_title: "{{ current_ep.title if current_ep else '' }}",
+            image: "{{ anime.image }}",
+            url: window.location.pathname,
+            type: "anime"
+        });
+    }
 })();
 </script>
 {% endblock %}

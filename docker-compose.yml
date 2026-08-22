@@ -1,0 +1,16 @@
+services:
+  nokaflix:
+    build: .
+    container_name: nokaflix
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - BASE_URL=http://localhost:8001
+      - COFLIX_SOURCE_URL=https://coflix.wiki
+      - VOIRDRAMA_SOURCE_URL=https://voirdrama.to
+      - VOIRANIME_SOURCE_URL=https://voir-anime.to
+    volumes:
+      - ./cache.db:/app/cache.db
+      - ./cache.db-shm:/app/cache.db-shm
+      - ./cache.db-wal:/app/cache.db-wal
