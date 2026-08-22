@@ -1,4 +1,4 @@
-# Coflix
+# Nokaflix
 
 Interface web locale pour parcourir et regarder des films et séries en streaming. L'application scrape le contenu de `coflix.wiki` à la volée, le présente dans une UI propre, et lit les vidéos via des iframes pointant sur des hébergeurs tiers.
 

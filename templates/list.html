@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ section_label }} en Streaming HD — Coflix{% endblock %}
+{% block title %}{{ section_label }} en Streaming HD — Nokaflix{% endblock %}
 
 {% block content %}
 <section class="content-section">
@@ -69,19 +69,28 @@
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
                 
-                <!-- Badges Distinctifs VF / VOSTFR (une carte = toutes les versions) -->
+                <!-- Badges : version(s) unifiée(s) + dernier épisode -->
                 {% set versions = item.versions if item.versions else ([item.version] if item.version else []) %}
-                {% for v in versions[:2] %}
-                    {% if v == 'VF' or v in ('FRENCH', 'TRUEFRENCH') %}
-                    <span class="card-badge card-badge--vf">
-                        <i class="fas fa-microphone"></i> {{ v }}{% if item.latest_episode and loop.index == 1 %} • Ép. {{ item.latest_episode }}{% endif %}
-                    </span>
-                    {% else %}
-                    <span class="card-badge card-badge--vostfr">
-                        <i class="fas fa-closed-captioning"></i> {{ v }}{% if item.latest_episode and loop.index == 1 %} • Ép. {{ item.latest_episode }}{% endif %}
-                    </span>
+                {% set has_vf = ('VF' in versions) or ('FRENCH' in versions) or ('TRUEFRENCH' in versions) %}
+                {% set has_vo = ('VOSTFR' in versions) or ('VO' in versions) %}
+                {% if versions %}
+                <div class="card-badges">
+                    {% if has_vf and has_vo %}
+                    <span class="card-badge card-badge--multi"><i class="fas fa-microphone"></i> VF&nbsp;+ <i class="fas fa-closed-captioning"></i> VOSTFR</span>
+                    {% elif has_vf %}
+                    <span class="card-badge card-badge--vf"><i class="fas fa-microphone"></i> VF</span>
+                    {% elif has_vo %}
+                    <span class="card-badge card-badge--vostfr"><i class="fas fa-closed-captioning"></i> VOSTFR</span>
                     {% endif %}
-                {% endfor %}
+                    {% if item.latest_episode %}
+                    <span class="card-badge card-badge--ep">{% if item.total_episodes %}Ep {{ item.latest_episode }} sur {{ item.total_episodes }}{% else %}Ép. {{ item.latest_episode }}{% endif %}</span>
+                    {% endif %}
+                </div>
+                {% elif item.latest_episode %}
+                <div class="card-badges">
+                    <span class="card-badge card-badge--ep">{% if item.total_episodes %}Ep {{ item.latest_episode }} sur {{ item.total_episodes }}{% else %}Ép. {{ item.latest_episode }}{% endif %}</span>
+                </div>
+                {% endif %}
                 
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>

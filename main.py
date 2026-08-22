@@ -27,7 +27,7 @@ from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_clien
 from scraper.voiranime_client import close_voiranime_client, get_voiranime_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("coflix")
+logger = logging.getLogger("nokaflix")
 
 
 @asynccontextmanager
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     await close_voiranime_client()
 
 
-app = FastAPI(title="Coflix", lifespan=lifespan)
+app = FastAPI(title="Nokaflix", lifespan=lifespan)
 
 BASE_DIR = Path(__file__).resolve().parent
 

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <title>{% block title %}Coflix — Streaming Films, Séries, K-Dramas & Animés VF/VOSTFR{% endblock %}</title>
+    <title>{% block title %}Nokaflix — Streaming Films, Séries, K-Dramas & Animés VF/VOSTFR{% endblock %}</title>
     <meta name="description" content="{% block description %}Plateforme de streaming gratuit pour regarder des films, séries, K-Dramas et animés japonais en VF et VOSTFR HD.{% endblock %}">
     
     <!-- Google Font Plus Jakarta Sans & Font Awesome 6 -->
@@ -24,7 +24,7 @@
         <!-- Logo -->
         <a class="brand" href="/">
             <div class="brand-icon"><i class="fas fa-play"></i></div>
-            <span>Co<b>flix</b></span>
+            <span>Noka<b>Flix</b></span>
         </a>
 
         <!-- Desktop Navigation -->
@@ -79,21 +79,18 @@
     </a>
     <a href="/dramas" class="mobile-tab {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
         <i class="fas fa-earth-asia"></i>
-        <span>Dramas</span>
+        <span>K-dramas</span>
     </a>
     <a href="/animes" class="mobile-tab {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
         <i class="fas fa-dragon"></i>
         <span>Animés</span>
     </a>
-    <a href="/recherche" class="mobile-tab {% if request.url.path == '/recherche' %}active{% endif %}">
-        <i class="fas fa-magnifying-glass"></i>
-        <span>Recherche</span>
-    </a>
+     
 </nav>
 
 <!-- Footer -->
 <footer class="site-footer">
-    <p>© 2026 Coflix — Plateforme de streaming multi-sources (Films, Séries, K-Dramas & Animés).</p>
+    <p>© 2026 Nokaflix </p>
 </footer>
 
 <!-- Global Scripts -->

@@ -8,7 +8,8 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from cache import HOME_TTL, cache
+from cache import DETAIL_TTL, HOME_TTL, cache
+from routes.detail import load_detail
 from scraper.coflix_client import CoflixFetchError, coflix_get_html
 from scraper.coflix_parser import (
     AVAILABLE_GENRES,
@@ -89,6 +90,32 @@ async def _load_popular_animes() -> list:
         return []
 
 
+async def _enrich_series_episodes(items: list[dict]) -> list[dict]:
+    """Complète les items 'series' avec le dernier épisode et le total
+    (depuis la fiche détail, déjà mise en cache par load_detail).
+    Échec toléré : la carte reste affichée sans info d'épisode."""
+    sem = asyncio.Semaphore(4)
+
+    async def enrich(it: dict) -> dict:
+        if it.get("type") != "series" or not it.get("slug"):
+            return it
+        async with sem:
+            try:
+                d = await cache.get_or_set(
+                    f"detail:{it['slug']}", DETAIL_TTL, lambda: load_detail(it["slug"])
+                )
+                eps = d.get("episodes") or []
+                nums = [int(e["number"]) for e in eps if str(e.get("number") or "").isdigit()]
+                if nums:
+                    it["latest_episode"] = str(max(nums))
+                    it["total_episodes"] = len(eps)
+            except Exception as exc:
+                logger.warning("Enrichissement épisodes %s : %s", it.get("slug"), exc)
+        return it
+
+    return list(await asyncio.gather(*[enrich(i) for i in items]))
+
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request, top_filter: str = Query(default="day", pattern="^(day|week|month)$")) -> HTMLResponse:
     """Page d'accueil multi-sources : hero + films + séries + K-Dramas + Animés + top tendances."""
@@ -148,7 +175,7 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         "request": request,
         "hero_slides": hero_slides if isinstance(hero_slides, list) else [],
         "recent_movies": merge_variants(movies_data.get("items", []))[:24],
-        "recent_series": merge_variants(series_data.get("items", []))[:24],
+        "recent_series": (await _enrich_series_episodes(merge_variants(series_data.get("items", []))))[:24],
         "popular_dramas": popular_dramas if isinstance(popular_dramas, list) else [],
         "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
         "top": merge_variants(top)[:10] if isinstance(top, list) else [],
@@ -226,6 +253,7 @@ async def series_list(
         data = {"items": [], "last_page": 1}
 
     items = merge_variants(data.get("items", []))
+    items = await _enrich_series_episodes(items)
     if version == "vf":
         items = [it for it in items if any("vf" in (v or "").lower() or "french" in (v or "").lower() for v in it.get("versions", [it.get("version", "")]))]
     elif version == "vostfr":
