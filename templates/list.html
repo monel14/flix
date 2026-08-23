@@ -10,6 +10,15 @@
         </h1>
     </div>
 
+    {# Variante B navigation mobile : K-Dramas n'est plus un onglet de la barre
+       inférieure ; cette passerelle conserve la découverte depuis l'expérience
+       Séries (et l'accueil conserve sa section K-Dramas). #}
+    {% if section == 'series' %}
+    <a href="/dramas" class="list-alias-link">
+        <i class="fas fa-earth-asia"></i>Explorer les K-Dramas<i class="fas fa-chevron-right list-alias-link-chevron"></i>
+    </a>
+    {% endif %}
+
     <!-- Toolbar Compacte : Version + Genre + Tri (Chantier 4) -->
     <div class="catalog-toolbar">
         <!-- Groupe 1 : Version Linguistique -->

@@ -106,9 +106,9 @@
         <i class="fas fa-film"></i>
         <span>Films</span>
     </a>
-    <a href="/dramas" class="mobile-tab {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
-        <i class="fas fa-earth-asia"></i>
-        <span>Dramas</span>
+    <a href="/series" class="mobile-tab {% if request.url.path.startswith('/series') %}active{% endif %}">
+        <i class="fas fa-tv"></i>
+        <span>Séries</span>
     </a>
     <a href="/animes" class="mobile-tab {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
         <i class="fas fa-dragon"></i>

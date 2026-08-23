@@ -282,6 +282,11 @@ img {
     border-top: 1px solid var(--border-subtle);
     z-index: 999;
     grid-template-columns: repeat(5, 1fr);
+    /* Safe area (iPhone à encoche) : la barre s'étend dans l'inset inférieur
+       sans allonger les 5 cellules — content-box local (la page est en
+       border-box global) pour que le padding s'AJOUTE aux 56px. */
+    box-sizing: content-box;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .mobile-tab {
     display: flex;
@@ -585,6 +590,32 @@ img {
     row-gap: 8px;
     column-gap: 12px;
     margin-bottom: 12px;
+}
+
+/* Passerelle de catalogue (ex. K-Dramas dans l'expérience Séries — nav
+   mobile variante B) : pill discrète aux tokens du design system, réutilise
+   la hiérarchie « surface élevée + bord subtil » déjà en place. */
+.list-alias-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0 14px;
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+    text-decoration: none;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+.list-alias-link:hover {
+    color: var(--text-pure);
+    border-color: var(--brand-glow);
+}
+.list-alias-link-chevron {
+    font-size: 0.6rem;
 }
 
 .section-title {
@@ -1754,7 +1785,11 @@ img {
     }
 }
 
-@media (max-width: 768px) {
+/* Chrome « mobile » basculé sous 768px : à 768px pile la navigation doit
+   être celle du desktop (barre mobile masquée, main-nav visible) —
+   avant, max-width:768 incluait 768 et les deux chromes pouvaient
+   coexister au breakpoint pivot. */
+@media (max-width: 767px) {
     :root {
         /* Cartes de rail plus étroites : ~3 visibles + amorce de la suivante
            (signal de scroll horizontal), défilement moins long. */
