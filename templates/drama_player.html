@@ -1,8 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}
-{% if current_ep %}{{ drama.title }} — {{ current_ep.title }}{% else %}{{ drama.title }}{% endif %} — K-Drama Streaming — Nokaflix
-{% endblock %}
+{# Métadonnées SEO construites par la route via services/seo.py (contexte `seo`) #}
 
 {% block content %}
 <div class="player-container-layout">

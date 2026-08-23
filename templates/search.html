@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import version_badge %}
 
-{% block title %}{{ 'Résultats pour "' ~ query ~ '"' if query else 'Explorer & Rechercher' }} — Nokaflix{% endblock %}
 {% block search_value %}{{ query }}{% endblock %}
 
 {% block content %}

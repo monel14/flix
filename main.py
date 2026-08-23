@@ -16,6 +16,8 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
+from services.seo import page_seo, site_origin
+SITE_NAME = "Nokaflix"
 from routes import anime, detail, drama, home, player, search
 from scraper.coflix_client import close_coflix_client
 from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_client
@@ -60,7 +62,10 @@ templates.env.globals["str"] = str
 @app.get("/ma-liste", response_class=HTMLResponse)
 async def watchlist_page(request: Request):
     """Page Ma Liste de favoris."""
-    return templates.TemplateResponse(request, "watchlist.html", {"request": request})
+    return templates.TemplateResponse(request, "watchlist.html", {
+        "request": request,
+        "seo": page_seo(request, title="Ma Liste — Nokaflix", path="/ma-liste"),
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -70,15 +75,15 @@ async def watchlist_page(request: Request):
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt(request: Request):
     """Robots.txt optimisé pour l'indexation par Google et les moteurs de recherche."""
-    base_url = str(request.base_url).rstrip("/")
+    base_url = site_origin(request)
     return f"User-agent: *\nAllow: /\n\nSitemap: {base_url}/sitemap.xml\n"
 
 
 @app.get("/sitemap.xml")
 async def sitemap_xml(request: Request):
     """Générateur dynamique de sitemap pour le référencement Google."""
-    base_url = str(request.base_url).rstrip("/")
-    
+    base_url = site_origin(request)
+
     static_routes = [
         "/",
         "/films",
@@ -178,7 +183,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         }.get(status, "Une erreur inattendue s'est produite.")
         return templates.TemplateResponse(
             request, "error.html",
-            {"request": request, "status_code": status, "message": msg},
+            {"request": request, "status_code": status, "message": msg,
+             "seo": page_seo(request, title=f"Erreur {status} — Nokaflix")},
             status_code=status,
         )
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
@@ -191,7 +197,8 @@ async def server_error_handler(request: Request, exc: Exception):
     if wants_html:
         return templates.TemplateResponse(
             request, "error.html",
-            {"request": request, "status_code": 500, "message": "Erreur serveur interne."},
+            {"request": request, "status_code": 500, "message": "Erreur serveur interne.",
+             "seo": page_seo(request, title="Erreur 500 — Nokaflix")},
             status_code=500,
         )
     return JSONResponse({"detail": "Internal Server Error"}, status_code=500)

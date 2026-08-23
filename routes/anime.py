@@ -8,6 +8,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
+from services.seo import page_seo
+from services.seo import content_seo, page_seo
 from scraper.voiranime_client import (
     VoiranimeFetchError,
     VoiranimeNotFoundError,
@@ -111,6 +113,14 @@ async def animes_list(
     elif version == "vostfr":
         section_label += " (VOSTFR)"
 
+
+    canon_params = []
+    if genre:
+        canon_params.append(f"genre={genre}")
+    if page > 1:
+        canon_params.append(f"page={page}")
+    canon_path = request.url.path + (f"?{'&'.join(canon_params)}" if canon_params else "")
+
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
         "items": items,
@@ -125,6 +135,9 @@ async def animes_list(
         "current_sort": sort,
         "current_version": version or "all",
         "base_path": "/animes",
+           "seo": page_seo(request,
+                        title=f"{section_label} en Streaming HD — Nokaflix",
+                        path=canon_path),
     })
 
 
@@ -148,6 +161,15 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
         "request": request,
         "anime": data,
         "slug": slug,
+        # Le type d'œuvre n'est pas fourni de façon fiable par cette source :
+        # pas de JSON-LD plutôt qu'un type deviné (cf. services/seo.py).
+        "seo": content_seo(
+            request,
+            item=data,
+            path=f"/anime/{slug}",
+            title_suffix="Animé en Streaming HD",
+            kind_label="Animé en Streaming VF & VOSTFR",
+        ),
     })
 
 
@@ -188,6 +210,13 @@ async def anime_player(request: Request, slug: str, episode_slug: str) -> HTMLRe
     prev_ep = episodes[ep_index - 1] if ep_index > 0 else None
     next_ep = episodes[ep_index + 1] if ep_index >= 0 and ep_index + 1 < len(episodes) else None
 
+    base_title = anime.get("title", "")
+    seo_title = (
+        f"{base_title} — {current_ep['title']} — Animé Streaming — Nokaflix"
+        if current_ep else
+        f"{base_title} — Animé Streaming — Nokaflix"
+    )
+
     return templates.TemplateResponse(request, "anime_player.html", {
         "request": request,
         "anime": anime,
@@ -199,6 +228,10 @@ async def anime_player(request: Request, slug: str, episode_slug: str) -> HTMLRe
         "prev_ep": prev_ep,
         "next_ep": next_ep,
         "default_server": servers[0] if servers else None,
+        # URL du player = page d'usage ; le canonical pointe la fiche parente
+        # (pas de contenu dupliqué fiche/player pour l'indexation).
+        "seo": page_seo(request, title=seo_title, path=f"/anime/{slug}",
+                        image=anime.get("image", "")),
     })
 
 

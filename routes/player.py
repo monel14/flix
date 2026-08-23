@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from cache import DETAIL_TTL, PLAYER_TTL, cache
+from services.seo import page_seo
 from routes.detail import load_detail
 from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_get_json
 from scraper.coflix_parser import parse_coflix_servers
@@ -85,6 +86,13 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
     prev_ep = episodes[ep_index - 1] if ep_index > 0 else None
     next_ep = episodes[ep_index + 1] if ep_index >= 0 and ep_index + 1 < len(episodes) else None
 
+    base_title = film.get("title", "")
+    seo_title = (
+        f"{base_title} — {current_ep['title']} — Streaming — Nokaflix"
+        if current_ep else
+        f"{base_title} — Streaming — Nokaflix"
+    )
+
     return templates.TemplateResponse(request, "player.html", {
         "request": request,
         "film": film,
@@ -96,6 +104,10 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
         "prev_ep": prev_ep,
         "next_ep": next_ep,
         "default_server": servers[0] if servers else None,
+        # URL du player = page d'usage ; le canonical pointe la fiche parente
+        # (pas de contenu dupliqué fiche/player pour l'indexation).
+        "seo": page_seo(request, title=seo_title, path=f"/film/{slug}",
+                        image=film.get("image", "")),
     })
 
 

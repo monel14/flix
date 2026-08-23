@@ -4,20 +4,38 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <title>{% block title %}Nokaflix — Streaming Films, Séries, K-Dramas & Animés HD{% endblock %}</title>
-    <meta name="description" content="{% block description %}Plateforme Nokaflix de streaming gratuit pour regarder des films, séries, K-Dramas et animés en VF et VOSTFR HD.{% endblock %}">
-    
-    <!-- OpenGraph & Social Sharing Meta Tags -->
+    {# Métadonnées SEO & partage — source unique de vérité : services/seo.py.
+       Chaque route construit un objet `seo` (SeoMeta) ; si une page n'en
+       fournit pas, les valeurs génériques du site s'appliquent. #}
+    <title>{{ seo.title if seo else 'Nokaflix — Streaming Films, Séries, K-Dramas & Animés HD' }}</title>
+    <meta name="description" content="{{ seo.description if seo else 'Plateforme Nokaflix de streaming gratuit pour regarder des films, séries, K-Dramas et animés en VF et VOSTFR HD.' }}">
+    {% if seo %}
+    <link rel="canonical" href="{{ seo.canonical }}">
+    {% endif %}
+
+    <!-- Open Graph -->
     <meta property="og:site_name" content="Nokaflix">
-    <meta property="og:title" content="{% block og_title %}Nokaflix — Films, Séries, K-Dramas & Animés en Streaming HD{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}Regardez des milliers de films, séries, K-Dramas et animés en streaming gratuit VF et VOSTFR sans coupure.{% endblock %}">
-    <meta property="og:image" content="{% block og_image %}https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1200{% endblock %}">
-    <meta property="og:type" content="video.movie">
-    
-    <!-- Twitter Cards -->
+    <meta property="og:title" content="{{ seo.og_title if seo else 'Nokaflix — Films, Séries, K-Dramas & Animés en Streaming HD' }}">
+    <meta property="og:description" content="{{ seo.og_description if seo else 'Regardez des milliers de films, séries, K-Dramas et animés en streaming gratuit VF et VOSTFR sans coupure.' }}">
+    <meta property="og:image" content="{{ seo.image if seo else 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1200' }}">
+    {% if seo %}
+    <meta property="og:url" content="{{ seo.canonical }}">
+    <meta property="og:type" content="{{ seo.og_type }}">
+    {% else %}
+    <meta property="og:type" content="website">
+    {% endif %}
+
+    <!-- Twitter/X Cards — mêmes données que Open Graph -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{% block twitter_title %}Nokaflix — Streaming Gratuit HD{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_description %}Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR.{% endblock %}">
+    <meta name="twitter:title" content="{{ seo.twitter_title if seo else 'Nokaflix — Streaming Gratuit HD' }}">
+    <meta name="twitter:description" content="{{ seo.twitter_description if seo else 'Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR.' }}">
+    {% if seo %}
+    <meta name="twitter:image" content="{{ seo.image }}">
+    {% endif %}
+    {% if seo and seo.json_ld %}
+    <!-- Données structurées (type d'œuvre fiable uniquement — jamais deviné) -->
+    <script type="application/ld+json">{{ seo.json_ld | tojson }}</script>
+    {% endif %}
     
     <!-- Google Font Plus Jakarta Sans & Font Awesome 6 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

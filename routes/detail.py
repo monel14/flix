@@ -12,6 +12,7 @@ from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_
 from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
 from scraper.voirdrama_client import VoirdramaNotFoundError, voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_detail
+from services.seo import content_seo
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -72,6 +73,16 @@ async def film_detail(request: Request, slug: str):
                 "film": data,
                 "slug": slug,
                 "related": data.get("related", []),
+                # content_type ("Movie"/"Series") provient de la source :
+                # c'est le seul signal fiable pour typer le JSON-LD.
+                "seo": content_seo(
+                    request,
+                    item=data,
+                    path=f"/film/{slug}",
+                    title_suffix="Streaming HD",
+                    kind_label="en Streaming VF & VOSTFR HD",
+                    content_type=data.get("content_type", ""),
+                ),
             })
     except (CoflixNotFoundError, CoflixFetchError):
         pass

@@ -1,9 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}{{ drama.title }} — K-Drama en Streaming HD — Nokaflix{% endblock %}
-{% block og_title %}{{ drama.title }} Drama en Streaming VOSTFR & VF — Nokaflix{% endblock %}
-{% block og_description %}{{ drama.synopsis[:160] if drama.synopsis else 'Regarder ' ~ drama.title ~ ' en streaming gratuit.' }}{% endblock %}
-{% block og_image %}{{ drama.image }}{% endblock %}
+{# Métadonnées SEO construites par la route via services/seo.py (contexte `seo`) #}
 
 {% block content %}
 <!-- 1. CINEMATIC DRAMA HERO BANNER (Pleine Page) -->

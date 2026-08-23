@@ -1,10 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import version_badge %}
-
-{% block title %}{{ film.title }} — Streaming HD — Nokaflix{% endblock %}
-{% block og_title %}{{ film.title }} en Streaming VF & VOSTFR HD — Nokaflix{% endblock %}
-{% block og_description %}{{ film.synopsis[:160] if film.synopsis else 'Regarder ' ~ film.title ~ ' en streaming gratuit.' }}{% endblock %}
-{% block og_image %}{{ film.image }}{% endblock %}
+{# Métadonnées SEO construites par la route via services/seo.py (contexte `seo`) #}
 
 {% block content %}
 <!-- 1. CINEMATIC DETAIL HERO BANNER (Chantier 5 — Pleine Page Non Enfermée) -->

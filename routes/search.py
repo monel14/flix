@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from cache import SEARCH_TTL, cache
+from services.seo import page_seo
 from scraper.coflix_client import CoflixFetchError, coflix_get_html
 from scraper.coflix_parser import parse_coflix_search
 from scraper.voirdrama_client import VoirdramaFetchError, voirdrama_get_html
@@ -84,11 +85,15 @@ async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
             logger.warning("Erreur recherche globale '%s' : %s", cleaned_q, exc)
             error = "La recherche a rencontré une erreur. Réessaie dans un instant."
 
+    seo_title = (f'Résultats pour "{cleaned_q}"' if cleaned_q else "Explorer & Rechercher") + " — Nokaflix"
     return templates.TemplateResponse(request, "search.html", {
         "request": request,
         "query": q,
         "results": results,
         "error": error,
+        # Canonical sans la requête : les pages de résultats ne se
+        # concurrencent pas entre elles dans l'index.
+        "seo": page_seo(request, title=seo_title, path="/recherche"),
     })
 
 

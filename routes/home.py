@@ -22,6 +22,7 @@ from scraper.voirdrama_parser import parse_voirdrama_list
 from scraper.voiranime_client import voiranime_get_html
 from scraper.voiranime_parser import parse_voiranime_list
 from services.dedup import canonical_slug, merge_variants
+from services.seo import page_seo
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -171,6 +172,7 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
         "top": top[:10] if isinstance(top, list) else [],
         "top_filter": top_filter,
+        "seo": page_seo(request, path="/"),
     })
 
 
@@ -207,6 +209,13 @@ async def movies_list(
     prev_url = f"/films?page={page - 1}{query_str}" if page > 1 else None
     next_url = f"/films?page={page + 1}{query_str}" if page < data.get("last_page", 1) else None
 
+    canon_params = []
+    if genre:
+        canon_params.append(f"genre={genre}")
+    if page > 1:
+        canon_params.append(f"page={page}")
+    canon_path = request.url.path + (f"?{'&'.join(canon_params)}" if canon_params else "")
+
     genre_label = next((g["label"] for g in AVAILABLE_GENRES if g["slug"] == genre), None) if genre else None
     section_label = f"Films — {genre_label}" if genre_label else "Films"
 
@@ -223,6 +232,9 @@ async def movies_list(
         "current_genre": genre,
         "current_version": version or "all",
         "base_path": "/films",
+        "seo": page_seo(request,
+                        title=f"{section_label} en Streaming HD — Nokaflix",
+                        path=canon_path),
     })
 
 
@@ -259,6 +271,13 @@ async def series_list(
     prev_url = f"/series?page={page - 1}{query_str}" if page > 1 else None
     next_url = f"/series?page={page + 1}{query_str}" if page < data.get("last_page", 1) else None
 
+    canon_params = []
+    if genre:
+        canon_params.append(f"genre={genre}")
+    if page > 1:
+        canon_params.append(f"page={page}")
+    canon_path = request.url.path + (f"?{'&'.join(canon_params)}" if canon_params else "")
+
     genre_label = next((g["label"] for g in AVAILABLE_GENRES if g["slug"] == genre), None) if genre else None
     section_label = f"Séries — {genre_label}" if genre_label else "Séries"
 
@@ -275,4 +294,7 @@ async def series_list(
         "current_genre": genre,
         "current_version": version or "all",
         "base_path": "/series",
+        "seo": page_seo(request,
+                        title=f"{section_label} en Streaming HD — Nokaflix",
+                        path=canon_path),
     })

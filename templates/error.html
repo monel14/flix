@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}Erreur {{ status_code }} — Nokaflix{% endblock %}
+{# Titre construit par le gestionnaire d'erreurs via services/seo.py (contexte `seo`) #}
 
 {% block content %}
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 20px;">

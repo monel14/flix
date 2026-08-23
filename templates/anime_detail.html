@@ -1,9 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}{{ anime.title }} — Animé en Streaming HD — Nokaflix{% endblock %}
-{% block og_title %}{{ anime.title }} Animé en Streaming VF & VOSTFR — Nokaflix{% endblock %}
-{% block og_description %}{{ anime.synopsis[:160] if anime.synopsis else 'Regarder ' ~ anime.title ~ ' en streaming gratuit.' }}{% endblock %}
-{% block og_image %}{{ anime.image }}{% endblock %}
+{# Métadonnées SEO construites par la route via services/seo.py (contexte `seo`) #}
 
 {% block content %}
 <!-- 1. CINEMATIC ANIME HERO BANNER (Pleine Page) -->
