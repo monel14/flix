@@ -318,6 +318,11 @@
                         <div class="history-thumb-wrap">
                             <img src="${item.image}" alt="${item.title}">
                             <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
+                            <button type="button" class="history-remove-btn" data-slug="${item.slug}"
+                                    aria-label="Retirer ${item.title} de votre historique"
+                                    title="Ne plus reprendre cet épisode">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                         <div class="history-info">
                             <p class="history-title">${item.title}</p>
@@ -325,6 +330,23 @@
                         </div>
                     </a>
                 `).join('');
+                // Retrait d'un élément de l'historique : mise à jour du stockage
+                // puis du DOM (sans navigation — la carte est un lien).
+                rail.querySelectorAll('.history-remove-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.NokaflixHistory.remove(btn.dataset.slug);
+                        const card = btn.closest('.history-card');
+                        card.classList.add('is-removing');
+                        setTimeout(() => {
+                            card.remove();
+                            if (!rail.querySelector('.history-card')) {
+                                section.style.display = 'none';
+                            }
+                        }, 150);
+                    });
+                });
                 section.style.display = 'block';
             }
         }

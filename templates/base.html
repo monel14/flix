@@ -228,6 +228,13 @@
                 localStorage.setItem('nokaflix_watch_history', JSON.stringify(history.slice(0, 12)));
             } catch(e) {}
         },
+        remove: function(slug) {
+            try {
+                let history = JSON.parse(localStorage.getItem('nokaflix_watch_history') || '[]');
+                history = history.filter(h => h.slug !== slug);
+                localStorage.setItem('nokaflix_watch_history', JSON.stringify(history));
+            } catch(e) {}
+        },
         get: function() {
             try {
                 return JSON.parse(localStorage.getItem('nokaflix_watch_history') || '[]');

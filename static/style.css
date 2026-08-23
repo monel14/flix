@@ -726,6 +726,49 @@ img {
     pointer-events: none;
 }
 .history-thumb-wrap .card-play-overlay { z-index: 2; }
+/* Bouton « retirer de l'historique » : même langage que l'overlay play —
+   discret par défaut, révélé au survol/focus de la carte (desktop) ;
+   toujours visible sur écran tactile, où le survol n'existe pas.
+   Le rouge n'apparaît que sur l'action elle-même (signal d'interaction). */
+.history-remove-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 3;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 9, 12, 0.6);
+    color: #fff;
+    font-size: 0.62rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: var(--transition-fast);
+}
+.history-card:hover .history-remove-btn,
+.history-card:focus-within .history-remove-btn,
+.history-remove-btn:focus-visible {
+    opacity: 1;
+}
+.history-remove-btn:hover {
+    background: var(--brand);
+}
+.history-remove-btn:focus-visible {
+    outline: 2px solid var(--text-pure);
+    outline-offset: 2px;
+}
+@media (hover: none) {
+    .history-remove-btn { opacity: 1; }
+}
+/* Sortie douce à la suppression (le DOM suit après 150ms). */
+.history-card.is-removing {
+    opacity: 0;
+    transform: scale(0.96);
+}
 .history-card:hover .history-thumb-wrap::after,
 .history-card:focus-visible .history-thumb-wrap::after,
 .history-card:hover .card-play-overlay,
