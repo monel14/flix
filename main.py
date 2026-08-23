@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -77,6 +77,22 @@ async def robots_txt(request: Request):
     """Robots.txt optimisé pour l'indexation par Google et les moteurs de recherche."""
     base_url = site_origin(request)
     return f"User-agent: *\nAllow: /\n\nSitemap: {base_url}/sitemap.xml\n"
+
+
+# ---------------------------------------------------------------------------
+# PWA légère : service worker servi à la racine (scope "/" obligatoire)
+# ---------------------------------------------------------------------------
+
+
+@app.get("/sw.js")
+async def service_worker():
+    """Sert static/sw.js à la racine : le scope d'un SW dépend de son chemin,
+    /static/sw.js ne pourrait contrôler que /static/*."""
+    return FileResponse(
+        BASE_DIR / "static" / "sw.js",
+        media_type="text/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
 
 
 @app.get("/sitemap.xml")
