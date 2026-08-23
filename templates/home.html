@@ -13,9 +13,11 @@
             <div class="hero-slide-backdrop" style="background-image: url('{{ slide.image }}');"></div>
             <div class="hero-slide-content">
                 <div class="hero-slide-meta">
-                    <span class="card-badge card-badge--vf" style="position: static;">À LA UNE</span>
                     {% if slide.version %}<span class="hero-meta-text">{{ slide.version }}</span>{% endif %}
-                    {% if slide.year %}<span class="hero-meta-text">• {{ slide.year }}</span>{% endif %}
+                    {% if slide.year %}
+                        <span class="hero-meta-divider">·</span>
+                        <span class="hero-meta-text">{{ slide.year }}</span>
+                    {% endif %}
                 </div>
                 <h1 class="hero-slide-title">{{ slide.title }}</h1>
                 {% if slide.synopsis %}
@@ -24,9 +26,6 @@
                 <div class="hero-slide-actions">
                     <a href="/film/{{ slide.slug }}" class="btn-cta btn-cta--primary btn-cta--big">
                         <i class="fas fa-play"></i> Regarder
-                    </a>
-                    <a href="/film/{{ slide.slug }}" class="btn-cta btn-cta--secondary btn-cta--big">
-                        <i class="fas fa-circle-info"></i> Plus d'infos
                     </a>
                 </div>
             </div>
@@ -49,19 +48,19 @@
 
 
 <!-- 2. REPRENDRE LA LECTURE (CONTINUE WATCHING) -->
-<section class="content-section continue-watching-section" id="continue-watching-section">
+<section class="content-section content-section--important continue-watching-section" id="continue-watching-section">
     <div class="section-header">
-        <h2 class="section-title"><i class="fas fa-clock-rotate-left"></i> Reprendre la lecture</h2>
+        <h2 class="section-title section-title--large"><i class="fas fa-clock-rotate-left"></i> Reprendre la lecture</h2>
     </div>
     <div class="cards-rail" id="continue-watching-rail"></div>
 </section>
 
 
-<!-- 3. TOP 10 DU MOMENT (Cartes Numérotées — Chantier 8) -->
+<!-- 3. TOP 10 DU MOMENT -->
 {% if top %}
-<section class="content-section">
+<section class="content-section content-section--important">
     <div class="section-header">
-        <h2 class="section-title">Top 10 des Tendances</h2>
+        <h2 class="section-title section-title--large">Top 10 des Tendances</h2>
         <div class="top-tabs-bar">
             <a href="/?top_filter=day" class="top-tab-btn {% if top_filter == 'day' %}active{% endif %}">Aujourd'hui</a>
             <a href="/?top_filter=week" class="top-tab-btn {% if top_filter == 'week' %}active{% endif %}">Cette semaine</a>
@@ -86,11 +85,11 @@
 {% endif %}
 
 
-<!-- 4. ANIMÉS JAPONAIS (Rail Défilant) -->
+<!-- 4. ANIMÉS JAPONAIS -->
 {% if popular_animes %}
 <section class="content-section">
     <div class="section-header">
-        <h2 class="section-title">Nouveautés Animés</h2>
+        <h2 class="section-title">Animés</h2>
         <a href="/animes" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
     </div>
     <div class="cards-rail">
@@ -118,11 +117,11 @@
 {% endif %}
 
 
-<!-- 5. K-DRAMAS POPULAIRES (Rail Défilant) -->
+<!-- 5. K-DRAMAS POPULAIRES -->
 {% if popular_dramas %}
 <section class="content-section">
     <div class="section-header">
-        <h2 class="section-title">K-Dramas & Séries Asiatiques</h2>
+        <h2 class="section-title">K-Dramas</h2>
         <a href="/dramas" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
     </div>
     <div class="cards-rail">
@@ -150,10 +149,10 @@
 {% endif %}
 
 
-<!-- 6. FILMS RÉCENTS (Rail Défilant) -->
+<!-- 6. FILMS RÉCENTS -->
 <section class="content-section">
     <div class="section-header">
-        <h2 class="section-title">Derniers Films Ajoutés</h2>
+        <h2 class="section-title">Films</h2>
         <a href="/films" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
     </div>
     <div class="cards-rail">
@@ -180,10 +179,10 @@
 </section>
 
 
-<!-- 7. SÉRIES RÉCENTES (Rail Défilant) -->
-<section class="content-section">
+<!-- 7. SÉRIES RÉCENTES -->
+<section class="content-section content-section--compact">
     <div class="section-header">
-        <h2 class="section-title">Séries Populaires & Nouveautés</h2>
+        <h2 class="section-title">Séries</h2>
         <a href="/series" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
     </div>
     <div class="cards-rail">

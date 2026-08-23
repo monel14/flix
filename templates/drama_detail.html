@@ -33,31 +33,36 @@
         <!-- Colonne Informations & Métadonnées -->
         <div class="detail-meta-column">
             <div class="detail-chips-row">
-                <span class="card-badge card-badge--vf" style="position: static;">K-DRAMA</span>
                 {% if drama.version == 'VF' %}
                 <span class="card-badge card-badge--vf" style="position: static;">VF</span>
                 {% else %}
                 <span class="card-badge card-badge--vostfr" style="position: static;">VOSTFR</span>
                 {% endif %}
-                {% if drama.country %}<span class="detail-meta-chip">• {{ drama.country }}</span>{% endif %}
-                {% if drama.year %}<span class="detail-meta-chip">• {{ drama.year }}</span>{% endif %}
-                {% if drama.status %}<span class="detail-meta-chip">• {{ drama.status }}</span>{% endif %}
+                {% if drama.country %}<span class="detail-meta-chip">· {{ drama.country }}</span>{% endif %}
+                {% if drama.year %}<span class="detail-meta-chip">· {{ drama.year }}</span>{% endif %}
+                {% if drama.status %}<span class="detail-meta-chip">· {{ drama.status }}</span>{% endif %}
             </div>
 
             <h1 class="detail-main-title">{{ drama.title }}</h1>
 
             {% if drama.genres %}
             <div class="detail-genres-row">
-                {% for g in drama.genres %}
+                {% for g in drama.genres[:5] %}
                 <a href="/dramas?genre={{ g | lower | replace(' ', '-') }}" class="detail-genre-badge">
                     {{ g }}
                 </a>
                 {% endfor %}
+                {% if drama.genres | length > 5 %}
+                <span class="detail-genre-badge detail-genre-more">+{{ drama.genres | length - 5 }}</span>
+                {% endif %}
             </div>
             {% endif %}
 
             {% if drama.synopsis %}
-            <p class="detail-synopsis-text">{{ drama.synopsis }}</p>
+            <div class="synopsis-wrapper">
+                <p class="detail-synopsis-text synopsis-collapsed" id="synopsis-text">{{ drama.synopsis }}</p>
+                <button class="synopsis-read-more" id="synopsis-toggle" aria-expanded="false">Lire plus</button>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -116,6 +121,27 @@
     });
 
     updateBtn();
+
+    // Synopsis toggle
+    const synopsisText = document.getElementById('synopsis-text');
+    const synopsisToggle = document.getElementById('synopsis-toggle');
+    if (synopsisText && synopsisToggle) {
+        if (synopsisText.scrollHeight <= synopsisText.clientHeight) {
+            synopsisToggle.classList.add('hidden');
+        }
+        synopsisToggle.addEventListener('click', () => {
+            const isExpanded = synopsisText.classList.contains('synopsis-collapsed');
+            if (isExpanded) {
+                synopsisText.classList.remove('synopsis-collapsed');
+                synopsisToggle.textContent = 'Réduire';
+                synopsisToggle.setAttribute('aria-expanded', 'true');
+            } else {
+                synopsisText.classList.add('synopsis-collapsed');
+                synopsisToggle.textContent = 'Lire plus';
+                synopsisToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
 })();
 </script>
 {% endblock %}

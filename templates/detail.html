@@ -39,25 +39,31 @@
                 <span class="card-badge card-badge--vostfr" style="position: static;">{{ film.version or 'VOSTFR' }}</span>
                 {% endif %}
 
-                {% if film.year %}<span class="detail-meta-chip">• {{ film.year }}</span>{% endif %}
-                {% if film.content_type %}<span class="detail-meta-chip">• {{ film.content_type }}</span>{% endif %}
-                {% if film.status %}<span class="detail-meta-chip">• {{ film.status }}</span>{% endif %}
+                {% if film.year %}<span class="detail-meta-chip">· {{ film.year }}</span>{% endif %}
+                {% if film.content_type %}<span class="detail-meta-chip">· {{ film.content_type }}</span>{% endif %}
+                {% if film.status %}<span class="detail-meta-chip">· {{ film.status }}</span>{% endif %}
             </div>
 
             <h1 class="detail-main-title">{{ film.title }}</h1>
 
             {% if film.genres %}
             <div class="detail-genres-row">
-                {% for g in film.genres %}
+                {% for g in film.genres[:5] %}
                 <a href="/films?genre={{ g | lower | replace(' ', '-') }}" class="detail-genre-badge">
                     {{ g }}
                 </a>
                 {% endfor %}
+                {% if film.genres | length > 5 %}
+                <span class="detail-genre-badge detail-genre-more">+{{ film.genres | length - 5 }}</span>
+                {% endif %}
             </div>
             {% endif %}
 
             {% if film.synopsis %}
-            <p class="detail-synopsis-text">{{ film.synopsis }}</p>
+            <div class="synopsis-wrapper">
+                <p class="detail-synopsis-text synopsis-collapsed" id="synopsis-text">{{ film.synopsis }}</p>
+                <button class="synopsis-read-more" id="synopsis-toggle" aria-expanded="false">Lire plus</button>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -151,6 +157,28 @@
     });
 
     updateBtn();
+
+    // Synopsis toggle
+    const synopsisText = document.getElementById('synopsis-text');
+    const synopsisToggle = document.getElementById('synopsis-toggle');
+    if (synopsisText && synopsisToggle) {
+        // Check if content is actually truncated
+        if (synopsisText.scrollHeight <= synopsisText.clientHeight) {
+            synopsisToggle.classList.add('hidden');
+        }
+        synopsisToggle.addEventListener('click', () => {
+            const isExpanded = synopsisText.classList.contains('synopsis-collapsed');
+            if (isExpanded) {
+                synopsisText.classList.remove('synopsis-collapsed');
+                synopsisToggle.textContent = 'Réduire';
+                synopsisToggle.setAttribute('aria-expanded', 'true');
+            } else {
+                synopsisText.classList.add('synopsis-collapsed');
+                synopsisToggle.textContent = 'Lire plus';
+                synopsisToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
 })();
 </script>
 {% endblock %}

@@ -288,17 +288,17 @@ img {
 }
 
 /* ==========================================================================
-   CINEMATIC FULL-BLEED HERO SHOWCASE (Chantier 3)
+   HERO SHOWCASE — Cinématique Sobre
    ========================================================================== */
 .hero-slider-section {
     position: relative;
     width: 100%;
-    min-height: 480px;
-    max-height: 580px;
+    min-height: 450px;
+    max-height: 560px;
     border-radius: var(--radius-card);
     overflow: hidden;
     margin-top: 8px;
-    margin-bottom: 36px;
+    margin-bottom: 48px;
     background: #000;
 }
 
@@ -306,7 +306,7 @@ img {
     position: relative;
     width: 100%;
     height: 100%;
-    min-height: 480px;
+    min-height: 450px;
 }
 
 .hero-slide {
@@ -316,8 +316,8 @@ img {
     align-items: flex-end;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s ease-in-out;
-    padding: 40px 44px;
+    transition: opacity 0.6s ease-in-out;
+    padding: 48px 52px;
 }
 
 .hero-slide.active {
@@ -331,57 +331,67 @@ img {
     inset: 0;
     background-size: cover;
     background-position: center 20%;
-    filter: brightness(0.65);
+    filter: brightness(0.68);
     z-index: 1;
 }
 
-/* Multi-couches de dégradés cinématiques naturels */
+/* Gradient subtil uniquement en bas — pas de gradient latéral */
 .hero-slide-backdrop::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: 
-        linear-gradient(0deg, rgba(8, 9, 12, 1) 0%, rgba(8, 9, 12, 0.4) 40%, transparent 100%),
-        linear-gradient(90deg, rgba(8, 9, 12, 0.95) 0%, rgba(8, 9, 12, 0.5) 35%, transparent 75%);
+    background: linear-gradient(
+        to top,
+        rgba(8, 9, 12, 1) 0%,
+        rgba(8, 9, 12, 0.65) 25%,
+        rgba(8, 9, 12, 0.2) 50%,
+        transparent 100%
+    );
 }
 
 .hero-slide-content {
     position: relative;
     z-index: 2;
-    max-width: 580px;
+    max-width: 540px;
 }
 
 .hero-slide-meta {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin-bottom: 12px;
     flex-wrap: wrap;
 }
 
 .hero-meta-text {
-    font-size: 0.82rem;
+    font-size: 0.80rem;
     font-weight: 600;
     color: var(--text-muted);
+    letter-spacing: 0.3px;
+}
+
+.hero-meta-divider {
+    color: var(--text-dim);
+    font-size: 0.70rem;
 }
 
 .hero-slide-title {
-    font-size: 2.5rem;
+    font-size: 2.3rem;
     font-weight: 800;
-    line-height: 1.12;
-    letter-spacing: -0.03em;
-    margin-bottom: 10px;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    margin-bottom: 12px;
     color: var(--text-pure);
 }
 
 .hero-slide-synopsis {
-    font-size: 0.90rem;
+    font-size: 0.88rem;
     font-weight: 400;
     color: var(--text-body);
-    line-height: 1.6;
+    line-height: 1.55;
     margin-bottom: 20px;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Strictement limité à 2 lignes */
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -389,18 +399,18 @@ img {
 .hero-slide-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
-/* Boutons CTA Commerciaux */
+/* Boutons CTA */
 .btn-cta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 20px;
+    gap: 8px;
+    padding: 10px 24px;
     border-radius: var(--radius-btn);
-    font-size: 0.88rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     border: none;
@@ -430,19 +440,19 @@ img {
     background: var(--brand-hover);
 }
 .btn-cta--big {
-    font-size: 0.92rem;
-    padding: 10px 24px;
+    font-size: 0.90rem;
+    padding: 12px 28px;
 }
 
-/* Commandes Hero */
+/* Navigation du Hero */
 .hero-nav {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     z-index: 10;
-    background: rgba(8, 9, 12, 0.5);
-    border: 1px solid var(--border-subtle);
-    color: #fff;
+    background: rgba(8, 9, 12, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.75);
     width: 38px;
     height: 38px;
     border-radius: 50%;
@@ -451,21 +461,28 @@ img {
     justify-content: center;
     cursor: pointer;
     font-size: 0.85rem;
-    transition: var(--transition-fast);
+    transition: opacity 0.2s ease, background 0.15s ease;
+    opacity: 0;
+}
+.hero-slider-section:hover .hero-nav {
+    opacity: 1;
 }
 .hero-nav:hover {
     background: rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
-.hero-nav--prev { left: 14px; }
-.hero-nav--next { right: 14px; }
+.hero-nav--prev { left: 18px; }
+.hero-nav--next { right: 18px; }
 
+/* Dots de navigation — visibles mais discrets */
 .hero-dots {
     position: absolute;
     bottom: 16px;
-    right: 28px;
+    right: 24px;
     z-index: 10;
     display: flex;
     gap: 6px;
+    align-items: center;
 }
 .hero-dot {
     width: 6px;
@@ -474,48 +491,73 @@ img {
     background: rgba(255, 255, 255, 0.3);
     border: none;
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: width 0.25s ease, background 0.2s ease;
+    padding: 0;
 }
 .hero-dot.active {
-    width: 18px;
-    background: #fff;
+    width: 22px;
+    background: rgba(255, 255, 255, 0.95);
 }
 
 /* ==========================================================================
-   SECTIONS & RYTHME DES RAILS (Chantier 2 & 10)
+   SECTIONS & RYTHME DES RAILS
    ========================================================================== */
+
+/* Espacement des sections — Hiérarchie par le rythme */
 .content-section {
-    margin-bottom: 36px;
+    margin-bottom: 32px;
 }
 
+.content-section--important {
+    margin-bottom: 40px;
+}
+
+.content-section--compact {
+    margin-bottom: 24px;
+}
+
+/* Header de section */
 .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .section-title {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     gap: 8px;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     color: var(--text-pure);
 }
 
-.see-all-link {
-    font-size: 0.82rem;
+.section-title--large {
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.section-title--small {
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-muted);
+}
+
+.see-all-link {
+    font-size: 0.80rem;
+    font-weight: 600;
+    color: var(--text-dim);
     display: flex;
     align-items: center;
     gap: 4px;
     transition: var(--transition-fast);
+    opacity: 0.7;
 }
 .see-all-link:hover {
     color: var(--text-pure);
+    opacity: 1;
 }
 
 /* Top Tabs Selector */
@@ -546,7 +588,7 @@ img {
    ========================================================================== */
 .continue-watching-section {
     display: none;
-    margin-bottom: 36px;
+    /* margin-bottom hérité de .content-section ou .content-section--important */
 }
 
 .history-card {
@@ -633,12 +675,12 @@ img {
     background: transparent;
     border: none;
     overflow: visible;
-    transition: var(--transition-fast);
+    transition: transform 0.2s var(--ease-out);
     flex-shrink: 0;
     text-decoration: none;
 }
 .stream-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
 }
 
 .card-poster-wrap {
@@ -653,11 +695,10 @@ img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: opacity 0.2s ease, transform 0.25s var(--ease-out);
+    transition: transform 0.3s var(--ease-out);
 }
 .stream-card:hover .card-poster-wrap img {
-    transform: scale(1.03);
-    opacity: 0.9;
+    transform: scale(1.05);
 }
 
 /* Play Overlay Subtil */
@@ -687,27 +728,26 @@ img {
 .stream-card:hover .card-play-overlay { opacity: 1; }
 .stream-card:hover .card-play-btn { transform: scale(1); }
 
-/* Micro-Badges Techniques Discrets (Chantier 9) */
+/* Badges — Informationnels, visuellement secondaires */
 .card-badge {
     position: absolute;
     top: 6px;
     left: 6px;
-    font-size: 0.65rem;
+    font-size: 0.60rem;
     font-weight: 700;
     padding: 2px 5px;
     border-radius: var(--radius-badge);
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
     z-index: 4;
 }
 .card-badge--vf {
-    background: var(--brand);
-    color: #fff;
+    background: rgba(180, 20, 25, 0.9);
+    color: rgba(255, 255, 255, 0.9);
 }
 .card-badge--vostfr {
-    background: rgba(20, 24, 34, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #cbd5e1;
+    background: rgba(20, 22, 28, 0.85);
+    color: rgba(200, 205, 215, 0.9);
 }
 
 /* Métadonnées Typographiques Sous le Poster (Chantier 1 & 9) */
@@ -889,7 +929,7 @@ img {
     height: 480px;
     background-size: cover;
     background-position: center 20%;
-    filter: blur(28px) brightness(0.25);
+    filter: blur(20px) brightness(0.2);
     z-index: 1;
     pointer-events: none;
 }
@@ -964,13 +1004,53 @@ img {
 .detail-genre-badge:hover {
     background: rgba(255, 255, 255, 0.12);
 }
+.detail-genre-more {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: default;
+}
+.detail-genre-more:hover {
+    background: transparent;
+}
 
 .detail-synopsis-text {
-    font-size: 0.92rem;
+    font-size: 0.90rem;
     font-weight: 400;
     color: var(--text-body);
-    line-height: 1.65;
-    max-width: 780px;
+    line-height: 1.6;
+    max-width: 680px;
+}
+
+/* Synopsis avec troncature et expansion */
+.synopsis-wrapper {
+    position: relative;
+}
+
+.synopsis-collapsed {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.synopsis-read-more {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+.synopsis-read-more:hover {
+    color: var(--text-pure);
+}
+.synopsis-read-more.hidden {
+    display: none;
 }
 
 /* Épisodes */
@@ -1369,7 +1449,23 @@ img {
         grid-template-columns: 180px 1fr;
         gap: 24px;
     }
-    .hero-slide-title { font-size: 2rem; }
+    .hero-slide {
+        padding: 40px 40px;
+    }
+    .hero-slide-content {
+        max-width: 460px;
+    }
+    .hero-slide-title {
+        font-size: 2rem;
+    }
+
+    /* Sections — Tablet */
+    .content-section {
+        margin-bottom: 28px;
+    }
+    .content-section--important {
+        margin-bottom: 36px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -1379,11 +1475,56 @@ img {
     .mobile-bottom-bar { display: flex; }
     .site-main { padding: 0 16px 80px; }
 
-    .hero-slider-section { min-height: 340px; }
-    .hero-slide { padding: 20px 16px; }
-    .hero-slide-title { font-size: 1.6rem; }
-    .hero-slide-synopsis { font-size: 0.82rem; -webkit-line-clamp: 2; }
+    .hero-slider-section {
+        min-height: 320px;
+        max-height: 420px;
+        margin-bottom: 32px;
+        border-radius: 0;
+    }
+    .hero-slides-wrapper {
+        min-height: 320px;
+    }
+    .hero-slide {
+        padding: 28px 20px;
+        align-items: flex-end;
+    }
+    .hero-slide-content {
+        max-width: 100%;
+    }
+    .hero-slide-title {
+        font-size: 1.55rem;
+        margin-bottom: 10px;
+        letter-spacing: -0.02em;
+    }
+    .hero-slide-synopsis {
+        font-size: 0.82rem;
+        -webkit-line-clamp: 2;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+    .hero-slide-meta {
+        margin-bottom: 10px;
+    }
+    .hero-meta-text {
+        font-size: 0.75rem;
+    }
     .hero-nav { display: none; }
+    .hero-dots {
+        bottom: 12px;
+        right: 16px;
+        gap: 5px;
+    }
+    .hero-dot {
+        width: 5px;
+        height: 5px;
+    }
+    .hero-dot.active {
+        width: 18px;
+    }
+    .btn-cta--big {
+        padding: 10px 22px;
+        font-size: 0.85rem;
+    }
 
     .detail-backdrop-full { left: -16px; right: -16px; height: 360px; }
     .detail-layout-content {
@@ -1409,4 +1550,47 @@ img {
 
     .catalog-toolbar { flex-direction: column; align-items: stretch; }
     .toolbar-group { justify-content: space-between; }
+
+    /* Sections — Mobile plus compact */
+    .content-section {
+        margin-bottom: 24px;
+    }
+    .content-section--important {
+        margin-bottom: 28px;
+    }
+    .content-section--compact {
+        margin-bottom: 16px;
+    }
+    .section-header {
+        margin-bottom: 10px;
+    }
+    .section-title {
+        font-size: 0.95rem;
+    }
+    .section-title--large {
+        font-size: 1.05rem;
+    }
+}
+
+/* Réduction de mouvement — Accessibilité */
+@media (prefers-reduced-motion: reduce) {
+    .stream-card,
+    .stream-card:hover,
+    .card-poster-wrap img,
+    .stream-card:hover .card-poster-wrap img,
+    .card-play-overlay,
+    .card-play-btn,
+    .stream-card:hover .card-play-overlay,
+    .stream-card:hover .card-play-btn {
+        transition: none;
+    }
+    .stream-card:hover {
+        transform: none;
+    }
+    .stream-card:hover .card-poster-wrap img {
+        transform: none;
+    }
+    .stream-card:hover .card-play-btn {
+        transform: scale(1);
+    }
 }
