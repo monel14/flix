@@ -79,19 +79,26 @@
             else if (item.type === 'anime') { typeLabel = 'Animé'; targetUrl = `/anime/${item.slug}`; }
             else if (item.type === 'series') { typeLabel = 'Série'; }
 
+            // Même règle que la macro version_badge : badge rouge uniquement
+            // pour les versions françaises, badge neutre sinon, aucun si inconnu.
+            const v = (item.version || '').trim().toUpperCase();
+            const badge = v
+                ? `<span class="card-badge ${(v.includes('VF') || v.includes('FRENCH')) ? 'card-badge--vf' : 'card-badge--vostfr'}">${v}</span>`
+                : '';
+
             return `
             <div class="stream-card" style="position: relative;">
                 <a href="${targetUrl}">
                     <div class="card-poster-wrap">
                         <img src="${item.image}" alt="${item.title}" loading="lazy">
-                        ${item.version ? `<span class="card-badge card-badge--vf">${item.version}</span>` : ''}
+                        ${badge}
                         <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
                     </div>
                 </a>
                 <div class="card-details" style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div style="min-width: 0; flex: 1;">
                         <a href="${targetUrl}"><p class="card-title">${item.title}</p></a>
-                        <p class="card-sub">${typeLabel}</p>
+                        <p class="card-meta-line"><span>${typeLabel}</span></p>
                     </div>
                     <button class="remove-fav-btn" data-slug="${item.slug}" title="Retirer de ma liste" style="background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; font-size: 0.9rem;">
                         <i class="fas fa-trash-can"></i>

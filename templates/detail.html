@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import version_badge %}
 
 {% block title %}{{ film.title }} — Streaming HD — Nokaflix{% endblock %}
 {% block og_title %}{{ film.title }} en Streaming VF & VOSTFR HD — Nokaflix{% endblock %}
@@ -34,14 +35,13 @@
         <div class="detail-meta-column">
             <div class="detail-chips-row">
                 {% if film.version == 'VF' %}
-                <span class="card-badge card-badge--vf" style="position: static;">VF</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr" style="position: static;">{{ film.version or 'VOSTFR' }}</span>
+                <span class="card-badge card-badge--vf card-badge--static">VF</span>
+                {% elif film.version %}
+                <span class="card-badge card-badge--vostfr card-badge--static">{{ film.version }}</span>
                 {% endif %}
-
-                {% if film.year %}<span class="detail-meta-chip">· {{ film.year }}</span>{% endif %}
-                {% if film.content_type %}<span class="detail-meta-chip">· {{ film.content_type }}</span>{% endif %}
-                {% if film.status %}<span class="detail-meta-chip">· {{ film.status }}</span>{% endif %}
+                {% if film.year %}<span class="detail-meta-chip">{{ film.year }}</span>{% endif %}
+                {% if film.content_type %}<span class="detail-meta-chip">{{ film.content_type }}</span>{% endif %}
+                {% if film.status %}<span class="detail-meta-chip">{{ film.status }}</span>{% endif %}
             </div>
 
             <h1 class="detail-main-title">{{ film.title }}</h1>
@@ -103,14 +103,10 @@
     </div>
     <div class="cards-rail">
         {% for item in related %}
-        <a href="/film/{{ item.slug }}" class="stream-card" style="width: 150px;">
+        <a href="/film/{{ item.slug }}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version == 'VF' %}
-                <span class="card-badge card-badge--vf">VF</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr">VOSTFR</span>
-                {% endif %}
+                {{ version_badge(item.version) }}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">

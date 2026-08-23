@@ -2,7 +2,8 @@
    NOKAFLIX — Direction Artistique Commerciale & Design System Vidéo (P2)
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* NB : la police Plus Jakarta Sans est chargée via <link> dans base.html.
+   Ne pas la réimporter ici (@import bloque le rendu et doublonne le requêtage). */
 
 :root {
     /* ── Palette Fond & Canvas (Obsidienne & Noir Cinéma) ── */
@@ -46,7 +47,18 @@
     /* ── Ombres Discrètes ── */
     --shadow-poster:       0 6px 18px rgba(0, 0, 0, 0.6);
     --shadow-modal:        0 16px 48px rgba(0, 0, 0, 0.85);
-    
+
+    /* ── Halo de marque (page d'erreur, accents exceptionnels) ── */
+    --brand-glow:          rgba(229, 9, 20, 0.35);
+
+    /* ── Rythme des sections (hiérarchie éditoriale par l'espacement) ── */
+    --space-section:           34px;
+    --space-section-important: 48px;
+    --space-section-compact:   26px;
+
+    /* ── Largeur de référence des cartes poster en rail horizontal ── */
+    --card-w-rail:         155px;
+
     /* ── Transitions ── */
     --ease-out:            cubic-bezier(0.16, 1, 0.3, 1);
     --transition-fast:     all 0.15s var(--ease-out);
@@ -387,7 +399,9 @@ img {
 }
 
 .hero-slide-title {
-    font-size: 2.3rem;
+    /* Échelle éditoriale n°1 du produit : doit dominer le titre de fiche (2.3rem).
+       Fluide entre tablette et grand écran, bornée pour rester maîtrisée. */
+    font-size: clamp(2rem, 3vw, 2.75rem);
     font-weight: 800;
     line-height: 1.1;
     letter-spacing: -0.025em;
@@ -411,6 +425,7 @@ img {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-wrap: wrap; /* évite le débordement des 2 CTA sur petit écran */
 }
 
 /* Boutons CTA */
@@ -514,17 +529,19 @@ img {
    SECTIONS & RYTHME DES RAILS
    ========================================================================== */
 
-/* Espacement des sections — Hiérarchie par le rythme */
+/* Espacement des sections — Hiérarchie par le rythme.
+   3 niveaux volontairement contrastés : une section "importante" doit
+   respirer ~40% de plus qu'une section de catalogue standard. */
 .content-section {
-    margin-bottom: 32px;
+    margin-bottom: var(--space-section);
 }
 
 .content-section--important {
-    margin-bottom: 40px;
+    margin-bottom: var(--space-section-important);
 }
 
 .content-section--compact {
-    margin-bottom: 24px;
+    margin-bottom: var(--space-section-compact);
 }
 
 /* Header de section */
@@ -621,19 +638,9 @@ img {
     height: 100%;
     object-fit: cover;
 }
-.history-progress-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.2);
-}
-.history-progress-fill {
-    height: 100%;
-    background: var(--brand);
-    width: 60%;
-}
+/* NB : pas de barre de progression sur ces cartes — la lecture se fait via
+   lecteurs intégrés tiers, la position réelle n'est pas mesurable. Afficher
+   une progression fictive serait une information mensongère (retiré en P3). */
 .history-info {
     padding: 6px 2px 2px;
 }
@@ -691,6 +698,12 @@ img {
 }
 .stream-card:hover {
     transform: translateY(-6px);
+}
+
+/* Largeur uniforme des cartes poster en rail (token --card-w-rail).
+   Centralisée ici pour rester responsive — jamais en style inline. */
+.cards-rail > .stream-card {
+    width: var(--card-w-rail);
 }
 
 .card-poster-wrap {
@@ -758,6 +771,10 @@ img {
 .card-badge--vostfr {
     background: rgba(20, 22, 28, 0.85);
     color: rgba(200, 205, 215, 0.9);
+}
+/* Variante en flux (hors positionnement absolu de poster) — pages détail */
+.card-badge--static {
+    position: static;
 }
 
 /* Métadonnées Typographiques Sous le Poster (Chantier 1 & 9) */
@@ -921,6 +938,41 @@ img {
     color: var(--text-pure);
 }
 
+/* Barre de filtres à puces (page Ma Liste) — même langage que les
+   sélecteurs segmentés : géométrie maîtrisée, actif = rouge de marque. */
+.genres-scroll-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+}
+.genres-scroll-bar::-webkit-scrollbar { display: none; }
+.genre-chip {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    padding: 5px 12px;
+    border-radius: var(--radius-btn);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.genre-chip:hover {
+    color: var(--text-pure);
+    border-color: var(--border-focus);
+}
+.genre-chip.active {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+}
+
 /* ==========================================================================
    DETAIL PAGE (Chantier 5 — Pleine Page Cinématique)
    ========================================================================== */
@@ -979,11 +1031,34 @@ img {
 }
 
 .detail-main-title {
-    font-size: 2.3rem;
+    /* Fluide : reste imposant sur desktop sans déborder sur mobile (375px) */
+    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem);
     font-weight: 800;
     line-height: 1.15;
     letter-spacing: -0.02em;
     color: var(--text-pure);
+}
+
+/* Ligne de métadonnées de fiche — badge + infos textuelles.
+   Les séparateurs « · » sont générés ici (jamais tapés dans le HTML). */
+.detail-chips-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 0;
+}
+
+.detail-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.detail-meta-chip::before {
+    content: "·";
+    margin: 0 10px;
+    color: var(--text-dim);
 }
 
 .detail-genres-row {
@@ -1437,6 +1512,30 @@ img {
 .share-btn-item.copy i { color: var(--brand); }
 
 /* ==========================================================================
+   ÉTATS VIDES (Recherche, Catalogue, Ma Liste)
+   ========================================================================== */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+}
+.empty-state > i {
+    font-size: 3rem;
+    margin-bottom: 14px;
+    opacity: 0.25;
+    display: inline-block;
+}
+.empty-state-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.empty-state-hint {
+    font-size: 0.85rem;
+    margin-top: 6px;
+}
+
+/* ==========================================================================
    PAGINATION
    ========================================================================== */
 .pagination-container {
@@ -1485,6 +1584,14 @@ img {
 /* ==========================================================================
    RESPONSIVE (Mobile & Tablet)
    ========================================================================== */
+/* Point intermédiaire : petites fenêtres desktop / tablette paysage.
+   Le header compresse la recherche avant de masquer la navigation à 768px. */
+@media (max-width: 1160px) {
+    .header-inner { gap: 16px; padding: 0 24px; }
+    .search-bar { max-width: 220px; }
+    .nav-link { padding: 6px 9px; font-size: 0.86rem; }
+}
+
 @media (max-width: 1024px) {
     .detail-layout-content {
         grid-template-columns: 180px 1fr;
@@ -1496,20 +1603,22 @@ img {
     .hero-slide-content {
         max-width: 460px;
     }
-    .hero-slide-title {
-        font-size: 2rem;
-    }
 
-    /* Sections — Tablet */
+    /* Sections — Tablet (l'échelle du titre hero est fluide via clamp) */
     .content-section {
-        margin-bottom: 28px;
+        margin-bottom: 30px;
     }
     .content-section--important {
-        margin-bottom: 36px;
+        margin-bottom: 40px;
     }
 }
 
 @media (max-width: 768px) {
+    :root {
+        /* Cartes de rail plus étroites : ~3 visibles + amorce de la suivante
+           (signal de scroll horizontal), défilement moins long. */
+        --card-w-rail: 118px;
+    }
     .site-header { padding: 0 16px; }
     .header-inner { padding: 0; gap: 14px; } /* le header mobile = logo + recherche : gap réduit pour 320px */
     .main-nav { display: none; }
@@ -1597,13 +1706,13 @@ img {
 
     /* Sections — Mobile plus compact */
     .content-section {
-        margin-bottom: 24px;
+        margin-bottom: 26px;
     }
     .content-section--important {
-        margin-bottom: 28px;
+        margin-bottom: 34px;
     }
     .content-section--compact {
-        margin-bottom: 16px;
+        margin-bottom: 20px;
     }
     .section-header {
         margin-bottom: 10px;

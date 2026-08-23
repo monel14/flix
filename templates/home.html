@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% from "_macros.html" import version_badge %}
 
 {% block title %}Nokaflix — Regarder Films, Séries, K-Dramas & Animés en Streaming HD{% endblock %}
 
 {% block content %}
 
-<!-- 1. CINEMATIC HERO SHOWCASE (Chantier 3) -->
+<!-- 1. CINEMATIC HERO SHOWCASE -->
 {% if hero_slides %}
 <section class="hero-slider-section" id="hero-slider">
     <div class="hero-slides-wrapper">
@@ -27,6 +28,12 @@
                     <a href="/film/{{ slide.slug }}" class="btn-cta btn-cta--primary btn-cta--big">
                         <i class="fas fa-play"></i> Regarder
                     </a>
+                    <button type="button"
+                            class="btn-cta btn-cta--secondary hero-watchlist-btn"
+                            data-item='{{ {"title": slide.title, "slug": slide.slug, "image": slide.image, "version": slide.version or "", "type": slide.content_type or "movie"} | tojson }}'
+                            aria-label="Ajouter {{ slide.title }} à ma liste">
+                        <i class="fas fa-plus"></i> <span>Ma Liste</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -74,7 +81,7 @@
             <div class="top-card-inner">
                 <div class="card-poster-wrap">
                     <img src="{{ item.image }}" alt="{{ item.title }}" loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}">
-                    {% if item.version %}<span class="card-badge card-badge--vf">{{ item.version }}</span>{% endif %}
+                    {{ version_badge(item.version) }}
                     <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
                 </div>
             </div>
@@ -85,7 +92,59 @@
 {% endif %}
 
 
-<!-- 4. ANIMÉS JAPONAIS -->
+<!-- 4. FILMS — catalogue principal, placé avant les sections "univers" -->
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title">Films</h2>
+        <a href="/films" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="cards-rail">
+        {% for item in recent_movies %}
+        <a href="/film/{{ item.slug }}" class="stream-card">
+            <div class="card-poster-wrap">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {{ version_badge(item.version) }}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
+            </div>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+                <p class="card-meta-line"><span>Film</span></p>
+            </div>
+        </a>
+        {% else %}
+        <p style="color: var(--text-dim);">Aucun film disponible pour le moment.</p>
+        {% endfor %}
+    </div>
+</section>
+
+
+<!-- 5. SÉRIES — second pilier du catalogue (même importance que Films) -->
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title">Séries</h2>
+        <a href="/series" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="cards-rail">
+        {% for item in recent_series %}
+        <a href="/film/{{ item.slug }}" class="stream-card">
+            <div class="card-poster-wrap">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {{ version_badge(item.version) }}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
+            </div>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+                <p class="card-meta-line"><span>Série</span></p>
+            </div>
+        </a>
+        {% else %}
+        <p style="color: var(--text-dim);">Aucune série disponible pour le moment.</p>
+        {% endfor %}
+    </div>
+</section>
+
+
+<!-- 6. ANIMÉS — section "univers", exploration après les catalogues -->
 {% if popular_animes %}
 <section class="content-section">
     <div class="section-header">
@@ -94,14 +153,10 @@
     </div>
     <div class="cards-rail">
         {% for item in popular_animes %}
-        <a href="/anime/{{ item.slug }}" class="stream-card" style="width: 155px;">
+        <a href="/anime/{{ item.slug }}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version == 'VF' %}
-                <span class="card-badge card-badge--vf">VF</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr">VOSTFR</span>
-                {% endif %}
+                {{ version_badge(item.version) }}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">
@@ -117,23 +172,19 @@
 {% endif %}
 
 
-<!-- 5. K-DRAMAS POPULAIRES -->
+<!-- 7. K-DRAMAS — dernière section, clôture de la page -->
 {% if popular_dramas %}
-<section class="content-section">
+<section class="content-section content-section--compact">
     <div class="section-header">
         <h2 class="section-title">K-Dramas</h2>
         <a href="/dramas" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
     </div>
     <div class="cards-rail">
         {% for item in popular_dramas %}
-        <a href="/drama/{{ item.slug }}" class="stream-card" style="width: 155px;">
+        <a href="/drama/{{ item.slug }}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version == 'VF' %}
-                <span class="card-badge card-badge--vf">VF</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr">VOSTFR</span>
-                {% endif %}
+                {{ version_badge(item.version) }}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">
@@ -148,72 +199,13 @@
 </section>
 {% endif %}
 
-
-<!-- 6. FILMS RÉCENTS -->
-<section class="content-section">
-    <div class="section-header">
-        <h2 class="section-title">Films</h2>
-        <a href="/films" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
-    </div>
-    <div class="cards-rail">
-        {% for item in recent_movies %}
-        <a href="/film/{{ item.slug }}" class="stream-card" style="width: 155px;">
-            <div class="card-poster-wrap">
-                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version == 'VF' %}
-                <span class="card-badge card-badge--vf">{{ item.version }}</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr">{{ item.version }}</span>
-                {% endif %}
-                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
-            </div>
-            <div class="card-details">
-                <p class="card-title">{{ item.title }}</p>
-                <p class="card-meta-line"><span>Film</span></p>
-            </div>
-        </a>
-        {% else %}
-        <p style="color: var(--text-dim);">Aucun film disponible pour le moment.</p>
-        {% endfor %}
-    </div>
-</section>
-
-
-<!-- 7. SÉRIES RÉCENTES -->
-<section class="content-section content-section--compact">
-    <div class="section-header">
-        <h2 class="section-title">Séries</h2>
-        <a href="/series" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
-    </div>
-    <div class="cards-rail">
-        {% for item in recent_series %}
-        <a href="/film/{{ item.slug }}" class="stream-card" style="width: 155px;">
-            <div class="card-poster-wrap">
-                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                {% if item.version == 'VF' %}
-                <span class="card-badge card-badge--vf">{{ item.version }}</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr">{{ item.version }}</span>
-                {% endif %}
-                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
-            </div>
-            <div class="card-details">
-                <p class="card-title">{{ item.title }}</p>
-                <p class="card-meta-line"><span>Série</span></p>
-            </div>
-        </a>
-        {% else %}
-        <p style="color: var(--text-dim);">Aucune série disponible pour le moment.</p>
-        {% endfor %}
-    </div>
-</section>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
 (function() {
     // 1. Slider Hero
+    const heroSection = document.getElementById('hero-slider');
     const slides = document.querySelectorAll('.hero-slide');
     const dots = document.querySelectorAll('.hero-dot');
     const prevBtn = document.getElementById('hero-prev');
@@ -240,13 +232,65 @@
             dot.addEventListener('click', () => { goToSlide(i); resetAuto(); });
         });
 
-        function startAuto() { autoTimer = setInterval(nextSlide, 7000); }
-        function resetAuto() { clearInterval(autoTimer); startAuto(); }
+        function startAuto() {
+            if (autoTimer) return;
+            autoTimer = setInterval(nextSlide, 7000);
+        }
+        function stopAuto() {
+            clearInterval(autoTimer);
+            autoTimer = null;
+        }
+        function resetAuto() { stopAuto(); startAuto(); }
+
+        // Mise en pause de la rotation pendant la lecture du slide
+        // (survol souris, navigation clavier, onglet en arrière-plan)
+        if (heroSection) {
+            heroSection.addEventListener('mouseenter', stopAuto);
+            heroSection.addEventListener('mouseleave', startAuto);
+            heroSection.addEventListener('focusin', stopAuto);
+            heroSection.addEventListener('focusout', startAuto);
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) { stopAuto(); } else { startAuto(); }
+        });
 
         startAuto();
     }
 
-    // 2. Affichage dynamique du rail "Reprendre la lecture"
+    // 2. Boutons "Ma Liste" du Hero (état persisté via localStorage)
+    document.querySelectorAll('.hero-watchlist-btn').forEach(btn => {
+        if (!window.NokaflixWatchlist) return;
+        let item = null;
+        try { item = JSON.parse(btn.dataset.item); } catch (e) { return; }
+
+        function updateBtn() {
+            const inList = window.NokaflixWatchlist.has(item.slug);
+            if (inList) {
+                btn.innerHTML = '<i class="fas fa-check"></i> <span>Dans ma liste</span>';
+                btn.setAttribute('aria-label', 'Retirer ' + item.title + ' de ma liste');
+            } else {
+                btn.innerHTML = '<i class="fas fa-plus"></i> <span>Ma Liste</span>';
+                btn.setAttribute('aria-label', 'Ajouter ' + item.title + ' à ma liste');
+            }
+        }
+
+        btn.addEventListener('click', () => {
+            const added = window.NokaflixWatchlist.toggle(item);
+            updateBtn();
+            if (added) {
+                btn.classList.remove('watchlist-confirmed');
+                void btn.offsetWidth; // relance l'animation en cas de clics rapprochés
+                btn.classList.add('watchlist-confirmed');
+            }
+        });
+        btn.addEventListener('animationend', () => btn.classList.remove('watchlist-confirmed'));
+
+        updateBtn();
+    });
+
+    // 3. Affichage dynamique du rail "Reprendre la lecture".
+    //    Pas de barre de progression : la position réelle n'est pas connue,
+    //    la carte affiche honnêtement le titre et l'épisode à reprendre.
     if (window.NokaflixHistory) {
         const history = window.NokaflixHistory.get();
         if (history && history.length > 0) {
@@ -257,7 +301,6 @@
                     <a href="${item.url}" class="history-card">
                         <div class="history-thumb-wrap">
                             <img src="${item.image}" alt="${item.title}">
-                            <div class="history-progress-bar"><div class="history-progress-fill"></div></div>
                             <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
                         </div>
                         <div class="history-info">

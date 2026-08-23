@@ -34,12 +34,12 @@
         <div class="detail-meta-column">
             <div class="detail-chips-row">
                 {% if anime.version == 'VF' %}
-                <span class="card-badge card-badge--vf" style="position: static;">VF</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr" style="position: static;">VOSTFR</span>
+                <span class="card-badge card-badge--vf card-badge--static">VF</span>
+                {% elif anime.version %}
+                <span class="card-badge card-badge--vostfr card-badge--static">{{ anime.version }}</span>
                 {% endif %}
-                {% if anime.year %}<span class="detail-meta-chip">· {{ anime.year }}</span>{% endif %}
-                {% if anime.status %}<span class="detail-meta-chip">· {{ anime.status }}</span>{% endif %}
+                {% if anime.year %}<span class="detail-meta-chip">{{ anime.year }}</span>{% endif %}
+                {% if anime.status %}<span class="detail-meta-chip">{{ anime.status }}</span>{% endif %}
             </div>
 
             <h1 class="detail-main-title">{{ anime.title }}</h1>

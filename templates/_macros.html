@@ -1,0 +1,20 @@
+{# ==========================================================================
+   MACROS PARTAGÉES — Nokaflix
+   ========================================================================== #}
+
+{# Badge de version linguistique.
+   Règle produit : on n'affiche un badge QUE si l'information est connue.
+   - Versions françaises (VF, FRENCH, TRUEFRENCH) -> badge rouge discret
+   - Autres versions connues (VOSTFR, VO...)      -> badge sombre neutre
+   - Version inconnue / absente                   -> aucun badge
+     (mieux vaut l'absence d'information qu'une information fausse) #}
+{% macro version_badge(version) %}
+    {% set v = (version or '') | trim | upper %}
+    {% if v %}
+        {% if 'VF' in v or 'FRENCH' in v %}
+        <span class="card-badge card-badge--vf">{{ v }}</span>
+        {% else %}
+        <span class="card-badge card-badge--vostfr">{{ v }}</span>
+        {% endif %}
+    {% endif %}
+{% endmacro %}

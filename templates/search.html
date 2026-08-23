@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import version_badge %}
 
 {% block title %}{{ 'Résultats pour "' ~ query ~ '"' if query else 'Explorer & Rechercher' }} — Nokaflix{% endblock %}
 {% block search_value %}{{ query }}{% endblock %}
@@ -27,15 +28,15 @@
     {% endif %}
 
     {% if not query %}
-    <div style="text-align: center; padding: 60px 20px; color: var(--text-dim);">
-        <i class="fas fa-compass" style="font-size: 3rem; margin-bottom: 14px; opacity: 0.25;"></i>
-        <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Tapez un nom de film, série, K-Drama ou animé pour explorer.</p>
+    <div class="empty-state">
+        <i class="fas fa-compass"></i>
+        <p class="empty-state-title">Tapez un nom de film, série, K-Drama ou animé pour explorer.</p>
     </div>
     {% elif not results and not error %}
-    <div style="text-align: center; padding: 60px 20px; color: var(--text-dim);">
-        <i class="fas fa-film" style="font-size: 3rem; margin-bottom: 14px; opacity: 0.25;"></i>
-        <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Aucun résultat trouvé pour « {{ query }} ».</p>
-        <p style="font-size: 0.85rem; margin-top: 6px;">Essayez avec un autre mot-clé ou parcourez nos catégories.</p>
+    <div class="empty-state">
+        <i class="fas fa-film"></i>
+        <p class="empty-state-title">Aucun résultat trouvé pour « {{ query }} ».</p>
+        <p class="empty-state-hint">Essayez avec un autre mot-clé ou parcourez nos catégories.</p>
     </div>
     {% else %}
     <div class="cards-grid">
@@ -43,13 +44,7 @@
         <a href="{% if item.type == 'drama' %}/drama/{{ item.slug }}{% elif item.type == 'anime' %}/anime/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                
-                {% if item.version == 'VF' %}
-                <span class="card-badge card-badge--vf">VF</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr">VOSTFR</span>
-                {% endif %}
-                
+                {{ version_badge(item.version) }}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">

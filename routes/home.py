@@ -21,7 +21,7 @@ from scraper.voirdrama_client import voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_list
 from scraper.voiranime_client import voiranime_get_html
 from scraper.voiranime_parser import parse_voiranime_list
-from services.dedup import merge_variants
+from services.dedup import canonical_slug, merge_variants
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -147,11 +147,26 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         fetch_animes(),
     )
 
+    movies_items = movies_data.get("items", [])[:24]
+    series_items = series_data.get("items", [])[:24]
+
+    # Inférence du type (film/série) des slides du hero SANS requête supplémentaire :
+    # on croise leurs slugs canoniques avec les catalogues déjà chargés ci-dessus.
+    # Sert à enregistrer le bon type quand le titre est ajouté à "Ma Liste" depuis le hero.
+    if isinstance(hero_slides, list) and hero_slides:
+        movie_keys = {canonical_slug(i.get("slug", "")) for i in movies_items} - {""}
+        series_keys = {canonical_slug(i.get("slug", "")) for i in series_items} - {""}
+        for slide in hero_slides:
+            if not isinstance(slide, dict):
+                continue
+            key = canonical_slug(slide.get("slug", ""))
+            slide["content_type"] = "series" if key and key in series_keys and key not in movie_keys else "movie"
+
     return templates.TemplateResponse(request, "home.html", {
         "request": request,
         "hero_slides": hero_slides if isinstance(hero_slides, list) else [],
-        "recent_movies": movies_data.get("items", [])[:24],
-        "recent_series": series_data.get("items", [])[:24],
+        "recent_movies": movies_items,
+        "recent_series": series_items,
         "popular_dramas": popular_dramas if isinstance(popular_dramas, list) else [],
         "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
         "top": top[:10] if isinstance(top, list) else [],

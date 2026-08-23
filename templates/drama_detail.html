@@ -34,13 +34,13 @@
         <div class="detail-meta-column">
             <div class="detail-chips-row">
                 {% if drama.version == 'VF' %}
-                <span class="card-badge card-badge--vf" style="position: static;">VF</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr" style="position: static;">VOSTFR</span>
+                <span class="card-badge card-badge--vf card-badge--static">VF</span>
+                {% elif drama.version %}
+                <span class="card-badge card-badge--vostfr card-badge--static">{{ drama.version }}</span>
                 {% endif %}
-                {% if drama.country %}<span class="detail-meta-chip">· {{ drama.country }}</span>{% endif %}
-                {% if drama.year %}<span class="detail-meta-chip">· {{ drama.year }}</span>{% endif %}
-                {% if drama.status %}<span class="detail-meta-chip">· {{ drama.status }}</span>{% endif %}
+                {% if drama.country %}<span class="detail-meta-chip">{{ drama.country }}</span>{% endif %}
+                {% if drama.year %}<span class="detail-meta-chip">{{ drama.year }}</span>{% endif %}
+                {% if drama.status %}<span class="detail-meta-chip">{{ drama.status }}</span>{% endif %}
             </div>
 
             <h1 class="detail-main-title">{{ drama.title }}</h1>

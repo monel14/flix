@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import version_badge %}
 
 {% block title %}{{ section_label }} en Streaming HD — Nokaflix{% endblock %}
 
@@ -73,14 +74,7 @@
         <a href="{% if item.type == 'drama' or section == 'dramas' %}/drama/{{ item.slug }}{% elif item.type == 'anime' or section == 'animes' %}/anime/{{ item.slug }}{% else %}/film/{{ item.slug }}{% endif %}" class="stream-card">
             <div class="card-poster-wrap">
                 <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                
-                <!-- Micro-Badge Sobre -->
-                {% if item.version == 'VF' %}
-                <span class="card-badge card-badge--vf">VF</span>
-                {% else %}
-                <span class="card-badge card-badge--vostfr">VOSTFR</span>
-                {% endif %}
-                
+                {{ version_badge(item.version) }}
                 <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
             </div>
             <div class="card-details">
@@ -101,9 +95,9 @@
             </div>
         </a>
         {% else %}
-        <div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-dim);">
-            <i class="fas fa-film" style="font-size: 2.5rem; margin-bottom: 12px; opacity: 0.3;"></i>
-            <p>Aucun titre trouvé avec ces critères de filtre.</p>
+        <div class="empty-state" style="grid-column: 1 / -1;">
+            <i class="fas fa-film"></i>
+            <p class="empty-state-title">Aucun titre trouvé avec ces critères de filtre.</p>
         </div>
         {% endfor %}
     </div>
