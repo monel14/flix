@@ -108,7 +108,6 @@
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-meta-line"><span>Film</span></p>
             </div>
         </a>
         {% else %}
@@ -134,7 +133,6 @@
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-meta-line"><span>Série</span></p>
             </div>
         </a>
         {% else %}
@@ -161,9 +159,9 @@
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-meta-line">
-                    {% if item.latest_episode %}<span>Ép. {{ item.latest_episode }}</span>{% else %}<span>Animé</span>{% endif %}
-                </p>
+                {% if item.latest_episode %}
+                <p class="card-meta-line"><span>Ép. {{ item.latest_episode }}</span></p>
+                {% endif %}
             </div>
         </a>
         {% endfor %}
@@ -189,9 +187,9 @@
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-meta-line">
-                    {% if item.latest_episode %}<span>Ép. {{ item.latest_episode }}</span>{% else %}<span>K-Drama</span>{% endif %}
-                </p>
+                {% if item.latest_episode %}
+                <p class="card-meta-line"><span>Ép. {{ item.latest_episode }}</span></p>
+                {% endif %}
             </div>
         </a>
         {% endfor %}
@@ -232,8 +230,12 @@
             dot.addEventListener('click', () => { goToSlide(i); resetAuto(); });
         });
 
+        // Accessibilité : pas de rotation automatique si l'utilisateur
+        // préfère réduire les animations (les contrôles manuels restent).
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
         function startAuto() {
-            if (autoTimer) return;
+            if (autoTimer || reduceMotion.matches) return;
             autoTimer = setInterval(nextSlide, 7000);
         }
         function stopAuto() {

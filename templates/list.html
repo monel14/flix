@@ -6,12 +6,9 @@
 {% block content %}
 <section class="content-section">
     <div class="section-header">
-        <h1 class="section-title">
+        <h1 class="section-title section-title--page">
             {{ section_label }}
         </h1>
-        <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim);">
-            Page {{ current_page }} sur {{ last_page }}
-        </div>
     </div>
 
     <!-- Toolbar Compacte : Version + Genre + Tri (Chantier 4) -->
@@ -79,19 +76,9 @@
             </div>
             <div class="card-details">
                 <p class="card-title">{{ item.title }}</p>
-                <p class="card-meta-line">
-                    {% if item.latest_episode %}
-                    <span>Ép. {{ item.latest_episode }}</span>
-                    {% elif section == 'films' %}
-                    <span>Film</span>
-                    {% elif section == 'series' %}
-                    <span>Série</span>
-                    {% elif section == 'dramas' %}
-                    <span>K-Drama</span>
-                    {% elif section == 'animes' %}
-                    <span>Animé</span>
-                    {% endif %}
-                </p>
+                {% if item.latest_episode %}
+                <p class="card-meta-line"><span>Ép. {{ item.latest_episode }}</span></p>
+                {% endif %}
             </div>
         </a>
         {% else %}

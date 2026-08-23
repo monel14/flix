@@ -5,7 +5,7 @@
 {% block content %}
 <section class="content-section">
     <div class="section-header">
-        <h1 class="section-title">
+        <h1 class="section-title section-title--page">
             <i class="fas fa-bookmark"></i>
             Ma Liste de Favoris
         </h1>
@@ -100,7 +100,7 @@
                         <a href="${targetUrl}"><p class="card-title">${item.title}</p></a>
                         <p class="card-meta-line"><span>${typeLabel}</span></p>
                     </div>
-                    <button class="remove-fav-btn" data-slug="${item.slug}" title="Retirer de ma liste" style="background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; font-size: 0.9rem;">
+                    <button class="remove-fav-btn" data-slug="${item.slug}" title="Retirer de ma liste">
                         <i class="fas fa-trash-can"></i>
                     </button>
                 </div>

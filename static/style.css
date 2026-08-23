@@ -341,6 +341,10 @@ img {
     pointer-events: none;
     transition: opacity 0.6s ease-in-out;
     padding: 48px 52px;
+    /* Le slide actif redevient "relative" (voir ci-dessous) : sans ce min-height
+       il ne remplirait pas le wrapper (450px) et laisserait une bande noire
+       sous le contenu quand celui-ci est court. */
+    min-height: inherit;
 }
 
 .hero-slide.active {
@@ -549,6 +553,9 @@ img {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap; /* petits écrans : le 2e élément (onglets…) passe en dessous proprement */
+    row-gap: 8px;
+    column-gap: 12px;
     margin-bottom: 12px;
 }
 
@@ -567,19 +574,27 @@ img {
     font-weight: 800;
 }
 
+/* Titre de page (Catalogue, Recherche, Ma Liste) : un palier au-dessus
+   des titres de rails, sans devenir un composant spectaculaire. */
+.section-title--page {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+}
+
 .see-all-link {
     font-size: 0.80rem;
     font-weight: 600;
-    color: var(--text-dim);
+    /* dim @ 70% d'opacité était à peine perceptible ; muted plein reste
+       secondaire tout en étant réellement découvrable. */
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 4px;
     transition: var(--transition-fast);
-    opacity: 0.7;
 }
 .see-all-link:hover {
     color: var(--text-pure);
-    opacity: 1;
 }
 
 /* Top Tabs Selector */
@@ -819,7 +834,9 @@ img {
     font-weight: 800;
     line-height: 0.75;
     color: var(--bg-base);
-    -webkit-text-stroke: 2px rgba(255, 255, 255, 0.22);
+    /* 0.22 était quasi invisible sur fond sombre ; 0.4 garde l'effet
+       "numéro creux" tout en rendant le rang réellement lisible. */
+    -webkit-text-stroke: 2px rgba(255, 255, 255, 0.4);
     margin-right: -18px;
     z-index: 2;
     pointer-events: none;
@@ -991,7 +1008,10 @@ img {
     height: 480px;
     background-size: cover;
     background-position: center 20%;
-    filter: blur(20px) brightness(0.2);
+    /* Ambiance de couleur perceptible sans voler la vedette au contenu :
+       0.2 rendait le backdrop quasi noir (effet perdu), 0.38 le rend lisible. */
+    filter: blur(24px) brightness(0.38);
+    transform: scale(1.06); /* évite les bords transparents créés par le flou */
     z-index: 1;
     pointer-events: none;
 }
@@ -1417,6 +1437,18 @@ img {
     color: #fff;
 }
 
+/* Séparateur de saison dans la playlist (uniquement si plusieurs saisons) */
+.playlist-season-sep {
+    align-self: center;
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    padding: 0 4px;
+}
+
 /* ==========================================================================
    BOUTON & MODAL DE PARTAGE VIRAL
    ========================================================================== */
@@ -1723,6 +1755,26 @@ img {
     .section-title--large {
         font-size: 1.05rem;
     }
+    .section-title--page {
+        font-size: 1.15rem;
+    }
+
+    /* Onglets Top 10 : défilement horizontal plutôt qu'empilement cassé */
+    .top-tabs-bar {
+        overflow-x: auto;
+        max-width: 100%;
+        scrollbar-width: none;
+    }
+    .top-tabs-bar::-webkit-scrollbar { display: none; }
+}
+
+/* Téléphones : le catalogue se parcourt à 3 colonnes (densité type app),
+   au lieu de 2 colonnes de cartes géantes. */
+@media (max-width: 540px) {
+    .cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
 }
 
 /* Réduction de mouvement — Accessibilité */
@@ -1768,6 +1820,28 @@ img {
 }
 .watchlist-confirmed {
     animation: watchlist-confirm 180ms ease-out;
+}
+
+/* Bouton de suppression (Ma Liste) — action destructive discrète mais
+   avec une zone tactile réelle (32px minimum). */
+.remove-fav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin: -6px -6px 0 0; /* la zone tactile déborde sans décaler la mise en page */
+    background: none;
+    border: none;
+    border-radius: var(--radius-btn);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: var(--transition-fast);
+}
+.remove-fav-btn:hover {
+    color: var(--brand);
+    background: var(--brand-dim);
 }
 
 /* Focus clavier visible — uniquement :focus-visible (pas de halo à la souris).

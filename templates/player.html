@@ -79,15 +79,32 @@
 
     <!-- 4. PLAYLIST DES ÉPISODES (Séries) -->
     {% if episodes %}
+    {% set seasons = episodes | selectattr('season') | map(attribute='season') | list %}
     <div class="player-playlist-box">
         <h2 class="playlist-heading"><i class="fas fa-list-ol"></i> Tous les épisodes</h2>
         <div class="playlist-rail">
+            {% if seasons | unique | list | length > 1 and seasons | length == episodes | length %}
+            {# Plusieurs saisons : séparateur discret au changement de saison,
+               sinon deux "Épisode 1" se suivraient sans distinction. #}
+            {% set ns = namespace(prev_season=None) %}
+            {% for ep in episodes %}
+                {% if ep.season != ns.prev_season %}
+                <span class="playlist-season-sep">S{{ ep.season }}</span>
+                {% set ns.prev_season = ep.season %}
+                {% endif %}
+            <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}"
+               class="playlist-ep-chip {% if ep.episode_id|string == episode_id|string %}active{% endif %}">
+                {{ ep.title }}
+            </a>
+            {% endfor %}
+            {% else %}
             {% for ep in episodes %}
             <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}"
                class="playlist-ep-chip {% if ep.episode_id|string == episode_id|string %}active{% endif %}">
                 {{ ep.title }}
             </a>
             {% endfor %}
+            {% endif %}
         </div>
     </div>
     {% endif %}
