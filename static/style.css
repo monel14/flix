@@ -311,6 +311,14 @@ img {
     width: 100%;
     margin: 0 auto;
     padding: 0 32px 64px;
+    /* Le décor absolu .detail-backdrop-full (full-bleed -padding, flou via
+       scale(1.06)) déborde volontairement de son contexte : on le rogne
+       ici au niveau du conteneur, SANS changer son scale ni son étendue,
+       pour éviter ~12px de débord horizontal des fiches en mobile.
+       Fallback `hidden` puis `clip` (clip ne crée pas de contexte de
+       défilement, contrairement à hidden). */
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 /* ==========================================================================
@@ -732,6 +740,14 @@ img {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 16px;
+}
+/* Anti-débordement mobile : les tracks `auto` d'un grid prennent le
+   min-content de leurs items ; or .card-title est en white-space:nowrap,
+   donc un titre long élargissait les pistes au-delà du viewport
+   (ex. /recherche : +692px de débord). min-width:0 rend les tracks
+   fluides sans toucher aux minmax (150px/115px) déclarés par breakpoint. */
+.cards-grid > * {
+    min-width: 0;
 }
 
 .cards-rail {
