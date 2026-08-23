@@ -116,9 +116,15 @@
     }
 
     btn.addEventListener('click', () => {
-        window.NokaflixWatchlist.toggle(dramaObj);
+        const added = window.NokaflixWatchlist.toggle(dramaObj);
         updateBtn();
+        if (added) {
+            btn.classList.remove('watchlist-confirmed');
+            void btn.offsetWidth; // relance l'animation en cas de clics rapprochés
+            btn.classList.add('watchlist-confirmed');
+        }
     });
+    btn.addEventListener('animationend', () => btn.classList.remove('watchlist-confirmed'));
 
     updateBtn();
 

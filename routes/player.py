@@ -80,10 +80,10 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
     # Épisode courant
     current_ep = next((e for e in episodes if str(e["episode_id"]) == str(episode_id)), None)
 
-    # Épisode précédent / suivant
+    # Épisode précédent / suivant (liste des épisodes en ordre croissant)
     ep_index = next((i for i, e in enumerate(episodes) if str(e["episode_id"]) == str(episode_id)), -1)
-    prev_ep = episodes[ep_index + 1] if ep_index >= 0 and ep_index + 1 < len(episodes) else None
-    next_ep = episodes[ep_index - 1] if ep_index > 0 else None
+    prev_ep = episodes[ep_index - 1] if ep_index > 0 else None
+    next_ep = episodes[ep_index + 1] if ep_index >= 0 and ep_index + 1 < len(episodes) else None
 
     return templates.TemplateResponse(request, "player.html", {
         "request": request,

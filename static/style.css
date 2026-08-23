@@ -245,8 +245,16 @@ img {
     text-transform: uppercase;
     margin-top: 1px;
 }
+/* État transitoire du dropdown (recherche en cours / aucun résultat) */
+.dd-status {
+    padding: 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-align: center;
+}
 
-/* Mobile Bottom Navigation Bar */
+/* Mobile Bottom Navigation Bar — 5 onglets à largeur égale */
 .mobile-bottom-bar {
     display: none;
     position: fixed;
@@ -258,8 +266,7 @@ img {
     backdrop-filter: blur(16px);
     border-top: 1px solid var(--border-subtle);
     z-index: 999;
-    justify-content: space-around;
-    align-items: center;
+    grid-template-columns: repeat(5, 1fr);
 }
 .mobile-tab {
     display: flex;
@@ -267,14 +274,18 @@ img {
     align-items: center;
     justify-content: center;
     gap: 2px;
+    min-height: 44px; /* zone tactile confortable (cellule étirée sur les 56px) */
     color: var(--text-muted);
     font-size: 0.68rem;
     font-weight: 600;
-    padding: 4px 8px;
+    padding: 4px 2px;
     border-radius: var(--radius-sm);
 }
 .mobile-tab i { font-size: 1rem; }
-.mobile-tab.active { color: var(--brand); }
+.mobile-tab.active {
+    color: var(--brand);
+    background: transparent;
+}
 
 /* ==========================================================================
    MAIN WRAPPER
@@ -539,12 +550,6 @@ img {
     font-weight: 800;
 }
 
-.section-title--small {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-muted);
-}
-
 .see-all-link {
     font-size: 0.80rem;
     font-weight: 600;
@@ -660,6 +665,11 @@ img {
     display: flex;
     gap: 12px;
     overflow-x: auto;
+    /* Marge interne de survol : évite le rognage du lift translateY(-6px/-4px)
+       en haut du rail. Compensée par le margin-top négatif -> aucun changement
+       d'espacement visuel entre les sections. */
+    padding-top: 8px;
+    margin-top: -8px;
     padding-bottom: 8px;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
@@ -976,16 +986,6 @@ img {
     color: var(--text-pure);
 }
 
-.detail-meta-line {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
 .detail-genres-row {
     display: flex;
     flex-wrap: wrap;
@@ -1177,6 +1177,15 @@ img {
 .player-ctrl-btn:hover {
     background: rgba(255, 255, 255, 0.16);
 }
+/* Bouton Suivant : emphase discrète en outline (pas de rouge primaire) */
+.player-ctrl-btn--next {
+    background: transparent;
+    border-color: var(--border-focus);
+}
+.player-ctrl-btn--next:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.35);
+}
 
 /* Sélecteur de Serveurs Épuré */
 .servers-selector-bar {
@@ -1238,15 +1247,47 @@ img {
     border: none;
 }
 
-/* Raccourcis Clavier Player Guide */
+/* État d'indisponibilité du lecteur (sobre, non bloquant) */
+.player-frame-status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(8, 9, 12, 0.72);
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 16px;
+    pointer-events: none; /* ne bloque jamais l'interaction avec le lecteur */
+    z-index: 1;
+}
+
+/* Raccourcis Clavier — aide discrète repliée par défaut */
+.player-shortcuts-details {
+    font-size: 0.74rem;
+    color: var(--text-dim);
+    padding: 2px 2px;
+}
+.player-shortcuts-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    width: fit-content;
+    transition: var(--transition-fast);
+}
+.player-shortcuts-details summary:hover,
+.player-shortcuts-details[open] summary {
+    color: var(--text-muted);
+}
 .player-shortcuts-bar {
     display: flex;
     align-items: center;
     gap: 14px;
     flex-wrap: wrap;
-    font-size: 0.74rem;
-    color: var(--text-dim);
-    padding: 2px 2px;
+    padding: 8px 2px 2px;
 }
 .shortcut-key {
     background: rgba(255, 255, 255, 0.08);
@@ -1470,9 +1511,9 @@ img {
 
 @media (max-width: 768px) {
     .site-header { padding: 0 16px; }
-    .header-inner { padding: 0; }
+    .header-inner { padding: 0; gap: 14px; } /* le header mobile = logo + recherche : gap réduit pour 320px */
     .main-nav { display: none; }
-    .mobile-bottom-bar { display: flex; }
+    .mobile-bottom-bar { display: grid; }
     .site-main { padding: 0 16px 80px; }
 
     .hero-slider-section {
@@ -1536,7 +1577,7 @@ img {
         max-width: 150px;
         margin: 0 auto;
     }
-    .detail-meta-line, .detail-genres-row {
+    .detail-genres-row {
         justify-content: center;
     }
 
@@ -1550,6 +1591,9 @@ img {
 
     .catalog-toolbar { flex-direction: column; align-items: stretch; }
     .toolbar-group { justify-content: space-between; }
+
+    /* Player — raccourcis clavier non pertinents au tactile */
+    .player-shortcuts-details { display: none; }
 
     /* Sections — Mobile plus compact */
     .content-section {
@@ -1574,6 +1618,14 @@ img {
 
 /* Réduction de mouvement — Accessibilité */
 @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
     .stream-card,
     .stream-card:hover,
     .card-poster-wrap img,
@@ -1593,4 +1645,26 @@ img {
     .stream-card:hover .card-play-btn {
         transform: scale(1);
     }
+}
+
+/* ==========================================================================
+   ÉTATS & MICRO-INTERACTIONS (Phase 8)
+   ========================================================================== */
+
+/* Confirmation d'ajout à Ma Liste — pulsation brève unique */
+@keyframes watchlist-confirm {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
+}
+.watchlist-confirmed {
+    animation: watchlist-confirm 180ms ease-out;
+}
+
+/* Focus clavier visible — uniquement :focus-visible (pas de halo à la souris).
+   :where() garde une spécificité nulle : les éléments qui possèdent déjà leur
+   propre style de focus (input recherche, select genres) le conservent. */
+:where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
 }

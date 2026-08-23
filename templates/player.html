@@ -31,7 +31,7 @@
             </a>
             {% endif %}
             {% if next_ep %}
-            <a href="/regarder/{{ slug }}/ep-{{ next_ep.episode_id }}" class="player-ctrl-btn" style="background: var(--brand);" title="{{ next_ep.title }}">
+            <a href="/regarder/{{ slug }}/ep-{{ next_ep.episode_id }}" class="player-ctrl-btn player-ctrl-btn--next" title="{{ next_ep.title }}">
                 Suivant <i class="fas fa-forward-step"></i>
             </a>
             {% endif %}
@@ -45,7 +45,7 @@
         <button class="server-pill-btn {% if loop.first %}active{% endif %}"
                 data-link="{{ srv.server_link }}"
                 data-idx="{{ loop.index0 }}">
-            <i class="fas fa-bolt"></i> {{ srv.server_name }}
+            {{ srv.server_name }}
             {% if srv.version %}<small>({{ srv.version }})</small>{% endif %}
         </button>
         {% endfor %}
@@ -58,17 +58,24 @@
                 allowfullscreen
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 referrerpolicy="no-referrer-when-downgrade"
-                frameborder="0"
                 scrolling="no">
         </iframe>
+        {% if not servers %}
+        <div class="player-frame-status">
+            <span class="frame-status-text">Aucune source de lecture disponible pour le moment.</span>
+        </div>
+        {% endif %}
     </div>
 
-    <!-- Guide des Raccourcis Clavier -->
-    <div class="player-shortcuts-bar">
-        <span><span class="shortcut-key">F</span> Plein écran</span>
-        <span><span class="shortcut-key">P</span> Épisode précédent</span>
-        <span><span class="shortcut-key">N</span> Épisode suivant</span>
-    </div>
+    <!-- Guide des Raccourcis Clavier (aide discrète) -->
+    <details class="player-shortcuts-details">
+        <summary>Raccourcis clavier</summary>
+        <div class="player-shortcuts-bar">
+            <span><span class="shortcut-key">F</span> Plein écran</span>
+            <span><span class="shortcut-key">P</span> Épisode précédent</span>
+            <span><span class="shortcut-key">N</span> Épisode suivant</span>
+        </div>
+    </details>
 
     <!-- 4. PLAYLIST DES ÉPISODES (Séries) -->
     {% if episodes %}
@@ -112,6 +119,7 @@
 
     // Gestion des raccourcis clavier
     document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return; // ne pas détourner les raccourcis navigateur (Ctrl+F, Cmd+P…)
         if (['input', 'textarea'].includes(document.activeElement.tagName.toLowerCase())) return;
         
         // F -> Plein écran

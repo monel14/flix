@@ -100,10 +100,6 @@
         <i class="fas fa-bookmark"></i>
         <span>Ma Liste</span>
     </a>
-    <a href="/recherche" class="mobile-tab {% if request.url.path == '/recherche' %}active{% endif %}">
-        <i class="fas fa-magnifying-glass"></i>
-        <span>Recherche</span>
-    </a>
 </nav>
 
 <!-- Share Modal Component -->
@@ -111,7 +107,7 @@
     <div class="share-modal-box">
         <div class="share-modal-title">
             <span>Partager ce titre</span>
-            <button class="share-close-btn" id="share-close-btn"><i class="fas fa-xmark"></i></button>
+            <button class="share-close-btn" id="share-close-btn" aria-label="Fermer"><i class="fas fa-xmark" aria-hidden="true"></i></button>
         </div>
         <div class="share-grid">
             <button class="share-btn-item whatsapp" id="share-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
@@ -138,6 +134,7 @@
     const dropdown = document.getElementById('search-dropdown');
     if (input && dropdown) {
         let timer = null;
+        let seq = 0; // évite qu'une réponse lente écrase une recherche plus récente
         input.addEventListener('input', () => {
             clearTimeout(timer);
             const q = input.value.trim();
@@ -146,12 +143,16 @@
                 return; 
             }
             timer = setTimeout(() => {
+                const mySeq = ++seq;
+                dropdown.innerHTML = '<div class="dd-status">Recherche…</div>';
+                dropdown.hidden = false;
                 fetch(`/api/search?q=${encodeURIComponent(q)}`)
                     .then(r => r.json())
                     .then(data => {
+                        if (mySeq !== seq) return;
                         const results = data.results || [];
                         if (!results.length) { 
-                            dropdown.hidden = true; 
+                            dropdown.innerHTML = '<div class="dd-status">Aucun résultat</div>';
                             return; 
                         }
                         dropdown.innerHTML = results.map(r => {
@@ -171,7 +172,7 @@
                         }).join('');
                         dropdown.hidden = false;
                     })
-                    .catch(() => { dropdown.hidden = true; });
+                    .catch(() => { if (mySeq === seq) dropdown.hidden = true; });
             }, 200);
         });
 
@@ -240,6 +241,8 @@
                 return true;
             }
         }
+    };
+
     // 4. Gestionnaire de Partage Social Viral
     window.openShareModal = function(title, url) {
         const shareUrl = url || window.location.href;
