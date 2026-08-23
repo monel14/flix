@@ -15,8 +15,9 @@
             {% endif %}
         </h1>
         {% if results %}
+        {% set n_results = results | length %}
         <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim);">
-            {{ results | length }} titre(s) trouvé(s)
+            {{ n_results }} titre{{ 's' if n_results > 1 }} trouvé{{ 's' if n_results > 1 }}
         </span>
         {% endif %}
     </div>

@@ -278,6 +278,53 @@
         modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('open'); };
         modal.classList.add('open');
     };
+
+    // 5. Navigation des rails horizontaux — chevrons discrets, desktop
+    //    uniquement (masqués en CSS sous 1024px). Le clic fait avancer le
+    //    rail d'environ une page de cartes ; chaque chevron n'est affiché
+    //    que lorsque le déplacement correspondant est possible.
+    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    document.querySelectorAll('.cards-rail').forEach(rail => {
+        if (rail.dataset.railEnhanced) return;
+        rail.dataset.railEnhanced = '1';
+
+        const shell = document.createElement('div');
+        shell.className = 'rail-shell';
+        rail.parentNode.insertBefore(shell, rail);
+        shell.appendChild(rail);
+
+        const scrollByPage = (dir) => rail.scrollBy({
+            left: dir * rail.clientWidth * 0.9,
+            behavior: reduceMotionQuery.matches ? 'auto' : 'smooth'
+        });
+
+        const makeBtn = (dir) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'rail-nav rail-nav--' + (dir < 0 ? 'prev' : 'next');
+            btn.setAttribute('aria-label', dir < 0 ? 'Faire défiler vers la gauche' : 'Faire défiler vers la droite');
+            btn.innerHTML = '<i class="fas fa-chevron-' + (dir < 0 ? 'left' : 'right') + '" aria-hidden="true"></i>';
+            btn.addEventListener('click', () => scrollByPage(dir));
+            return btn;
+        };
+        const prevBtn = makeBtn(-1);
+        const nextBtn = makeBtn(1);
+        shell.appendChild(prevBtn);
+        shell.appendChild(nextBtn);
+
+        const update = () => {
+            const maxScroll = rail.scrollWidth - rail.clientWidth;
+            const scrollable = maxScroll > 4;
+            prevBtn.hidden = !scrollable || rail.scrollLeft <= 4;
+            nextBtn.hidden = !scrollable || rail.scrollLeft >= maxScroll - 4;
+        };
+        rail.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        // Le rail « Reprendre la lecture » est rempli après coup (localStorage) :
+        // son apparition doit reconfigurer l'état des chevrons.
+        new MutationObserver(update).observe(rail, { childList: true });
+        update();
+    });
 })();
 </script>
 {% block scripts %}{% endblock %}

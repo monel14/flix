@@ -129,7 +129,11 @@ def parse_coflix_hero(html: str) -> list[CoflixHeroItem]:
             img = slide.select_one("img")
             thumb = img.get("src", "") if img else ""
         if thumb:
-            thumb = thumb.replace("/w300/", "/w500/")
+            # Le backdrop du Hero s'affiche jusqu'à ~1600px de large : on
+            # demande la taille supérieure w780 quand la source suit le
+            # schéma de tailles /wNNN/ ; home.html dérive l'URL w500 comme
+            # repli silencieux si la w780 n'existe pas réellement.
+            thumb = thumb.replace("/w300/", "/w780/")
 
         syn_tag = slide.select_one(".synopsis, .content p, p")
         synopsis = syn_tag.text.strip() if syn_tag else ""

@@ -10,8 +10,12 @@
 <section class="hero-slider-section" id="hero-slider">
     <div class="hero-slides-wrapper">
         {% for slide in hero_slides %}
+        {% set hero_image_sd = slide.image | replace('/w780/', '/w500/') %}
         <div class="hero-slide {% if loop.first %}active{% endif %}" data-slide-index="{{ loop.index0 }}">
-            <div class="hero-slide-backdrop" style="background-image: url('{{ slide.image }}');"></div>
+            <div class="hero-slide-backdrop"
+                 style="background-image: url('{{ slide.image }}');"
+                 data-src="{{ slide.image }}"
+                 {% if hero_image_sd != slide.image %}data-fallback="{{ hero_image_sd }}"{% endif %}></div>
             <div class="hero-slide-content">
                 <div class="hero-slide-meta">
                     {% if slide.version %}<span class="hero-meta-text">{{ slide.version }}</span>{% endif %}
@@ -30,7 +34,7 @@
                     </a>
                     <button type="button"
                             class="btn-cta btn-cta--secondary hero-watchlist-btn"
-                            data-item='{{ {"title": slide.title, "slug": slide.slug, "image": slide.image, "version": slide.version or "", "type": slide.content_type or "movie"} | tojson }}'
+                            data-item='{{ {"title": slide.title, "slug": slide.slug, "image": hero_image_sd, "version": slide.version or "", "type": slide.content_type or "movie"} | tojson }}'
                             aria-label="Ajouter {{ slide.title }} à ma liste">
                         <i class="fas fa-plus"></i> <span>Ma Liste</span>
                     </button>
@@ -258,6 +262,17 @@
 
         startAuto();
     }
+
+    // 1 bis. Repli d'image du Hero (w780 -> w500) : la source ne garantit
+    // pas la taille supérieure ; si la HD dérivée du mécanisme existant est
+    // indisponible, on rebascule silencieusement sur le w500. Aucune requête
+    // supplémentaire dans le cas nominal : l'URL sondée est celle déjà
+    // chargée par le fond CSS (cache navigateur partagé).
+    document.querySelectorAll('.hero-slide-backdrop[data-fallback]').forEach(el => {
+        const probe = new Image();
+        probe.onerror = () => { el.style.backgroundImage = `url('${el.dataset.fallback}')`; };
+        probe.src = el.dataset.src;
+    });
 
     // 2. Boutons "Ma Liste" du Hero (état persisté via localStorage)
     document.querySelectorAll('.hero-watchlist-btn').forEach(btn => {

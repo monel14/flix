@@ -10,7 +10,7 @@
             Ma Liste de Favoris
         </h1>
         <div id="watchlist-count" style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">
-            0 titre(s) enregistré(s)
+            0 titre enregistré
         </div>
     </div>
 
@@ -65,7 +65,7 @@
         filterBar.style.display = 'flex';
         
         const filtered = filter === 'all' ? list : list.filter(item => item.type === filter);
-        if (count) count.textContent = `${filtered.length} titre(s) enregistré(s)`;
+        if (count) count.textContent = `${filtered.length} titre${filtered.length > 1 ? 's' : ''} enregistré${filtered.length > 1 ? 's' : ''}`;
 
         if (filtered.length === 0) {
             grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 32px; text-align: center; color: var(--text-muted);">Aucun titre dans cette catégorie.</div>';

@@ -59,6 +59,9 @@
     /* ── Largeur de référence des cartes poster en rail horizontal ── */
     --card-w-rail:         155px;
 
+    /* ── Largeur des vignettes 16/9 du rail « Reprendre la lecture » ── */
+    --card-w-history:      220px;
+
     /* ── Transitions ── */
     --ease-out:            cubic-bezier(0.16, 1, 0.3, 1);
     --transition-fast:     all 0.15s var(--ease-out);
@@ -425,6 +428,14 @@ img {
     overflow: hidden;
 }
 
+/* Lisibilité garantie quelle que soit la luminosité de l'artwork : ombre
+   courte quasi invisible sur image sombre, décisive sur image claire. */
+.hero-slide-meta,
+.hero-slide-title,
+.hero-slide-synopsis {
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
 .hero-slide-actions {
     display: flex;
     align-items: center;
@@ -515,6 +526,7 @@ img {
     align-items: center;
 }
 .hero-dot {
+    position: relative; /* ancre la zone tactile étendue ci-dessous */
     width: 6px;
     height: 6px;
     border-radius: var(--radius-pill);
@@ -523,6 +535,14 @@ img {
     cursor: pointer;
     transition: width 0.25s ease, background 0.2s ease;
     padding: 0;
+}
+/* Zone tactile confortable (~22×24px) SANS changer l'apparence ni la mise
+   en page : un pseudo-élément transparent agrandit purement la surface
+   cliquable autour du dot — le rendu visible reste le dot de 6px. */
+.hero-dot::after {
+    content: '';
+    position: absolute;
+    inset: -9px -8px;
 }
 .hero-dot.active {
     width: 22px;
@@ -632,7 +652,7 @@ img {
     position: relative;
     display: flex;
     flex-direction: column;
-    width: 220px;
+    width: var(--card-w-history);
     overflow: hidden;
     flex-shrink: 0;
     transition: var(--transition-fast);
@@ -653,6 +673,30 @@ img {
     height: 100%;
     object-fit: cover;
 }
+/* Gradient discret en bas de la vignette, révélé uniquement au survol/focus :
+   il sert la lisibilité du bouton de lecture (même langage que les cartes
+   poster) — le titre et l'épisode restent SOUS l'image, le visuel dominant. */
+.history-thumb-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(to top, rgba(8, 9, 12, 0.5), transparent 55%);
+    opacity: 0;
+    transition: opacity 0.2s var(--ease-out);
+    pointer-events: none;
+}
+.history-thumb-wrap .card-play-overlay { z-index: 2; }
+.history-card:hover .history-thumb-wrap::after,
+.history-card:focus-visible .history-thumb-wrap::after,
+.history-card:hover .card-play-overlay,
+.history-card:focus-visible .card-play-overlay {
+    opacity: 1;
+}
+.history-card:hover .card-play-btn,
+.history-card:focus-visible .card-play-btn {
+    transform: scale(1);
+}
 /* NB : pas de barre de progression sur ces cartes — la lecture se fait via
    lecteurs intégrés tiers, la position réelle n'est pas mesurable. Afficher
    une progression fictive serait une information mensongère (retiré en P3). */
@@ -670,8 +714,15 @@ img {
 .history-sub {
     font-size: 0.74rem;
     font-weight: 500;
-    color: var(--brand);
+    color: var(--text-muted);
     margin-top: 1px;
+    transition: color 0.15s var(--ease-out);
+}
+/* Le rouge devient un signal d'interaction, pas un décor répété :
+   le libellé d'épisode ne s'embrase qu'au survol/focus de sa carte. */
+.history-card:hover .history-sub,
+.history-card:focus-visible .history-sub {
+    color: var(--brand);
 }
 
 /* ==========================================================================
@@ -698,6 +749,48 @@ img {
 }
 .cards-rail::-webkit-scrollbar { height: 3px; }
 .cards-rail::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: var(--radius-pill); }
+
+/* Navigation discrète des rails — desktop uniquement (≥1024px).
+   Même langage visuel que les flèches du Hero ; les chevrons n'apparaissent
+   qu'au survol du rail (ou au focus clavier) et seulement quand le
+   déplacement correspondant est possible. Le défilement tactile/mobile
+   naturel est conservé : aucun chevron sous 1024px. */
+.rail-shell {
+    position: relative;
+}
+.rail-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 9, 12, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.85rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease;
+}
+.rail-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+.rail-shell:hover .rail-nav:not([hidden]),
+.rail-shell:focus-within .rail-nav:not([hidden]) {
+    opacity: 1;
+}
+.rail-nav--prev { left: 6px; }
+.rail-nav--next { right: 6px; }
+.rail-nav[hidden] { display: none; }
+@media (max-width: 1023px) {
+    .rail-nav { display: none; }
+}
 
 /* Carte Artwork Pur (Pas de boîte opaque, pas de bordure) */
 .stream-card {
@@ -1771,6 +1864,11 @@ img {
 /* Téléphones : le catalogue se parcourt à 3 colonnes (densité type app),
    au lieu de 2 colonnes de cartes géantes. */
 @media (max-width: 540px) {
+    :root {
+        /* Rail « Reprendre » : ~2 vignettes visibles + amorce de la
+           suivante à 430px (les autres rails gardent leurs tailles). */
+        --card-w-history: 172px;
+    }
     .cards-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
