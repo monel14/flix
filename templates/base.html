@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
     <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/premium-overrides.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -80,7 +81,7 @@
 
 <!-- Mobile Bottom Navigation (Native App feel) -->
 <nav class="mobile-bottom-bar" aria-label="Navigation mobile">
-    <a href="/" class="mobile-tab {% if request.url.path == '/' %}active{% endif %}">
+    <a href="/" class="mobile-tab {% if request.url.path == '/' %}active{% endif %}" aria-current="{% if request.url.path == '/' %}page{% endif %}">
         <i class="fas fa-house"></i>
         <span>Accueil</span>
     </a>

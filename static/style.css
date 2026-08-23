@@ -6,15 +6,16 @@
 
 :root {
     /* ── Palette Fond & Canvas (Obsidienne & Noir Cinéma) ── */
-    --bg-base:             #08090c;
-    --bg-canvas:           #0c0e14;
-    --bg-surface:          #131620;
-    --bg-surface-elevated: #1a1e2b;
+    --bg-base:             #0b0d0f;
+    --bg-canvas:           #101316;
+    --bg-surface:          #171b1d;
+    --bg-surface-elevated: #202629;
     
     /* ── Accents & Actions ── */
-    --brand:               #e50914;
-    --brand-hover:         #f40612;
-    --brand-dim:           rgba(229, 9, 20, 0.12);
+    /* Noka uses a warm signal colour rather than Netflix red: editorial, not clone. */
+    --brand:               #e7b768;
+    --brand-hover:         #f2c982;
+    --brand-dim:           rgba(231, 183, 104, 0.14);
     
     --btn-primary-bg:      #ffffff;
     --btn-primary-text:    #08090c;
