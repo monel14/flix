@@ -159,8 +159,8 @@
     });
 
     // Enregistrement dans l'historique "Reprendre la lecture"
-    if (window.NokaflixHistory) {
-        window.NokaflixHistory.save({
+    if (window.NokaTVHistory) {
+        window.NokaTVHistory.save({
             title: "{{ film.title | replace('\"', '\\\"') }}",
             slug: "{{ slug }}",
             episode_id: "{{ episode_id }}",

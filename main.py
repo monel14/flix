@@ -17,14 +17,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
 from services.seo import page_seo, site_origin
-SITE_NAME = "Nokaflix"
+SITE_NAME = "NokaTV"
 from routes import anime, detail, drama, home, player, search
 from scraper.coflix_client import close_coflix_client
 from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_client
 from scraper.voiranime_client import close_voiranime_client, get_voiranime_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("nokaflix")
+logger = logging.getLogger("nokatv")
 
 
 @asynccontextmanager
@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
     await close_voiranime_client()
 
 
-app = FastAPI(title="Nokaflix", lifespan=lifespan)
+app = FastAPI(title="NokaTV", lifespan=lifespan)
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -64,7 +64,7 @@ async def watchlist_page(request: Request):
     """Page Ma Liste de favoris."""
     return templates.TemplateResponse(request, "watchlist.html", {
         "request": request,
-        "seo": page_seo(request, title="Ma Liste — Nokaflix", path="/ma-liste"),
+        "seo": page_seo(request, title="Ma Liste — NokaTV", path="/ma-liste"),
     })
 
 
@@ -200,7 +200,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         return templates.TemplateResponse(
             request, "error.html",
             {"request": request, "status_code": status, "message": msg,
-             "seo": page_seo(request, title=f"Erreur {status} — Nokaflix")},
+             "seo": page_seo(request, title=f"Erreur {status} — NokaTV")},
             status_code=status,
         )
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
@@ -214,7 +214,7 @@ async def server_error_handler(request: Request, exc: Exception):
         return templates.TemplateResponse(
             request, "error.html",
             {"request": request, "status_code": 500, "message": "Erreur serveur interne.",
-             "seo": page_seo(request, title="Erreur 500 — Nokaflix")},
+             "seo": page_seo(request, title="Erreur 500 — NokaTV")},
             status_code=500,
         )
     return JSONResponse({"detail": "Internal Server Error"}, status_code=500)

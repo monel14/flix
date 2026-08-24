@@ -45,7 +45,7 @@
 <script>
 (function() {
     function loadWatchlist(filter = 'all') {
-        const list = window.NokaflixWatchlist ? window.NokaflixWatchlist.get() : [];
+        const list = window.NokaTVWatchlist ? window.NokaTVWatchlist.get() : [];
         const grid = document.getElementById('watchlist-grid');
         const empty = document.getElementById('watchlist-empty');
         const count = document.getElementById('watchlist-count');
@@ -111,7 +111,7 @@
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const slug = btn.dataset.slug;
-                window.NokaflixWatchlist.remove(slug);
+                window.NokaTVWatchlist.remove(slug);
                 loadWatchlist(filter);
             });
         });

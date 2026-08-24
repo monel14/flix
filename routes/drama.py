@@ -136,7 +136,7 @@ async def dramas_list(
         "current_version": version or "all",
         "base_path": "/dramas",
            "seo": page_seo(request,
-                        title=f"{section_label} en Streaming HD — Nokaflix",
+                        title=f"{section_label} en Streaming HD — NokaTV",
                         path=canon_path),
     })
 
@@ -212,9 +212,9 @@ async def drama_player(request: Request, slug: str, episode_slug: str) -> HTMLRe
 
     base_title = drama.get("title", "")
     seo_title = (
-        f"{base_title} — {current_ep['title']} — K-Drama Streaming — Nokaflix"
+        f"{base_title} — {current_ep['title']} — K-Drama Streaming — NokaTV"
         if current_ep else
-        f"{base_title} — K-Drama Streaming — Nokaflix"
+        f"{base_title} — K-Drama Streaming — NokaTV"
     )
 
     return templates.TemplateResponse(request, "drama_player.html", {

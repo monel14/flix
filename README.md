@@ -1,4 +1,4 @@
-# Nokaflix — Films, Séries, K-Dramas & Animés
+# NokaTV — Films, Séries, K-Dramas & Animés
 
 Interface web moderne pour parcourir et regarder des films, séries, K-Dramas et animés japonais en streaming gratuit HD.
 L'application agrège à la volée le contenu de 3 sources majeures (`coflix.wiki`, `voirdrama.to`, `voir-anime.to`), le présente dans une interface cinématique soignée et sans publicité, et lit les vidéos via des lecteurs intégrés.
@@ -43,7 +43,7 @@ L'application agrège à la volée le contenu de 3 sources majeures (`coflix.wik
 ```bash
 # 1. Cloner le dépôt
 git clone <url-du-repo>
-cd nokaflix
+cd nokatv
 
 # 2. Lancer le conteneur en tâche de fond
 docker compose up -d
@@ -57,7 +57,7 @@ L'application est immédiatement disponible sur **`http://localhost:8001`**.
 ```bash
 # 1. Cloner le dépôt
 git clone <url-du-repo>
-cd nokaflix
+cd nokatv
 
 # 2. Créer l'environnement virtuel
 python -m venv .venv

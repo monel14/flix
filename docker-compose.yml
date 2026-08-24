@@ -1,7 +1,7 @@
 services:
-  nokaflix:
+  nokatv:
     build: .
-    container_name: nokaflix
+    container_name: nokatv
     restart: unless-stopped
     ports:
       - "8001:8001"

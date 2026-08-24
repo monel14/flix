@@ -88,9 +88,9 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
 
     base_title = film.get("title", "")
     seo_title = (
-        f"{base_title} — {current_ep['title']} — Streaming — Nokaflix"
+        f"{base_title} — {current_ep['title']} — Streaming — NokaTV"
         if current_ep else
-        f"{base_title} — Streaming — Nokaflix"
+        f"{base_title} — Streaming — NokaTV"
     )
 
     return templates.TemplateResponse(request, "player.html", {

@@ -88,7 +88,7 @@
 <script>
 (function() {
     const btn = document.getElementById('watchlist-btn');
-    if (!btn || !window.NokaflixWatchlist) return;
+    if (!btn || !window.NokaTVWatchlist) return;
 
     const dramaObj = {
         title: "{{ drama.title | replace('\"', '\\\"') }}",
@@ -99,7 +99,7 @@
     };
 
     function updateBtn() {
-        const inList = window.NokaflixWatchlist.has(dramaObj.slug);
+        const inList = window.NokaTVWatchlist.has(dramaObj.slug);
         if (inList) {
             btn.innerHTML = '<i class="fas fa-check"></i> <span>Dans ma liste</span>';
             btn.classList.add('btn-cta--brand');
@@ -112,7 +112,7 @@
     }
 
     btn.addEventListener('click', () => {
-        const added = window.NokaflixWatchlist.toggle(dramaObj);
+        const added = window.NokaTVWatchlist.toggle(dramaObj);
         updateBtn();
         if (added) {
             btn.classList.remove('watchlist-confirmed');

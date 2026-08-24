@@ -275,12 +275,12 @@
 
     // 2. Boutons "Ma Liste" du Hero (état persisté via localStorage)
     document.querySelectorAll('.hero-watchlist-btn').forEach(btn => {
-        if (!window.NokaflixWatchlist) return;
+        if (!window.NokaTVWatchlist) return;
         let item = null;
         try { item = JSON.parse(btn.dataset.item); } catch (e) { return; }
 
         function updateBtn() {
-            const inList = window.NokaflixWatchlist.has(item.slug);
+            const inList = window.NokaTVWatchlist.has(item.slug);
             if (inList) {
                 btn.innerHTML = '<i class="fas fa-check"></i> <span>Dans ma liste</span>';
                 btn.setAttribute('aria-label', 'Retirer ' + item.title + ' de ma liste');
@@ -291,7 +291,7 @@
         }
 
         btn.addEventListener('click', () => {
-            const added = window.NokaflixWatchlist.toggle(item);
+            const added = window.NokaTVWatchlist.toggle(item);
             updateBtn();
             if (added) {
                 btn.classList.remove('watchlist-confirmed');
@@ -307,8 +307,8 @@
     // 3. Affichage dynamique du rail "Reprendre la lecture".
     //    Pas de barre de progression : la position réelle n'est pas connue,
     //    la carte affiche honnêtement le titre et l'épisode à reprendre.
-    if (window.NokaflixHistory) {
-        const history = window.NokaflixHistory.get();
+    if (window.NokaTVHistory) {
+        const history = window.NokaTVHistory.get();
         if (history && history.length > 0) {
             const section = document.getElementById('continue-watching-section');
             const rail = document.getElementById('continue-watching-rail');
@@ -336,7 +336,7 @@
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        window.NokaflixHistory.remove(btn.dataset.slug);
+                        window.NokaTVHistory.remove(btn.dataset.slug);
                         const card = btn.closest('.history-card');
                         card.classList.add('is-removing');
                         setTimeout(() => {

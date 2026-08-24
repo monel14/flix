@@ -233,7 +233,7 @@ async def movies_list(
         "current_version": version or "all",
         "base_path": "/films",
         "seo": page_seo(request,
-                        title=f"{section_label} en Streaming HD — Nokaflix",
+                        title=f"{section_label} en Streaming HD — NokaTV",
                         path=canon_path),
     })
 
@@ -295,6 +295,6 @@ async def series_list(
         "current_version": version or "all",
         "base_path": "/series",
         "seo": page_seo(request,
-                        title=f"{section_label} en Streaming HD — Nokaflix",
+                        title=f"{section_label} en Streaming HD — NokaTV",
                         path=canon_path),
     })

@@ -136,7 +136,7 @@ async def animes_list(
         "current_version": version or "all",
         "base_path": "/animes",
            "seo": page_seo(request,
-                        title=f"{section_label} en Streaming HD — Nokaflix",
+                        title=f"{section_label} en Streaming HD — NokaTV",
                         path=canon_path),
     })
 
@@ -212,9 +212,9 @@ async def anime_player(request: Request, slug: str, episode_slug: str) -> HTMLRe
 
     base_title = anime.get("title", "")
     seo_title = (
-        f"{base_title} — {current_ep['title']} — Animé Streaming — Nokaflix"
+        f"{base_title} — {current_ep['title']} — Animé Streaming — NokaTV"
         if current_ep else
-        f"{base_title} — Animé Streaming — Nokaflix"
+        f"{base_title} — Animé Streaming — NokaTV"
     )
 
     return templates.TemplateResponse(request, "anime_player.html", {

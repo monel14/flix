@@ -85,7 +85,7 @@ async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
             logger.warning("Erreur recherche globale '%s' : %s", cleaned_q, exc)
             error = "La recherche a rencontré une erreur. Réessaie dans un instant."
 
-    seo_title = (f'Résultats pour "{cleaned_q}"' if cleaned_q else "Explorer & Rechercher") + " — Nokaflix"
+    seo_title = (f'Résultats pour "{cleaned_q}"' if cleaned_q else "Explorer & Rechercher") + " — NokaTV"
     return templates.TemplateResponse(request, "search.html", {
         "request": request,
         "query": q,

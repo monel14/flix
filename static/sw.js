@@ -1,4 +1,4 @@
-/* Service Worker minimal — Flix (PWA légère)
+/* Service Worker minimal — NokaTV (PWA légère)
  *
  * Stratégie volontairement prudente :
  *  - Pré-cache : UNIQUEMENT le shell CSS local (/static/style.css).
@@ -8,13 +8,13 @@
  *    /api/*, /recherche, players (/regarder*, /watch*), image-proxy, et
  *    évidemment tout contenu externe. Aucune donnée dynamique ni iframe
  *    n'est jamais servie depuis un cache obsolète.
- *  - Pas de fallback offline inventé : Flix dépend de sources externes
+ *  - Pas de fallback offline inventé : NokaTV dépend de sources externes
  *    dynamiques, et cette passe ne promet aucun mode hors-ligne.
  *
  * Bump STATIC_CACHE à chaque déploiement modifiant le shell CSS.
  */
 
-const STATIC_CACHE = 'flix-shell-v1';
+const STATIC_CACHE = 'nokatv-shell-v1';
 const SHELL_ASSETS = ['/static/style.css'];
 
 self.addEventListener('install', (event) => {

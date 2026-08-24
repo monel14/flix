@@ -15,15 +15,15 @@
     {# Métadonnées SEO & partage — source unique de vérité : services/seo.py.
        Chaque route construit un objet `seo` (SeoMeta) ; si une page n'en
        fournit pas, les valeurs génériques du site s'appliquent. #}
-    <title>{{ seo.title if seo else 'Nokaflix — Streaming Films, Séries, K-Dramas & Animés HD' }}</title>
-    <meta name="description" content="{{ seo.description if seo else 'Plateforme Nokaflix de streaming gratuit pour regarder des films, séries, K-Dramas et animés en VF et VOSTFR HD.' }}">
+    <title>{{ seo.title if seo else 'NokaTV — Streaming Films, Séries, K-Dramas & Animés HD' }}</title>
+    <meta name="description" content="{{ seo.description if seo else 'Plateforme NokaTV de streaming gratuit pour regarder des films, séries, K-Dramas et animés en VF et VOSTFR HD.' }}">
     {% if seo %}
     <link rel="canonical" href="{{ seo.canonical }}">
     {% endif %}
 
     <!-- Open Graph -->
-    <meta property="og:site_name" content="Nokaflix">
-    <meta property="og:title" content="{{ seo.og_title if seo else 'Nokaflix — Films, Séries, K-Dramas & Animés en Streaming HD' }}">
+    <meta property="og:site_name" content="NokaTV">
+    <meta property="og:title" content="{{ seo.og_title if seo else 'NokaTV — Films, Séries, K-Dramas & Animés en Streaming HD' }}">
     <meta property="og:description" content="{{ seo.og_description if seo else 'Regardez des milliers de films, séries, K-Dramas et animés en streaming gratuit VF et VOSTFR sans coupure.' }}">
     <meta property="og:image" content="{{ seo.image if seo else 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1200' }}">
     {% if seo %}
@@ -35,7 +35,7 @@
 
     <!-- Twitter/X Cards — mêmes données que Open Graph -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ seo.twitter_title if seo else 'Nokaflix — Streaming Gratuit HD' }}">
+    <meta name="twitter:title" content="{{ seo.twitter_title if seo else 'NokaTV — Streaming Gratuit HD' }}">
     <meta name="twitter:description" content="{{ seo.twitter_description if seo else 'Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR.' }}">
     {% if seo %}
     <meta name="twitter:image" content="{{ seo.image }}">
@@ -59,10 +59,10 @@
 <!-- Header / Navigation Bar -->
 <header class="site-header" id="site-header">
     <div class="header-inner">
-        <!-- Logo Nokaflix -->
+        <!-- Logo NokaTV -->
         <a class="brand" href="/">
             <div class="brand-icon"><i class="fas fa-play"></i></div>
-            <span>Noka<b>flix</b></span>
+            <span>Noka<b>TV</b></span>
         </a>
 
         <!-- Desktop Navigation -->
@@ -149,7 +149,7 @@
 
 <!-- Footer -->
 <footer class="site-footer">
-    <p>© 2026 Nokaflix — Plateforme de streaming multi-sources (Films, Séries, K-Dramas & Animés).</p>
+    <p>© 2026 NokaTV — Plateforme de streaming multi-sources (Films, Séries, K-Dramas & Animés).</p>
 </footer>
 
 <!-- Global Scripts, History & Watchlist Tracker -->
@@ -209,11 +209,28 @@
         });
     }
 
+    // Migration douce des clés localStorage (renommage Nokaflix → NokaTV) :
+    // la valeur est copiée vers nokatv_* à la première visite, l'ancienne clé
+    // est conservée en secours (aucune perte d'historique / de Ma Liste).
+    (function migrateStorageKeys() {
+        try {
+            [
+                ['nokaflix_watch_history', 'nokatv_watch_history'],
+                ['nokaflix_watchlist', 'nokatv_watchlist']
+            ].forEach(function(pair) {
+                var oldVal = localStorage.getItem(pair[0]);
+                if (oldVal !== null && localStorage.getItem(pair[1]) === null) {
+                    localStorage.setItem(pair[1], oldVal);
+                }
+            });
+        } catch(e) {}
+    })();
+
     // 2. Gestionnaire d'Historique de visionnage (Continue Watching)
-    window.NokaflixHistory = window.CoflixHistory = {
+    window.NokaTVHistory = window.NokaflixHistory = window.CoflixHistory = {
         save: function(item) {
             try {
-                let history = JSON.parse(localStorage.getItem('nokaflix_watch_history') || '[]');
+                let history = JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
                 history = history.filter(h => h.slug !== item.slug);
                 history.unshift({
                     title: item.title,
@@ -225,28 +242,28 @@
                     type: item.type || 'movie',
                     updated_at: Date.now()
                 });
-                localStorage.setItem('nokaflix_watch_history', JSON.stringify(history.slice(0, 12)));
+                localStorage.setItem('nokatv_watch_history', JSON.stringify(history.slice(0, 12)));
             } catch(e) {}
         },
         remove: function(slug) {
             try {
-                let history = JSON.parse(localStorage.getItem('nokaflix_watch_history') || '[]');
+                let history = JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
                 history = history.filter(h => h.slug !== slug);
-                localStorage.setItem('nokaflix_watch_history', JSON.stringify(history));
+                localStorage.setItem('nokatv_watch_history', JSON.stringify(history));
             } catch(e) {}
         },
         get: function() {
             try {
-                return JSON.parse(localStorage.getItem('nokaflix_watch_history') || '[]');
+                return JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
             } catch(e) { return []; }
         }
     };
 
     // 3. Gestionnaire de Favoris (Watchlist / Ma Liste)
-    window.NokaflixWatchlist = {
+    window.NokaTVWatchlist = window.NokaflixWatchlist = {
         get: function() {
             try {
-                return JSON.parse(localStorage.getItem('nokaflix_watchlist') || '[]');
+                return JSON.parse(localStorage.getItem('nokatv_watchlist') || '[]');
             } catch(e) { return []; }
         },
         has: function(slug) {
@@ -257,13 +274,13 @@
             let list = this.get();
             if (!this.has(item.slug)) {
                 list.unshift(item);
-                localStorage.setItem('nokaflix_watchlist', JSON.stringify(list));
+                localStorage.setItem('nokatv_watchlist', JSON.stringify(list));
             }
         },
         remove: function(slug) {
             let list = this.get();
             list = list.filter(item => item.slug !== slug);
-            localStorage.setItem('nokaflix_watchlist', JSON.stringify(list));
+            localStorage.setItem('nokatv_watchlist', JSON.stringify(list));
         },
         toggle: function(item) {
             if (this.has(item.slug)) {

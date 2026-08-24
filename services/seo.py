@@ -4,7 +4,7 @@ Toutes les métadonnées de page (title, description, canonical, Open Graph,
 Twitter Cards, JSON-LD) sont construites ici et rendues par base.html.
 Aucun template ne redéfinit sa propre logique de métadonnées.
 
-Domaine public : variable d'environnement SITE_URL (ex. "https://nokaflix.tv").
+Domaine public : variable d'environnement SITE_URL (ex. "https://nokatv.xyz").
 Sans elle, on retombe sur l'origine réellement vue par la requête
 (en tenant compte des en-têtes de proxy X-Forwarded-*).
 """
@@ -16,22 +16,22 @@ from dataclasses import dataclass, field
 
 from fastapi import Request
 
-SITE_NAME = "Nokaflix"
+SITE_NAME = "NokaTV"
 
 # Valeurs génériques = exactement celles qui étaient codées en dur dans
 # base.html avant la centralisation (aucune perte d'information, ni de
 # changement d'identité).
-DEFAULT_TITLE = "Nokaflix — Regarder Films, Séries, K-Dramas & Animés en Streaming HD"
-DEFAULT_OG_TITLE = "Nokaflix — Films, Séries, K-Dramas & Animés en Streaming HD"
+DEFAULT_TITLE = "NokaTV — Regarder Films, Séries, K-Dramas & Animés en Streaming HD"
+DEFAULT_OG_TITLE = "NokaTV — Films, Séries, K-Dramas & Animés en Streaming HD"
 DEFAULT_DESCRIPTION = (
-    "Plateforme Nokaflix de streaming gratuit pour regarder des films, "
+    "Plateforme NokaTV de streaming gratuit pour regarder des films, "
     "séries, K-Dramas et animés en VF et VOSTFR HD."
 )
 DEFAULT_OG_DESCRIPTION = (
     "Regardez des milliers de films, séries, K-Dramas et animés en streaming "
     "gratuit VF et VOSTFR sans coupure."
 )
-DEFAULT_TWITTER_TITLE = "Nokaflix — Streaming Gratuit HD"
+DEFAULT_TWITTER_TITLE = "NokaTV — Streaming Gratuit HD"
 DEFAULT_TWITTER_DESCRIPTION = "Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR."
 DEFAULT_IMAGE = "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1200"
 
@@ -95,7 +95,7 @@ class SeoMeta:
         """Données structurées — uniquement si le type d'œuvre est fiable.
 
         `name` est le titre exact de l'œuvre (pas le titre de page suffixé
-        « Streaming — Nokaflix ») et `image` n'est jamais l'image générique
+        « Streaming — NokaTV ») et `image` n'est jamais l'image générique
         de repli : rien de fabriqué.
         """
         if self.schema_type not in ("Movie", "TVSeries") or not self.work_name:
