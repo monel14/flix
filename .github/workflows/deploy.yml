@@ -1,0 +1,77 @@
+name: Deploy NokaTV to PlanetHoster
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy NokaTV
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PH_HOST }}
+          username: ${{ secrets.PH_USER }}
+          key: ${{ secrets.PH_SSH_KEY }}
+          port: ${{ secrets.PH_PORT }}
+
+          script: |
+            set -e
+
+            echo "======================================"
+            echo "        DEPLOIEMENT NOKATV"
+            echo "======================================"
+
+            cd /home/wtzjscfs/nokatv
+
+            echo "=== Mise à jour du code ==="
+
+            git fetch origin
+            git reset --hard origin/master
+
+            echo "=== Activation de Python 3.10 ==="
+
+            VENV="/home/wtzjscfs/virtualenv/nokatv/3.10"
+
+            if [ ! -f "$VENV/bin/activate" ]; then
+              echo "ERREUR: environnement Python introuvable:"
+              echo "$VENV"
+              exit 1
+            fi
+
+            source "$VENV/bin/activate"
+
+            echo "Python utilisé:"
+            which python
+            python --version
+
+            echo "Pip utilisé:"
+            python -m pip --version
+
+            echo "=== Installation des dépendances ==="
+
+            python -m pip install --upgrade pip
+            python -m pip install --upgrade -r requirements.txt
+
+            echo "=== Vérification FastAPI ==="
+
+            python -c "import fastapi; print('FastAPI:', fastapi.__version__)"
+
+            echo "=== Vérification Uvicorn ==="
+
+            python -c "import uvicorn; print('Uvicorn OK')"
+
+            echo "=== Vérification de l'application ==="
+
+            python -c "from main import app; print('Application FastAPI OK')"
+
+            echo "=== Redémarrage Passenger ==="
+
+            mkdir -p tmp
+            touch tmp/restart.txt
+
+            echo "======================================"
+            echo "       DEPLOIEMENT TERMINE"
+            echo "======================================"
