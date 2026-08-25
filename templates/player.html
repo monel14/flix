@@ -50,12 +50,16 @@
 
     <!-- 3. CADRE CINÉMA THEATER (Iframe) -->
     <div class="theater-frame-box" id="theater-box">
+        {# `sandbox` verrouille le lecteur externe : lecture vidéo autorisée
+           (scripts, fullscreen, autoplay) mais redirections / popups / onglets
+           publicitaires interdits (pas d'allow-top-navigation ni d'allow-popups). #}
         <iframe id="player-frame"
                 src="{{ default_server.server_link if default_server else '' }}"
                 allowfullscreen
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 referrerpolicy="no-referrer-when-downgrade"
-                scrolling="no">
+                scrolling="no"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
         </iframe>
         {% if not servers %}
         <div class="player-frame-status">
