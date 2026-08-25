@@ -56,9 +56,10 @@
         <iframe id="player-frame"
                 src="{{ default_server.server_link if default_server else '' }}"
                 allowfullscreen
+                autoplay
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 referrerpolicy="no-referrer-when-downgrade"
-                scrolling="no"
+                 
                 sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
         </iframe>
         {% if not servers %}
