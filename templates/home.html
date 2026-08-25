@@ -120,7 +120,32 @@
 </section>
 
 
-<!-- 5. SÉRIES — second pilier du catalogue (même importance que Films) -->
+<!-- 5. FILMS D'ANIMATION -->
+{% if animation_movies %}
+<section class="content-section">
+    <div class="section-header">
+        <h2 class="section-title">Films d'animation</h2>
+        <a href="/films?genre=animation" class="see-all-link">Voir tout <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="cards-rail">
+        {% for item in animation_movies %}
+        <a href="/film/{{ item.slug }}" class="stream-card">
+            <div class="card-poster-wrap">
+                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                {{ version_badge(item.version) }}
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
+            </div>
+            <div class="card-details">
+                <p class="card-title">{{ item.title }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+
+<!-- 6. SÉRIES — second pilier du catalogue (même importance que Films) -->
 <section class="content-section">
     <div class="section-header">
         <h2 class="section-title">Séries</h2>
@@ -145,7 +170,7 @@
 </section>
 
 
-<!-- 6. ANIMÉS — section "univers", exploration après les catalogues -->
+<!-- 7. ANIMÉS — section "univers", exploration après les catalogues -->
 {% if popular_animes %}
 <section class="content-section">
     <div class="section-header">
@@ -173,7 +198,7 @@
 {% endif %}
 
 
-<!-- 7. K-DRAMAS — dernière section, clôture de la page -->
+<!-- 8. K-DRAMAS — dernière section, clôture de la page -->
 {% if popular_dramas %}
 <section class="content-section content-section--compact">
     <div class="section-header">

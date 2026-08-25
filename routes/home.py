@@ -120,6 +120,17 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
             logger.warning("Erreur chargement séries accueil : %s", exc)
             return {"items": [], "last_page": 1}
 
+    async def fetch_animation_movies():
+        try:
+            return await cache.get_or_set(
+                "home:movies:animation:1",
+                HOME_TTL,
+                lambda: _load_home_section("movies", 1, "animation"),
+            )
+        except CoflixFetchError as exc:
+            logger.warning("Erreur chargement films d'animation accueil : %s", exc)
+            return {"items": [], "last_page": 1}
+
     async def fetch_top():
         try:
             return await cache.get_or_set(f"home:top:{top_filter}", HOME_TTL, lambda: _load_top(top_filter))
@@ -138,11 +149,12 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         except Exception:
             return []
 
-    # Chargement concurrent des 6 composants
-    hero_slides, movies_data, series_data, top, popular_dramas, popular_animes = await asyncio.gather(
+    # Chargement concurrent des composants de l'accueil
+    hero_slides, movies_data, series_data, animation_movies_data, top, popular_dramas, popular_animes = await asyncio.gather(
         fetch_hero(),
         fetch_movies(),
         fetch_series(),
+        fetch_animation_movies(),
         fetch_top(),
         fetch_dramas(),
         fetch_animes(),
@@ -150,6 +162,7 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
 
     movies_items = movies_data.get("items", [])[:24]
     series_items = series_data.get("items", [])[:24]
+    animation_movies = animation_movies_data.get("items", [])[:24]
 
     # Inférence du type (film/série) des slides du hero SANS requête supplémentaire :
     # on croise leurs slugs canoniques avec les catalogues déjà chargés ci-dessus.
@@ -168,6 +181,7 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         "hero_slides": hero_slides if isinstance(hero_slides, list) else [],
         "recent_movies": movies_items,
         "recent_series": series_items,
+        "animation_movies": animation_movies,
         "popular_dramas": popular_dramas if isinstance(popular_dramas, list) else [],
         "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
         "top": top[:10] if isinstance(top, list) else [],
