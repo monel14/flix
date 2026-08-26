@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 
 from cache import DETAIL_TTL, PLAYER_TTL, cache
 from services.seo import page_seo
@@ -15,7 +13,7 @@ from scraper.coflix_parser import parse_coflix_servers
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+from services.templates import templates
 
 
 async def _load_servers(episode_id: str) -> list:

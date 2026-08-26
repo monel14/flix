@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from pathlib import Path
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
 from cache import HOME_TTL, cache
 from scraper.coflix_client import CoflixFetchError, coflix_get_html
@@ -26,7 +24,7 @@ from services.seo import page_seo
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+from services.templates import templates
 
 
 async def _load_home_section(section: str, page: int = 1, genre: str | None = None) -> dict:
