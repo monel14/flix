@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from pathlib import Path
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 
 from cache import SEARCH_TTL, cache
 from services.seo import page_seo
@@ -19,7 +17,7 @@ from scraper.voiranime_parser import parse_voiranime_search
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+from services.templates import templates
 
 
 async def _load_search_all(query: str) -> list:

@@ -12,11 +12,11 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
 from services.seo import page_seo, site_origin
+from services.templates import templates
 SITE_NAME = "NokaTV"
 from routes import anime, detail, drama, home, player, search
 from scraper.coflix_client import close_coflix_client
@@ -50,10 +50,6 @@ static_dir = BASE_DIR / "static"
 static_dir.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-templates = Jinja2Templates(directory=BASE_DIR / "templates")
-templates.env.globals["str"] = str
-
 
 # ---------------------------------------------------------------------------
 # Route Ma Liste (Favoris / Watchlist)
