@@ -14,7 +14,7 @@
  * Bump STATIC_CACHE à chaque déploiement modifiant le shell CSS.
  */
 
-const STATIC_CACHE = 'nokatv-shell-v3';
+const STATIC_CACHE = 'nokatv-shell-v4';
 const SHELL_ASSETS = [
   '/static/style.css',
   '/static/tv.js',

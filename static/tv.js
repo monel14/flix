@@ -226,6 +226,16 @@
     return e.key === 'Enter' || e.key === 'Select' || e.key === 'Accept' || e.keyCode === 13;
   }
 
+  function directionKey(e) {
+    var key = e.key;
+    var code = e.keyCode;
+    if (key === 'ArrowLeft' || key === 'Left' || code === 37) return 'left';
+    if (key === 'ArrowRight' || key === 'Right' || code === 39) return 'right';
+    if (key === 'ArrowUp' || key === 'Up' || code === 38) return 'up';
+    if (key === 'ArrowDown' || key === 'Down' || code === 40) return 'down';
+    return '';
+  }
+
   function isNeutralFocus(el) {
     return !el || el === document.body ||
       el === frame || el === fsBtn ||
@@ -239,10 +249,11 @@
 
     // Flèches : uniquement en mode TV (le clavier desktop garde son comportement natif).
     if (isTvMode && !isBackKey(e)) {
-      if (e.key === 'ArrowLeft') { nav(-1, 0); e.preventDefault(); return; }
-      if (e.key === 'ArrowRight') { nav(1, 0); e.preventDefault(); return; }
-      if (e.key === 'ArrowUp') { nav(0, -1); e.preventDefault(); return; }
-      if (e.key === 'ArrowDown') { nav(0, 1); e.preventDefault(); return; }
+      var direction = directionKey(e);
+      if (direction === 'left') { nav(-1, 0); e.preventDefault(); return; }
+      if (direction === 'right') { nav(1, 0); e.preventDefault(); return; }
+      if (direction === 'up') { nav(0, -1); e.preventDefault(); return; }
+      if (direction === 'down') { nav(0, 1); e.preventDefault(); return; }
     }
 
     // Touche Retour : sortir du plein écran d'abord, sinon laisser le

@@ -1509,9 +1509,9 @@ img {
 /* Cadre Vidéo Cinéma (Theater Mode) */
 .theater-frame-box {
     position: relative;
-    width: min(100%, 1200px);
+    width: min(100%, 960px);
     margin: 0 auto;
-    padding-bottom: 45%; /* format plus compact que 16:9 */
+    padding-bottom: 42%; /* format plus compact que 16:9 */
     background: #000;
     border-radius: var(--radius-card);
     overflow: hidden;
