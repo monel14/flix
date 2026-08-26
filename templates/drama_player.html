@@ -4,6 +4,16 @@
 {% block content %}
 <div class="player-container-layout">
 
+    {# Métadonnées Media Session (titre, affiche, épisode suivant/précédent)
+       lues par static/tv.js pour l'écran d'accueil / la barre système TV. #}
+    <script type="application/json" id="media-session-data">{{ {
+        'title': (current_ep.title ~ ' — ' ~ drama.title) if current_ep else drama.title,
+        'album': drama.title,
+        'next': ('/regarder-drama/' ~ slug ~ '/' ~ next_ep.episode_id) if next_ep else '',
+        'prev': ('/regarder-drama/' ~ slug ~ '/' ~ prev_ep.episode_id) if prev_ep else '',
+        'artwork': [{'src': drama.image}] if drama.image else []
+    } | tojson }}</script>
+
     <!-- 1. BARRE SUPÉRIEURE DU LECTEUR -->
     <div class="player-header-bar">
         <div class="player-title-info">
@@ -21,6 +31,9 @@
         <div class="player-nav-controls">
             <button id="player-share-btn" class="btn-share" title="Partager ce titre">
                 <i class="fas fa-share-nodes"></i> Partager
+            </button>
+            <button id="player-fullscreen-btn" class="player-ctrl-btn" type="button" title="Plein écran (OK / F)">
+                <i class="fas fa-expand"></i> Plein écran
             </button>
             {% if prev_ep %}
             <a href="/regarder-drama/{{ slug }}/{{ prev_ep.episode_id }}" class="player-ctrl-btn" title="{{ prev_ep.title }}">

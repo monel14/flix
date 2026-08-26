@@ -2044,3 +2044,87 @@ img {
     outline: 2px solid var(--brand);
     outline-offset: 2px;
 }
+
+/* =========================================================================
+   MODE TV & TÉLÉCOMMANDE (interface « 10-foot »)
+   Activé par /static/tv.js via la classe html.tv-mode — aucun effet sur
+   téléphone, tablette ou ordinateur.
+   ========================================================================= */
+
+/* Lecture à distance : texte un peu plus grand, curseur de souris masqué. */
+html.tv-mode {
+    font-size: 17px;
+}
+html.tv-mode,
+html.tv-mode * {
+    cursor: none !important;
+}
+
+/* Halo de sélection épais et lumineux (remplace le simple contour 2px). */
+html.tv-mode :where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 3px solid var(--brand-hover);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px var(--brand-dim), 0 0 24px 2px var(--brand-glow);
+    border-radius: var(--radius-btn);
+}
+
+/* Cartes poster : la sélection flèches déclenche le même effet que le
+   survol souris (lift + zoom + bouton play). */
+html.tv-mode .stream-card:focus-visible {
+    transform: translateY(-6px);
+}
+html.tv-mode .stream-card:focus-visible .card-poster-wrap img {
+    transform: scale(1.05);
+}
+html.tv-mode .stream-card:focus-visible .card-play-overlay {
+    opacity: 1;
+}
+html.tv-mode .stream-card:focus-visible .card-play-btn {
+    transform: scale(1);
+}
+
+/* Cartes « Reprendre la lecture » : le overlay play est déjà géré en
+   :focus-visible ; on renforce juste le halo propre à la carte. */
+html.tv-mode .history-card:focus-visible {
+    box-shadow: 0 0 0 6px var(--brand-dim), 0 0 24px 2px var(--brand-glow);
+}
+
+/* Rails horizontaux : marge interne pour ne jamais rogner l'anneau de
+   focus, et défilement aligné sur la carte sélectionnée. */
+html.tv-mode .cards-rail {
+    padding: 10px 10px 18px;
+    margin: -10px -10px -18px;
+    scroll-padding: 10px 0 18px 12px;
+}
+
+/* Contrôles du lecteur plus hauts et plus lisibles à distance. */
+html.tv-mode .server-pill-btn,
+html.tv-mode .player-ctrl-btn,
+html.tv-mode .btn-share {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 0.95rem;
+}
+html.tv-mode .server-pill-btn {
+    padding: 10px 18px;
+}
+
+/* Navigation du header : cibles de focus plus grandes. */
+html.tv-mode .main-nav .nav-link {
+    padding: 10px 14px;
+}
+
+/* Plateformes aux moteurs plus fragiles : on allège les effets coûteux
+   (backdrop-filter non supporté / lent sur anciens Tizen & webOS). */
+html.tv-tizen .site-header,
+html.tv-webos .site-header {
+    background: rgba(8, 9, 12, 0.98);
+}
+html.tv-tizen *,
+html.tv-webos * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+html.tv-tizen {
+    scroll-behavior: auto;
+}

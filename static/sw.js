@@ -1,7 +1,7 @@
 /* Service Worker minimal — NokaTV (PWA légère)
  *
  * Stratégie volontairement prudente :
- *  - Pré-cache : shell CSS local, favicons et manifeste PWA.
+ *  - Pré-cache : shell CSS local, favicons, manifeste PWA et tv.js.
  *  - Cache-first n'est appliqué qu'aux fichiers /static/* (assets immuables
  *    par déploiement).
  *  - TOUT le reste passe par le réseau sans interception : pages HTML,
@@ -14,16 +14,17 @@
  * Bump STATIC_CACHE à chaque déploiement modifiant le shell CSS.
  */
 
-const STATIC_CACHE = 'nokatv-shell-v2';
+const STATIC_CACHE = 'nokatv-shell-v3';
 const SHELL_ASSETS = [
   '/static/style.css',
+  '/static/tv.js',
   '/static/icons/icon.svg?v=2',
   '/static/icons/icon-192.png?v=2',
   '/static/icons/icon-512.png?v=2',
   '/static/icons/icon-maskable-512.png?v=2',
   '/static/icons/apple-touch-icon.png?v=2',
   '/static/icons/favicon.ico?v=2',
-  '/static/manifest.webmanifest?v=2'
+  '/static/manifest.webmanifest?v=3'
 ];
 
 self.addEventListener('install', (event) => {
