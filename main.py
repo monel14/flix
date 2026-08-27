@@ -5,17 +5,22 @@ import os
 import urllib.parse
 from contextlib import asynccontextmanager
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
 from services.seo import page_seo, site_origin
+from services.sitemap import LEGAL_PATHS as LEGAL_SITEMAP_PATHS
+from services.sitemap import STATIC_PATHS as STATIC_SITEMAP_PATHS
+from services.sitemap import collect_sitemap_paths
 from services.templates import templates
 SITE_NAME = "NokaTV"
 from routes import anime, detail, drama, home, player, search
@@ -44,12 +49,31 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="NokaTV", lifespan=lifespan)
 
+# Compression transparente des réponses textuelles (HTML, CSS, JS, JSON) —
+# actif dès lors que le reverse-proxy frontal ne compresse pas déjà.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
 BASE_DIR = Path(__file__).resolve().parent
 
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(parents=True, exist_ok=True)
 
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+class VersionedStaticFiles(StaticFiles):
+    """Assets locaux versionnés dans le HTML (?v=N) : cache navigateur 1 an.
+
+    Le hash/version figure dans l'URL référencée par les templates et le
+    service worker (bump à chaque déploiement) : `immutable` est donc légitime
+    et les ré-visites de Googlebot ne re-téléchargent rien.
+    """
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
+app.mount("/static", VersionedStaticFiles(directory=static_dir), name="static")
 
 # ---------------------------------------------------------------------------
 # Route Ma Liste (Favoris / Watchlist)
@@ -58,9 +82,54 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/ma-liste", response_class=HTMLResponse)
 async def watchlist_page(request: Request):
     """Page Ma Liste de favoris."""
+    # Contenu personnalisé côté client (localStorage) : thin content en SSR
+    # et propre à chaque visiteur -> explicitement non indexable.
     return templates.TemplateResponse(request, "watchlist.html", {
         "request": request,
-        "seo": page_seo(request, title="Ma Liste — NokaTV", path="/ma-liste"),
+        "seo": page_seo(request, title="Ma Liste — NokaTV", path="/ma-liste", noindex=True),
+    })
+
+
+# ---------------------------------------------------------------------------
+# Pages de confiance (E-E-A-T) : mentions légales & contact
+# ---------------------------------------------------------------------------
+
+CONTACT_EMAIL_FALLBACK = "contact@nokatv.xyz"
+
+
+def _contact_email() -> str:
+    return (os.getenv("CONTACT_EMAIL") or "").strip() or CONTACT_EMAIL_FALLBACK
+
+
+@app.get("/mentions-legales", response_class=HTMLResponse)
+async def legal_notice_page(request: Request):
+    """Mentions légales — indexables : transparence sur la nature du service
+    (agrégateur sans hébergement), procédure de retrait et données locales."""
+    return templates.TemplateResponse(request, "mentions_legales.html", {
+        "request": request,
+        "contact_email": _contact_email(),
+        "seo": page_seo(
+            request,
+            title="Mentions légales — NokaTV",
+            description="Mentions légales de NokaTV : nature du service d'agrégation, propriété intellectuelle, procédure de retrait et respect des données personnelles.",
+            path="/mentions-legales",
+        ),
+    })
+
+
+@app.get("/contact", response_class=HTMLResponse)
+async def contact_page(request: Request):
+    """Page contact — indexable : signalement de liens morts et demandes de
+    retrait pour les ayants droit."""
+    return templates.TemplateResponse(request, "contact.html", {
+        "request": request,
+        "contact_email": _contact_email(),
+        "seo": page_seo(
+            request,
+            title="Contact — NokaTV",
+            description="Contacter NokaTV : signalement d'un lien mort, demande de retrait d'une référence (ayants droit) ou suggestion d'amélioration.",
+            path="/contact",
+        ),
     })
 
 
@@ -70,9 +139,21 @@ async def watchlist_page(request: Request):
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt(request: Request):
-    """Robots.txt optimisé pour l'indexation par Google et les moteurs de recherche."""
+    """Robots.txt : tout le HTML public est crawlable, sauf l'API (JSON sans
+    valeur d'indexation) qui gaspillerait le budget de crawl.
+
+    Les pages players / recherche / ma-liste ne sont PAS bloquées ici :
+    elles portent un meta noindex que Googlebot doit pouvoir lire (une page
+    bloquée dans robots.txt mais indexée ne peut pas être dé-indexée).
+    """
     base_url = site_origin(request)
-    return f"User-agent: *\nAllow: /\n\nSitemap: {base_url}/sitemap.xml\n"
+    return (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /api/\n"
+        "\n"
+        f"Sitemap: {base_url}/sitemap.xml\n"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -93,28 +174,42 @@ async def service_worker():
 
 @app.get("/sitemap.xml")
 async def sitemap_xml(request: Request):
-    """Générateur dynamique de sitemap pour le référencement Google."""
+    """Sitemap dynamique : pages statiques + fiches de contenu réelles.
+
+    Le trafic organique d'un site de streaming vient du long tail des fiches
+    (« regarder X en streaming ») : le sitemap les expose directement à
+    Google au lieu d'attendre une découverte par pagination. Les slugs sont
+    collectés depuis les sources et cachés 12 h (services/sitemap.py).
+    """
     base_url = site_origin(request)
 
-    static_routes = [
-        "/",
-        "/films",
-        "/series",
-        "/dramas",
-        "/animes",
-        "/recherche",
-    ]
+    try:
+        paths = await collect_sitemap_paths()
+    except Exception as exc:
+        logger.warning("Sitemap : collecte impossible, version statique seule (%s)", exc)
+        paths = list(STATIC_SITEMAP_PATHS) + list(LEGAL_SITEMAP_PATHS)
 
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ]
 
-    for route in static_routes:
-        xml_lines.append(f"  <url><loc>{base_url}{route}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>")
+    for path in paths:
+        # Priorité hiérarchique : hubs (accueil / sections) > pagination >
+        # fiches > pages de confiance. Pas de changefreq/lastmod fabriqués :
+        # Google les ignore ou les pénalyse s'ils sont faux.
+        is_hub = path in STATIC_SITEMAP_PATHS
+        is_legal = path in LEGAL_SITEMAP_PATHS
+        priority = "0.9" if is_hub else ("0.3" if is_legal else ("0.8" if "?" in path else "0.7"))
+        loc = escape(base_url + path)
+        xml_lines.append(f"  <url><loc>{loc}</loc><priority>{priority}</priority></url>")
 
     xml_lines.append("</urlset>")
-    return Response(content="\n".join(xml_lines), media_type="application/xml")
+    return Response(
+        content="\n".join(xml_lines),
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -196,7 +291,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         return templates.TemplateResponse(
             request, "error.html",
             {"request": request, "status_code": status, "message": msg,
-             "seo": page_seo(request, title=f"Erreur {status} — NokaTV")},
+             "seo": page_seo(request, title=f"Erreur {status} — NokaTV", noindex=True)},
             status_code=status,
         )
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
@@ -210,7 +305,7 @@ async def server_error_handler(request: Request, exc: Exception):
         return templates.TemplateResponse(
             request, "error.html",
             {"request": request, "status_code": 500, "message": "Erreur serveur interne.",
-             "seo": page_seo(request, title="Erreur 500 — NokaTV")},
+             "seo": page_seo(request, title="Erreur 500 — NokaTV", noindex=True)},
             status_code=500,
         )
     return JSONResponse({"detail": "Internal Server Error"}, status_code=500)

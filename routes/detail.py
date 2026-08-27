@@ -73,6 +73,7 @@ async def film_detail(request: Request, slug: str):
                 "related": data.get("related", []),
                 # content_type ("Movie"/"Series") provient de la source :
                 # c'est le seul signal fiable pour typer le JSON-LD.
+                # Fil d'Ariane réel : Accueil > Films ou Séries > œuvre.
                 "seo": content_seo(
                     request,
                     item=data,
@@ -80,6 +81,10 @@ async def film_detail(request: Request, slug: str):
                     title_suffix="Streaming HD",
                     kind_label="en Streaming VF & VOSTFR HD",
                     content_type=data.get("content_type", ""),
+                    breadcrumbs=[
+                        ("Séries" if data.get("type") == "series" else "Films",
+                         "/series" if data.get("type") == "series" else "/films")
+                    ],
                 ),
             })
     except (CoflixNotFoundError, CoflixFetchError):

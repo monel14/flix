@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
 from services.seo import page_seo
-from services.seo import content_seo, page_seo
+from services.seo import content_seo, item_list_json_ld, page_seo
 from scraper.voiranime_client import (
     VoiranimeFetchError,
     VoiranimeNotFoundError,
@@ -135,7 +135,11 @@ async def animes_list(
         "base_path": "/animes",
            "seo": page_seo(request,
                         title=f"{section_label} en Streaming HD — NokaTV",
-                        path=canon_path),
+                        path=canon_path,
+                        extra_json_ld=[item_list_json_ld(
+                            request,
+                            [(it.get("title", ""), f"/anime/{it.get('slug', '')}") for it in items if it.get("slug")],
+                        )]),
     })
 
 
@@ -167,6 +171,7 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
             path=f"/anime/{slug}",
             title_suffix="Animé en Streaming HD",
             kind_label="Animé en Streaming VF & VOSTFR",
+            breadcrumbs=[("Animés", "/animes")],
         ),
     })
 
@@ -227,9 +232,9 @@ async def anime_player(request: Request, slug: str, episode_slug: str) -> HTMLRe
         "next_ep": next_ep,
         "default_server": servers[0] if servers else None,
         # URL du player = page d'usage ; le canonical pointe la fiche parente
-        # (pas de contenu dupliqué fiche/player pour l'indexation).
+        # (pas de contenu dupliqué fiche/player pour l'indexation) + noindex.
         "seo": page_seo(request, title=seo_title, path=f"/anime/{slug}",
-                        image=anime.get("image", "")),
+                        image=anime.get("image", ""), noindex=True),
     })
 
 

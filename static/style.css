@@ -2,8 +2,53 @@
    NOKATV — Direction Artistique Commerciale & Design System Vidéo (P2)
    ========================================================================== */
 
-/* NB : la police Plus Jakarta Sans est chargée via <link> dans base.html.
-   Ne pas la réimporter ici (@import bloque le rendu et doublonne le requêtage). */
+/* ── Police locale (auto-hébergée — ex-CDN Google Fonts) ──
+   Sous-ensemble latin officiel @fontsource/plus-jakarta-sans 5.3.0 (woff2,
+   ~12 Ko par graisse). font-display: swap = texte visible immédiatement en
+   police système, puis échange. unicode-range latin : couvre le français
+   (accents Latin-1 + Œ/œ U+0152-0153) ; tout autre script retombe sur la
+   pile système sans télécharger de fichier inutile. */
+
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('fonts/plus-jakarta-sans-400-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('fonts/plus-jakarta-sans-500-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('fonts/plus-jakarta-sans-600-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('fonts/plus-jakarta-sans-700-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url('fonts/plus-jakarta-sans-800-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root {
     /* ── Palette Fond & Canvas (Obsidienne & Noir Cinéma) ── */
@@ -1795,6 +1840,69 @@ img {
     border-top: 1px solid var(--border-subtle);
     background: var(--bg-base);
     margin-top: auto;
+}
+
+.site-footer .footer-links {
+    margin-top: 6px;
+}
+
+.site-footer .footer-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+}
+
+.site-footer .footer-links a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* ── Pages de confiance (mentions légales, contact) ── */
+.legal-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+    line-height: 1.75;
+    font-size: 0.92rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.legal-page h1 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.legal-page .legal-meta {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 28px;
+}
+
+.legal-page h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 28px 0 8px;
+}
+
+.legal-page a {
+    color: var(--brand-hover);
+    text-decoration: underline;
+}
+
+.legal-page .contact-mail {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.legal-page .contact-list {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+}
+
+.legal-page .contact-list li {
+    margin-bottom: 10px;
 }
 
 /* ==========================================================================

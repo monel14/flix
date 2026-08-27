@@ -14,9 +14,15 @@
  * Bump STATIC_CACHE à chaque déploiement modifiant le shell CSS.
  */
 
-const STATIC_CACHE = 'nokatv-shell-v4';
+const STATIC_CACHE = 'nokatv-shell-v6';
 const SHELL_ASSETS = [
-  '/static/style.css',
+  '/static/style.css?v=6',
+  '/static/icons/icons.css?v=1',
+  '/static/fonts/plus-jakarta-sans-400-latin.woff2',
+  '/static/fonts/plus-jakarta-sans-500-latin.woff2',
+  '/static/fonts/plus-jakarta-sans-600-latin.woff2',
+  '/static/fonts/plus-jakarta-sans-700-latin.woff2',
+  '/static/fonts/plus-jakarta-sans-800-latin.woff2',
   '/static/tv.js',
   '/static/icons/icon.svg?v=2',
   '/static/icons/icon-192.png?v=2',
@@ -52,7 +58,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
 
-  // Externe (CDN films, images distantes, players/iframes, fontes, FA) : pas d'interception.
+  // Externe (CDN films, images distantes, players/iframes) : pas d'interception.
   if (url.origin !== self.location.origin) return;
 
   // Seuls les assets statiques locaux profitent du cache.
