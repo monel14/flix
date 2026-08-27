@@ -5,6 +5,7 @@ import os
 import urllib.parse
 from contextlib import asynccontextmanager
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / ".env")
@@ -16,6 +17,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
 from services.seo import page_seo, site_origin
+from services.sitemap import STATIC_PATHS as STATIC_SITEMAP_PATHS
+from services.sitemap import collect_sitemap_paths
 from services.templates import templates
 SITE_NAME = "NokaTV"
 from routes import anime, detail, drama, home, player, search
@@ -58,9 +61,11 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/ma-liste", response_class=HTMLResponse)
 async def watchlist_page(request: Request):
     """Page Ma Liste de favoris."""
+    # Contenu personnalisé côté client (localStorage) : thin content en SSR
+    # et propre à chaque visiteur -> explicitement non indexable.
     return templates.TemplateResponse(request, "watchlist.html", {
         "request": request,
-        "seo": page_seo(request, title="Ma Liste — NokaTV", path="/ma-liste"),
+        "seo": page_seo(request, title="Ma Liste — NokaTV", path="/ma-liste", noindex=True),
     })
 
 
@@ -70,9 +75,21 @@ async def watchlist_page(request: Request):
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt(request: Request):
-    """Robots.txt optimisé pour l'indexation par Google et les moteurs de recherche."""
+    """Robots.txt : tout le HTML public est crawlable, sauf l'API (JSON sans
+    valeur d'indexation) qui gaspillerait le budget de crawl.
+
+    Les pages players / recherche / ma-liste ne sont PAS bloquées ici :
+    elles portent un meta noindex que Googlebot doit pouvoir lire (une page
+    bloquée dans robots.txt mais indexée ne peut pas être dé-indexée).
+    """
     base_url = site_origin(request)
-    return f"User-agent: *\nAllow: /\n\nSitemap: {base_url}/sitemap.xml\n"
+    return (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /api/\n"
+        "\n"
+        f"Sitemap: {base_url}/sitemap.xml\n"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -93,28 +110,41 @@ async def service_worker():
 
 @app.get("/sitemap.xml")
 async def sitemap_xml(request: Request):
-    """Générateur dynamique de sitemap pour le référencement Google."""
+    """Sitemap dynamique : pages statiques + fiches de contenu réelles.
+
+    Le trafic organique d'un site de streaming vient du long tail des fiches
+    (« regarder X en streaming ») : le sitemap les expose directement à
+    Google au lieu d'attendre une découverte par pagination. Les slugs sont
+    collectés depuis les sources et cachés 12 h (services/sitemap.py).
+    """
     base_url = site_origin(request)
 
-    static_routes = [
-        "/",
-        "/films",
-        "/series",
-        "/dramas",
-        "/animes",
-        "/recherche",
-    ]
+    try:
+        paths = await collect_sitemap_paths()
+    except Exception as exc:
+        logger.warning("Sitemap : collecte impossible, version statique seule (%s)", exc)
+        paths = list(STATIC_SITEMAP_PATHS)
 
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ]
 
-    for route in static_routes:
-        xml_lines.append(f"  <url><loc>{base_url}{route}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>")
+    for path in paths:
+        # Priorité plus élevée pour les hubs (accueil / sections) que pour
+        # les pages paginées et les fiches. Pas de changefreq/lastmod
+        # fabriqués : Google les ignore ou les pénalyse s'ils sont faux.
+        is_hub = path in STATIC_SITEMAP_PATHS
+        priority = "0.9" if is_hub else ("0.8" if "?" in path else "0.7")
+        loc = escape(base_url + path)
+        xml_lines.append(f"  <url><loc>{loc}</loc><priority>{priority}</priority></url>")
 
     xml_lines.append("</urlset>")
-    return Response(content="\n".join(xml_lines), media_type="application/xml")
+    return Response(
+        content="\n".join(xml_lines),
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -196,7 +226,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         return templates.TemplateResponse(
             request, "error.html",
             {"request": request, "status_code": status, "message": msg,
-             "seo": page_seo(request, title=f"Erreur {status} — NokaTV")},
+             "seo": page_seo(request, title=f"Erreur {status} — NokaTV", noindex=True)},
             status_code=status,
         )
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
@@ -210,7 +240,7 @@ async def server_error_handler(request: Request, exc: Exception):
         return templates.TemplateResponse(
             request, "error.html",
             {"request": request, "status_code": 500, "message": "Erreur serveur interne.",
-             "seo": page_seo(request, title="Erreur 500 — NokaTV")},
+             "seo": page_seo(request, title="Erreur 500 — NokaTV", noindex=True)},
             status_code=500,
         )
     return JSONResponse({"detail": "Internal Server Error"}, status_code=500)

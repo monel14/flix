@@ -78,8 +78,12 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ## ⚙️ Configuration (`.env`)
 
 ```env
+# Domaine public (OBLIGATOIRE en prod) : ancre canonicals, Open Graph & sitemap
+SITE_URL=https://nokatv.xyz
 BASE_URL=http://localhost:8001
 COFLIX_SOURCE_URL=https://coflix.wiki
 VOIRDRAMA_SOURCE_URL=https://voirdrama.to
 VOIRANIME_SOURCE_URL=https://voir-anime.to
+# Optionnel : profondeur de collecte du sitemap par catégorie (défaut 5)
+# SITEMAP_MAX_PAGES=5
 ```

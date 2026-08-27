@@ -89,6 +89,9 @@ class SeoMeta:
     content_image: str = ""   # image de l'œuvre (JSON-LD `image` — jamais le fallback global)
     year: str = ""
     genres: list[str] = field(default_factory=list)
+    # Pages d'usage non indexables (players, recherche, ma-liste, erreurs).
+    # `follow` est conservé : les liens vers les fiches restent suivis.
+    noindex: bool = False
 
     @property
     def json_ld(self) -> dict | None:
@@ -132,6 +135,7 @@ def page_seo(
     content_image: str = "",
     year: str = "",
     genres: list[str] | None = None,
+    noindex: bool = False,
 ) -> SeoMeta:
     """Construit le SeoMeta d'une page avec fallbacks cohérents et URLs absolues.
 
@@ -155,6 +159,7 @@ def page_seo(
         content_image=content_image,
         year=(year or "").strip(),
         genres=[g for g in (genres or []) if g],
+        noindex=noindex,
     )
 
 

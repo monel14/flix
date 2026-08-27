@@ -7,6 +7,11 @@ services:
       - "8001:8001"
     environment:
       - BASE_URL=http://localhost:8001
+      # Domaine public du site : ancre tous les canonicals, URLs Open Graph
+      # et le sitemap. SANS cette valeur, ils dérivent des en-têtes proxy
+      # (risque d'URLs http://localhost:8001 dans l'index Google).
+      # ⚠️ À adapter à votre vrai domaine de production.
+      - SITE_URL=https://nokatv.xyz
       - COFLIX_SOURCE_URL=https://coflix.wiki
       - VOIRDRAMA_SOURCE_URL=https://voirdrama.to
       - VOIRANIME_SOURCE_URL=https://voir-anime.to

@@ -227,9 +227,9 @@ async def anime_player(request: Request, slug: str, episode_slug: str) -> HTMLRe
         "next_ep": next_ep,
         "default_server": servers[0] if servers else None,
         # URL du player = page d'usage ; le canonical pointe la fiche parente
-        # (pas de contenu dupliqué fiche/player pour l'indexation).
+        # (pas de contenu dupliqué fiche/player pour l'indexation) + noindex.
         "seo": page_seo(request, title=seo_title, path=f"/anime/{slug}",
-                        image=anime.get("image", "")),
+                        image=anime.get("image", ""), noindex=True),
     })
 
 

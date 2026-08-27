@@ -90,8 +90,9 @@ async def search(request: Request, q: str = Query(default="")) -> HTMLResponse:
         "results": results,
         "error": error,
         # Canonical sans la requête : les pages de résultats ne se
-        # concurrencent pas entre elles dans l'index.
-        "seo": page_seo(request, title=seo_title, path="/recherche"),
+        # concurrencent pas entre elles dans l'index. noindex en plus :
+        # une page de résultats internes n'apporte rien à Google.
+        "seo": page_seo(request, title=seo_title, path="/recherche", noindex=True),
     })
 
 

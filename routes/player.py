@@ -103,9 +103,10 @@ async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
         "next_ep": next_ep,
         "default_server": servers[0] if servers else None,
         # URL du player = page d'usage ; le canonical pointe la fiche parente
-        # (pas de contenu dupliqué fiche/player pour l'indexation).
+        # (pas de contenu dupliqué fiche/player pour l'indexation) et le
+        # noindex verrouille : Google ne doit pas indexer les pages player.
         "seo": page_seo(request, title=seo_title, path=f"/film/{slug}",
-                        image=film.get("image", "")),
+                        image=film.get("image", ""), noindex=True),
     })
 
 

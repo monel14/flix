@@ -26,6 +26,11 @@
     {% if seo %}
     <link rel="canonical" href="{{ seo.canonical }}">
     {% endif %}
+    {% if seo and seo.noindex %}
+    {# Pages d'usage (players, recherche, ma-liste, erreurs) : hors index,
+       mais liens suivis (`follow`) vers les fiches. #}
+    <meta name="robots" content="noindex, follow">
+    {% endif %}
 
     <!-- Open Graph -->
     <meta property="og:site_name" content="NokaTV">
