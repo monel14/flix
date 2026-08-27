@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="legal-page">
+    <h1>Contact</h1>
+    <p class="legal-meta">Une question, un lien cassé, une demande de retrait ? Écrivez-nous.</p>
+
+    <h2>Adresse de contact</h2>
+    <p>
+        <a class="contact-mail" href="mailto:{{ contact_email }}">{{ contact_email }}</a>
+    </p>
+
+    <h2>Motifs de contact</h2>
+    <ul class="contact-list">
+        <li><strong>Lien mort ou lecteur défaillant</strong> — indiquez l'URL de la fiche et l'épisode concerné.</li>
+        <li><strong>Demande de retrait (ayants droit)</strong> — indiquez l'URL concernée et la qualité au droit invoquée ; la référence est retirée dans les meilleurs délais.</li>
+        <li><strong>Suggestion d'amélioration</strong> — nouvelles sections, fonctionnalités, ergonomie.</li>
+    </ul>
+
+    <h2>Bon à savoir</h2>
+    <p>
+        NokaTV est une plateforme d'agrégation : nous n'hébergeons aucune vidéo et ne pouvons
+        agir que sur les <em>références</em> du catalogue (retrait d'une fiche, correction d'un
+        titre ou d'un résumé). Pour un problème propre à un lecteur intégré, le recours le plus
+        rapide reste de sélectionner un autre serveur disponible sur la fiche.
+    </p>
+</section>
+{% endblock %}

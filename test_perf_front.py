@@ -62,7 +62,7 @@ def test_icons_css_methode_mask_sans_webfont():
 
 
 def test_assets_statiques_cache_un_an():
-    for path in ("/static/style.css?v=5", "/static/icons/icons.css?v=1",
+    for path in ("/static/style.css?v=6", "/static/icons/icons.css?v=1",
                  "/static/fonts/plus-jakarta-sans-400-latin.woff2"):
         r = client.get(path)
         assert r.status_code == 200, path
@@ -78,7 +78,7 @@ def test_reponses_html_compresses_gzip():
 
 def test_service_worker_shell_mis_a_jour():
     """Le SW pré-cache le CSS versionné, les icônes et la police locale."""
-    assert "nokatv-shell-v5" in SW
-    assert "/static/style.css?v=5" in SW
+    assert "nokatv-shell-v6" in SW
+    assert "/static/style.css?v=6" in SW
     assert "/static/icons/icons.css?v=1" in SW
     assert "/static/fonts/plus-jakarta-sans-400-latin.woff2" in SW

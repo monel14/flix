@@ -16,7 +16,8 @@ L'application agrège à la volée le contenu de 3 sources majeures (`coflix.wik
 - **Recherche Instantanée Tri-Sources** : Recherche simultanée sur les 3 catalogues avec autocomplétion.
 - **Cache SQLite & Stale-on-Error** : Continuité de service même en cas de panne temporaire des sources distantes.
 - **Proxy d'Images Intégré** : Contournement transparent des protections 403 anti-hotlink pour des affiches toujours visibles.
-- **SEO & Partage Social** : Balises OpenGraph dynamiques (aperçu riche sur WhatsApp, Telegram, Discord, X) et génération automatique de `sitemap.xml` / `robots.txt`.
+- **SEO & Partage Social** : Balises OpenGraph dynamiques (aperçu riche sur WhatsApp, Telegram, Discord, X), données structurées Schema.org (`WebSite`+`SearchAction`, `BreadcrumbList` sur les fiches, `ItemList` sur les catalogues, `Movie`/`TVSeries` quand la source est fiable) et génération automatique de `sitemap.xml` (fiches incluses) / `robots.txt`.
+- **Pages de confiance (E-E-A-T)** : `/mentions-legales` et `/contact` — transparence sur la nature du service d'agrégation et procédure de retrait pour les ayants droit.
 - **Performance & Core Web Vitals** : zéro CDN tiers sur le chemin critique — police *Plus Jakarta Sans* auto-hébergée (woff2 latin, `font-display: swap`) et icônes *Font Awesome* en SVG local via *mask CSS* (plus de webfont d'icônes) ; gzip automatique et cache navigateur 1 an sur les assets versionnés.
 
 ---
@@ -81,6 +82,8 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```env
 # Domaine public (OBLIGATOIRE en prod) : ancre canonicals, Open Graph & sitemap
 SITE_URL=https://nokatv.xyz
+# Email de contact affiché sur /contact et /mentions-legales (retraits, liens morts)
+CONTACT_EMAIL=contact@nokatv.xyz
 BASE_URL=http://localhost:8001
 COFLIX_SOURCE_URL=https://coflix.wiki
 VOIRDRAMA_SOURCE_URL=https://voirdrama.to

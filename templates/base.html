@@ -51,16 +51,18 @@
     {% if seo %}
     <meta name="twitter:image" content="{{ seo.image }}">
     {% endif %}
-    {% if seo and seo.json_ld %}
-    <!-- Données structurées (type d'œuvre fiable uniquement — jamais deviné) -->
-    <script type="application/ld+json">{{ seo.json_ld | tojson }}</script>
+    {% if seo and seo.all_json_ld %}
+    <!-- Données structurées (œuvre éventuelle + WebSite / BreadcrumbList / ItemList) -->
+    {% for ld in seo.all_json_ld %}
+    <script type="application/ld+json">{{ ld | tojson }}</script>
+    {% endfor %}
     {% endif %}
     
     <!-- Assets locaux : icônes SVG (mask CSS) + police auto-hébergée.
        Zéro CDN tiers sur le chemin critique de rendu (plus de DNS/TLS
        bloquants). ?v=N : URLs versionnées -> cache navigateur 1 an sain. -->
     <link rel="stylesheet" href="{{ url_for('static', path='/icons/icons.css') }}?v=1">
-    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}?v=5">
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}?v=6">
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -159,6 +161,9 @@
 <!-- Footer -->
 <footer class="site-footer">
     <p>© 2026 NokaTV — Plateforme de streaming multi-sources (Films, Séries, K-Dramas & Animés).</p>
+    <p class="footer-links">
+        <a href="/mentions-legales">Mentions légales</a> · <a href="/contact">Contact</a>
+    </p>
 </footer>
 
 <!-- Global Scripts, History & Watchlist Tracker -->

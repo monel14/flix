@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
 from services.seo import page_seo
-from services.seo import content_seo, page_seo
+from services.seo import content_seo, item_list_json_ld, page_seo
 from scraper.voirdrama_client import (
     VoirdramaFetchError,
     VoirdramaNotFoundError,
@@ -135,7 +135,11 @@ async def dramas_list(
         "base_path": "/dramas",
            "seo": page_seo(request,
                         title=f"{section_label} en Streaming HD — NokaTV",
-                        path=canon_path),
+                        path=canon_path,
+                        extra_json_ld=[item_list_json_ld(
+                            request,
+                            [(it.get("title", ""), f"/drama/{it.get('slug', '')}") for it in items if it.get("slug")],
+                        )]),
     })
 
 
@@ -167,6 +171,7 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
             path=f"/drama/{slug}",
             title_suffix="K-Drama en Streaming HD",
             kind_label="Drama en Streaming VOSTFR & VF",
+            breadcrumbs=[("K-Dramas", "/dramas")],
         ),
     })
 

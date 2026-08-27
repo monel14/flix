@@ -18,6 +18,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
 from services.seo import page_seo, site_origin
+from services.sitemap import LEGAL_PATHS as LEGAL_SITEMAP_PATHS
 from services.sitemap import STATIC_PATHS as STATIC_SITEMAP_PATHS
 from services.sitemap import collect_sitemap_paths
 from services.templates import templates
@@ -90,6 +91,49 @@ async def watchlist_page(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Pages de confiance (E-E-A-T) : mentions légales & contact
+# ---------------------------------------------------------------------------
+
+CONTACT_EMAIL_FALLBACK = "contact@nokatv.xyz"
+
+
+def _contact_email() -> str:
+    return (os.getenv("CONTACT_EMAIL") or "").strip() or CONTACT_EMAIL_FALLBACK
+
+
+@app.get("/mentions-legales", response_class=HTMLResponse)
+async def legal_notice_page(request: Request):
+    """Mentions légales — indexables : transparence sur la nature du service
+    (agrégateur sans hébergement), procédure de retrait et données locales."""
+    return templates.TemplateResponse(request, "mentions_legales.html", {
+        "request": request,
+        "contact_email": _contact_email(),
+        "seo": page_seo(
+            request,
+            title="Mentions légales — NokaTV",
+            description="Mentions légales de NokaTV : nature du service d'agrégation, propriété intellectuelle, procédure de retrait et respect des données personnelles.",
+            path="/mentions-legales",
+        ),
+    })
+
+
+@app.get("/contact", response_class=HTMLResponse)
+async def contact_page(request: Request):
+    """Page contact — indexable : signalement de liens morts et demandes de
+    retrait pour les ayants droit."""
+    return templates.TemplateResponse(request, "contact.html", {
+        "request": request,
+        "contact_email": _contact_email(),
+        "seo": page_seo(
+            request,
+            title="Contact — NokaTV",
+            description="Contacter NokaTV : signalement d'un lien mort, demande de retrait d'une référence (ayants droit) ou suggestion d'amélioration.",
+            path="/contact",
+        ),
+    })
+
+
+# ---------------------------------------------------------------------------
 # SEO : Sitemap.xml & Robots.txt
 # ---------------------------------------------------------------------------
 
@@ -143,7 +187,7 @@ async def sitemap_xml(request: Request):
         paths = await collect_sitemap_paths()
     except Exception as exc:
         logger.warning("Sitemap : collecte impossible, version statique seule (%s)", exc)
-        paths = list(STATIC_SITEMAP_PATHS)
+        paths = list(STATIC_SITEMAP_PATHS) + list(LEGAL_SITEMAP_PATHS)
 
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -151,11 +195,12 @@ async def sitemap_xml(request: Request):
     ]
 
     for path in paths:
-        # Priorité plus élevée pour les hubs (accueil / sections) que pour
-        # les pages paginées et les fiches. Pas de changefreq/lastmod
-        # fabriqués : Google les ignore ou les pénalyse s'ils sont faux.
+        # Priorité hiérarchique : hubs (accueil / sections) > pagination >
+        # fiches > pages de confiance. Pas de changefreq/lastmod fabriqués :
+        # Google les ignore ou les pénalyse s'ils sont faux.
         is_hub = path in STATIC_SITEMAP_PATHS
-        priority = "0.9" if is_hub else ("0.8" if "?" in path else "0.7")
+        is_legal = path in LEGAL_SITEMAP_PATHS
+        priority = "0.9" if is_hub else ("0.3" if is_legal else ("0.8" if "?" in path else "0.7"))
         loc = escape(base_url + path)
         xml_lines.append(f"  <url><loc>{loc}</loc><priority>{priority}</priority></url>")
 

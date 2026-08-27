@@ -20,7 +20,7 @@ from scraper.voirdrama_parser import parse_voirdrama_list
 from scraper.voiranime_client import voiranime_get_html
 from scraper.voiranime_parser import parse_voiranime_list
 from services.dedup import canonical_slug, merge_variants
-from services.seo import page_seo
+from services.seo import item_list_json_ld, page_seo, website_json_ld
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -184,7 +184,9 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
         "top": top[:10] if isinstance(top, list) else [],
         "top_filter": top_filter,
-        "seo": page_seo(request, path="/"),
+        # WebSite + SearchAction : déclare le moteur de recherche interne
+        # (page d'accueil uniquement, là où Google l'attend).
+        "seo": page_seo(request, path="/", extra_json_ld=[website_json_ld(request)]),
     })
 
 
@@ -244,9 +246,14 @@ async def movies_list(
         "current_genre": genre,
         "current_version": version or "all",
         "base_path": "/films",
+        # ItemList : la page de catalogue décrit son contenu réel (fiches)
         "seo": page_seo(request,
                         title=f"{section_label} en Streaming HD — NokaTV",
-                        path=canon_path),
+                        path=canon_path,
+                        extra_json_ld=[item_list_json_ld(
+                            request,
+                            [(it.get("title", ""), f"/film/{it.get('slug', '')}") for it in items if it.get("slug")],
+                        )]),
     })
 
 
@@ -306,7 +313,12 @@ async def series_list(
         "current_genre": genre,
         "current_version": version or "all",
         "base_path": "/series",
+        # ItemList : la page de catalogue décrit son contenu réel (fiches)
         "seo": page_seo(request,
                         title=f"{section_label} en Streaming HD — NokaTV",
-                        path=canon_path),
+                        path=canon_path,
+                        extra_json_ld=[item_list_json_ld(
+                            request,
+                            [(it.get("title", ""), f"/film/{it.get('slug', '')}") for it in items if it.get("slug")],
+                        )]),
     })

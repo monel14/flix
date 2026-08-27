@@ -14,9 +14,9 @@
  * Bump STATIC_CACHE à chaque déploiement modifiant le shell CSS.
  */
 
-const STATIC_CACHE = 'nokatv-shell-v5';
+const STATIC_CACHE = 'nokatv-shell-v6';
 const SHELL_ASSETS = [
-  '/static/style.css?v=5',
+  '/static/style.css?v=6',
   '/static/icons/icons.css?v=1',
   '/static/fonts/plus-jakarta-sans-400-latin.woff2',
   '/static/fonts/plus-jakarta-sans-500-latin.woff2',

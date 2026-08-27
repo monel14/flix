@@ -92,6 +92,15 @@ class SeoMeta:
     # Pages d'usage non indexables (players, recherche, ma-liste, erreurs).
     # `follow` est conservé : les liens vers les fiches restent suivis.
     noindex: bool = False
+    # Données structurées additionnelles (WebSite, BreadcrumbList, ItemList…)
+    # au-delà du JSON-LD d'œuvre éventuel.
+    extra_json_ld: list[dict] = field(default_factory=list)
+
+    @property
+    def all_json_ld(self) -> list[dict]:
+        """Tous les blocs JSON-LD de la page (œuvre + additionnels)."""
+        blocks = [self.json_ld, *self.extra_json_ld]
+        return [b for b in blocks if b]
 
     @property
     def json_ld(self) -> dict | None:
@@ -136,6 +145,7 @@ def page_seo(
     year: str = "",
     genres: list[str] | None = None,
     noindex: bool = False,
+    extra_json_ld: list[dict] | None = None,
 ) -> SeoMeta:
     """Construit le SeoMeta d'une page avec fallbacks cohérents et URLs absolues.
 
@@ -160,7 +170,72 @@ def page_seo(
         year=(year or "").strip(),
         genres=[g for g in (genres or []) if g],
         noindex=noindex,
+        extra_json_ld=list(extra_json_ld or []),
     )
+
+
+def website_json_ld(request: Request) -> dict:
+    """JSON-LD WebSite + SearchAction (page d'accueil uniquement).
+
+    Déclare le moteur de recherche interne du site à Google
+    (`/recherche?q=…`). Les URLs sont ancrées sur le domaine public.
+    """
+    origin = site_origin(request)
+    return {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": SITE_NAME,
+        "url": f"{origin}/",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": f"{origin}/recherche?q={{search_term_string}}",
+            },
+            "query-input": "required name=search_term_string",
+        },
+    }
+
+
+def breadcrumb_json_ld(request: Request, trail: list[tuple[str, str]]) -> dict:
+    """JSON-LD BreadcrumbList depuis un fil de chemins (nom, chemin).
+
+    Le chemin courant est le dernier élément du fil ; les URLs sont absolues.
+    """
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": pos,
+                "name": name,
+                "item": make_absolute(request, path),
+            }
+            for pos, (name, path) in enumerate(trail, start=1)
+        ],
+    }
+
+
+def item_list_json_ld(request: Request, entries: list[tuple[str, str]]) -> dict:
+    """JSON-LD ItemList pour une page de catalogue (nom, chemin).
+
+    Chaque entrée devient un ListItem pointant vers la fiche — les pages
+    de liste décrivent ainsi leur contenu réel, sans le fabriquer.
+    """
+    return {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": pos,
+                "url": make_absolute(request, path),
+                "name": name,
+            }
+            for pos, (name, path) in enumerate(entries, start=1)
+        ],
+    }
 
 
 def content_seo(
@@ -171,6 +246,7 @@ def content_seo(
     title_suffix: str,
     kind_label: str,
     content_type: str = "",
+    breadcrumbs: list[tuple[str, str]] | None = None,
 ) -> SeoMeta:
     """SeoMeta d'une fiche de contenu (film, série).
 
@@ -178,6 +254,9 @@ def content_seo(
       Toute autre valeur (inconnue, non fiable) -> pas de JSON-LD.
     - Le synopsis, les genres et l'année proviennent de la source réelle ;
       rien n'est fabriqué.
+    - `breadcrumbs` : sections mères (nom, chemin) ; le fil d'Ariane complet
+      Accueil > section > œuvre est dérivé, la fiche en étant le dernier
+      élément.
     """
     title = (item.get("title") or "").strip()
     synopsis = (item.get("synopsis") or "").strip()
@@ -189,6 +268,10 @@ def content_seo(
         description = ""
     schema_type = {"Movie": "Movie", "Series": "TVSeries"}.get(content_type, "")
     og_type = {"Movie": "video.movie", "Series": "video.tv_show"}.get(content_type, "website")
+    extra: list[dict] = []
+    if title and breadcrumbs:
+        trail = [("Accueil", "/"), *breadcrumbs, (title, path)]
+        extra.append(breadcrumb_json_ld(request, trail))
     return page_seo(
         request,
         title=f"{title} — {title_suffix} — {SITE_NAME}" if title else "",
@@ -202,4 +285,5 @@ def content_seo(
         content_image=make_absolute(request, item.get("image", "")),
         year=item.get("year", ""),
         genres=item.get("genres") or [],
+        extra_json_ld=extra,
     )

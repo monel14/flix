@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="legal-page">
+    <h1>Mentions légales</h1>
+    <p class="legal-meta">Plateforme NokaTV — document d'information sur le fonctionnement du site.</p>
+
+    <h2>1. Éditeur du site</h2>
+    <p>
+        Le site NokaTV (ci-après « la plateforme ») est un service d'agrégation et d'indexation
+        de catalogues de streaming tiers. Contact de l'éditeur :
+        <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.
+    </p>
+
+    <h2>2. Nature du service</h2>
+    <p>
+        NokaTV n'héberge <strong>aucun fichier vidéo, audio ou photographique</strong>.
+        La plateforme agrège à la volée des informations descriptives (titres, résumés, affiches
+        relayées, listes d'épisodes) provenant de catalogues publics de tiers, et intègre des
+        lecteurs vidéo fournis et hébergés par ces tiers. Aucune copie d'œuvre n'est stockée
+        sur nos serveurs ; seules des informations techniques temporaires sont mises en cache
+        pour assurer la rapidité d'affichage.
+    </p>
+
+    <h2>3. Propriété intellectuelle</h2>
+    <p>
+        Les œuvres référencées (films, séries, K-Dramas, animés) appartiennent exclusivement à
+        leurs ayants droit respectifs. Les éléments d'identité du site (nom, logo, interface)
+        sont la propriété de la plateforme.
+    </p>
+    <p>
+        <strong>Procédure de retrait :</strong> tout ayant droit ou mandataire souhaitant le
+        retrait d'une référence peut écrire à <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>
+        en indiquant l'URL concernée et la qualité au droit invoquée. La référence est retirée
+        dans les meilleurs délais.
+    </p>
+
+    <h2>4. Données personnelles</h2>
+    <p>
+        La plateforme ne crée aucun compte, ne demande aucune inscription et ne collecte
+        aucune donnée personnelle. L'historique de visionnage et la liste de favoris
+        (« Ma Liste ») sont stockés <strong>exclusivement dans le stockage local de votre
+        navigateur</strong> (localStorage) : ils ne quittent jamais votre appareil et vous
+        pouvez les effacer à tout moment via les réglages du navigateur.
+    </p>
+
+    <h2>5. Cookies</h2>
+    <p>
+        La plateforme ne dépose aucun cookie publicitaire ni traceur tiers. Seul le stockage
+        local technique décrit ci-dessus est utilisé, pour mémoriser vos préférences d'interface.
+    </p>
+
+    <h2>6. Limitation de responsabilité</h2>
+    <p>
+        Les contenus et lecteurs intégrés proviennent de tiers sur lesquels la plateforme
+        n'exerce aucun contrôle éditorial ni technique. La disponibilité, la qualité et la
+        légalité de ces contenus relèvent de la responsabilité de leurs hébergeurs.
+    </p>
+</section>
+{% endblock %}

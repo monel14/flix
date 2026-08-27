@@ -29,6 +29,9 @@ SITEMAP_CACHE_KEY = "sitemap:paths"
 SITEMAP_TTL = 12 * 3600  # 12 h — un sitemap n'a pas besoin d'être plus frais
 
 STATIC_PATHS = ["/", "/films", "/series", "/dramas", "/animes"]
+# Pages de confiance (E-E-A-T) : toujours disponibles, donc toujours listées.
+LEGAL_PATHS = ["/mentions-legales", "/contact"]
+BASE_PATHS = STATIC_PATHS + LEGAL_PATHS
 
 
 def _max_pages() -> int:
@@ -120,7 +123,7 @@ async def _collect_all() -> list[str]:
     }
     results = await asyncio.gather(*tasks.values(), return_exceptions=True)
 
-    paths: set[str] = set(STATIC_PATHS)
+    paths: set[str] = set(BASE_PATHS)
     for (name, _), res in zip(tasks.items(), results):
         if isinstance(res, Exception):
             logger.warning("Sitemap : source « %s » indisponible (%s)", name, res)
@@ -131,7 +134,7 @@ async def _collect_all() -> list[str]:
     # HTML source qui a changé), on ne met PAS en cache 12 h un sitemap
     # dégradé — on laisse le Stale-on-Error du cache servir la version
     # précédente (plus riche), comme pour le reste du site.
-    if paths == set(STATIC_PATHS):
+    if paths == set(BASE_PATHS):
         stale = cache.get_stale(SITEMAP_CACHE_KEY)
         stale_paths = stale.get("data") if stale else None
         if isinstance(stale_paths, list) and len(stale_paths) > len(STATIC_PATHS):
