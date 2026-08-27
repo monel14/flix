@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -47,12 +48,31 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="NokaTV", lifespan=lifespan)
 
+# Compression transparente des réponses textuelles (HTML, CSS, JS, JSON) —
+# actif dès lors que le reverse-proxy frontal ne compresse pas déjà.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
 BASE_DIR = Path(__file__).resolve().parent
 
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(parents=True, exist_ok=True)
 
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+class VersionedStaticFiles(StaticFiles):
+    """Assets locaux versionnés dans le HTML (?v=N) : cache navigateur 1 an.
+
+    Le hash/version figure dans l'URL référencée par les templates et le
+    service worker (bump à chaque déploiement) : `immutable` est donc légitime
+    et les ré-visites de Googlebot ne re-téléchargent rien.
+    """
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
+app.mount("/static", VersionedStaticFiles(directory=static_dir), name="static")
 
 # ---------------------------------------------------------------------------
 # Route Ma Liste (Favoris / Watchlist)

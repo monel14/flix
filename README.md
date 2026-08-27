@@ -17,6 +17,7 @@ L'application agrège à la volée le contenu de 3 sources majeures (`coflix.wik
 - **Cache SQLite & Stale-on-Error** : Continuité de service même en cas de panne temporaire des sources distantes.
 - **Proxy d'Images Intégré** : Contournement transparent des protections 403 anti-hotlink pour des affiches toujours visibles.
 - **SEO & Partage Social** : Balises OpenGraph dynamiques (aperçu riche sur WhatsApp, Telegram, Discord, X) et génération automatique de `sitemap.xml` / `robots.txt`.
+- **Performance & Core Web Vitals** : zéro CDN tiers sur le chemin critique — police *Plus Jakarta Sans* auto-hébergée (woff2 latin, `font-display: swap`) et icônes *Font Awesome* en SVG local via *mask CSS* (plus de webfont d'icônes) ; gzip automatique et cache navigateur 1 an sur les assets versionnés.
 
 ---
 
@@ -31,7 +32,7 @@ L'application agrège à la volée le contenu de 3 sources majeures (`coflix.wik
 | Parser HTML | BeautifulSoup4 4.12 |
 | Templates | Jinja2 3.1 |
 | Cache & Archive | SQLite natif (mode WAL) avec Stale-on-Error |
-| Frontend | Vanilla CSS/JS + Plus Jakarta Sans + Font Awesome 6 |
+| Frontend | Vanilla CSS/JS — police woff2 & icônes SVG auto-hébergées (Font Awesome 6.5.2, mask CSS — zéro CDN) |
 | Conteneurisation | Docker & Docker Compose |
 
 ---

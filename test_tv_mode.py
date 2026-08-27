@@ -43,9 +43,9 @@ def test_base_charge_tv_js_et_manifeste_v3():
     assert 'manifest.webmanifest?v=3' in html
 
 
-def test_service_worker_cache_v4():
+def test_service_worker_cache_v5():
     js = (ROOT / "static" / "sw.js").read_text(encoding="utf-8")
-    assert "nokatv-shell-v4" in js
+    assert "nokatv-shell-v5" in js
     assert "'/static/tv.js'" in js
     assert "manifest.webmanifest?v=3" in js
 
