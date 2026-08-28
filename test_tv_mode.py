@@ -43,10 +43,13 @@ def test_base_charge_tv_js_et_manifeste_v3():
     assert 'manifest.webmanifest?v=3' in html
 
 
-def test_service_worker_cache_v6():
+def test_service_worker_cache_v8():
     js = (ROOT / "static" / "sw.js").read_text(encoding="utf-8")
-    assert "nokatv-shell-v6" in js
+    assert "nokatv-shell-v8" in js
     assert "'/static/tv.js'" in js
+    assert "'/static/pwa-install-manager.js?v=2'" in js
+    assert "'/static/pwa-install-prompt.js?v=2'" in js
+    assert "'/static/pwa-install.css?v=2'" in js
     assert "manifest.webmanifest?v=3" in js
 
 

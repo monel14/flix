@@ -12,6 +12,28 @@
     <meta name="apple-mobile-web-app-title" content="NokaTV">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/static/manifest.webmanifest?v=3">
+    {# Capture très tôt les événements PWA : les modules différés les
+       consomment ensuite sans risquer de rater un beforeinstallprompt déjà
+       émis pendant le chargement d'une page avec un SW existant. #}
+    <script>
+    (function (window) {
+        if (!window || !window.addEventListener) return;
+        var state = window.NokaTVPWAInstallBootstrap = window.NokaTVPWAInstallBootstrap || {};
+        if (state.initialized) return;
+        state.initialized = true;
+        state.deferredPrompt = null;
+        state.appInstalled = false;
+
+        window.addEventListener('beforeinstallprompt', function (event) {
+            if (event && typeof event.preventDefault === 'function') event.preventDefault();
+            state.deferredPrompt = event;
+        });
+        window.addEventListener('appinstalled', function () {
+            state.appInstalled = true;
+            state.deferredPrompt = null;
+        });
+    })(window);
+    </script>
     <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg?v=2">
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png?v=2">
     <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512.png?v=2">
@@ -72,6 +94,8 @@
        bloquants). ?v=N : URLs versionnées -> cache navigateur 1 an sain. -->
     <link rel="stylesheet" href="{{ url_for('static', path='/icons/icons.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}?v=6">
+    {# Composant PWA autonome : aucun impact tant qu'il reste masqué. #}
+    <link rel="stylesheet" href="{{ url_for('static', path='/pwa-install.css') }}?v=2">
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -165,6 +189,39 @@
             <i class="fas fa-check"></i> Lien copié dans le presse-papier !
         </div>
     </div>
+</div>
+
+<!-- Installation PWA : masquée par défaut. Les modules dédiés ne l'ouvrent
+     qu'avec beforeinstallprompt ou les consignes Apple iOS/iPadOS fiables. -->
+<div id="pwa-install-modal" class="pwa-install-overlay" hidden aria-hidden="true">
+    <section id="pwa-install-dialog" class="pwa-install-dialog" role="dialog" aria-modal="true"
+             aria-labelledby="pwa-install-title" aria-describedby="pwa-install-description" tabindex="-1">
+        <button type="button" id="pwa-install-close" class="pwa-install-close"
+                aria-label="Fermer la fenêtre d'installation">
+            <i class="fas fa-xmark" aria-hidden="true"></i>
+        </button>
+        <div class="pwa-install-heading">
+            <span class="pwa-install-mark" aria-hidden="true"><i class="fas fa-plus"></i></span>
+            <h2 id="pwa-install-title" class="pwa-install-title">Installer l'application</h2>
+        </div>
+        <p id="pwa-install-description" class="pwa-install-description">
+            Installez l'application pour y accéder plus rapidement depuis votre appareil.
+        </p>
+        <ol id="pwa-install-ios-instructions" class="pwa-install-steps" hidden
+            aria-label="Étapes d'installation sur iPhone et iPad">
+            <li><strong>Appuyez sur le bouton Partager</strong> dans Safari.</li>
+            <li>Choisissez <strong>« Ajouter à l'écran d'accueil »</strong>.</li>
+            <li>Confirmez avec <strong>« Ajouter »</strong>.</li>
+        </ol>
+        <div class="pwa-install-actions">
+            <button type="button" id="pwa-install-later" class="pwa-install-button pwa-install-button--later">
+                Plus tard
+            </button>
+            <button type="button" id="pwa-install-action" class="pwa-install-button pwa-install-button--primary">
+                <i class="fas fa-plus" aria-hidden="true"></i><span id="pwa-install-action-label">Installer</span>
+            </button>
+        </div>
+    </section>
 </div>
 
 <!-- Footer -->
@@ -404,6 +461,13 @@
    flèches, touches Retour/OK/Plein écran et Media Session. Sans effet sur
    téléphone / ordinateur (cf. static/tv.js). #}
 <script src="/static/tv.js"></script>
+{# Gestionnaire d'installation isolé : il écoute les capacités réelles du
+   navigateur et reste silencieux lorsqu'aucune installation n'est fiable. #}
+<script>
+    window.NokaTVPWAInstallConfig = window.NokaTVPWAInstallConfig || {};
+</script>
+<script src="{{ url_for('static', path='/pwa-install-manager.js') }}?v=2" defer></script>
+<script src="{{ url_for('static', path='/pwa-install-prompt.js') }}?v=2" defer></script>
 {# Enregistrement du service worker minimal (shell local uniquement ; aucune
    interception des pages, API, players ou contenus externes — cf. sw.js). #}
 <script>

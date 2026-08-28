@@ -1,0 +1,279 @@
+/* ==========================================================================
+   NokaTV — Invitation d'installation PWA
+   --------------------------------------------------------------------------
+   Composant isolé de l'interface générale : il reste entièrement masqué tant
+   qu'un mécanisme d'installation fiable ne l'active pas (modules PWA dédiés).
+   ========================================================================== */
+
+.pwa-install-overlay[hidden] {
+    display: none !important;
+}
+
+.pwa-install-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.72);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms var(--ease-out, ease);
+}
+
+.pwa-install-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.pwa-install-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    width: min(100%, 440px);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    max-height: calc(100vh - max(16px, env(safe-area-inset-top, 0px)) - max(16px, env(safe-area-inset-bottom, 0px)));
+    max-height: calc(100dvh - max(16px, env(safe-area-inset-top, 0px)) - max(16px, env(safe-area-inset-bottom, 0px)));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 22px;
+    color: var(--text-pure);
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-focus);
+    border-radius: 16px;
+    box-shadow: var(--shadow-modal);
+    transform: translateY(14px) scale(0.985);
+    transition: transform 180ms var(--ease-out, ease);
+}
+
+.pwa-install-overlay.is-open .pwa-install-dialog {
+    transform: translateY(0) scale(1);
+}
+
+.pwa-install-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-right: 48px;
+}
+
+.pwa-install-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    margin-top: 1px;
+    color: #fff;
+    background: var(--brand);
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.pwa-install-title {
+    margin: 0;
+    color: var(--text-pure);
+    font-size: 1.18rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+}
+
+.pwa-install-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+    transition: color 150ms ease, background 150ms ease;
+}
+
+.pwa-install-close:hover {
+    color: var(--text-pure);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.pwa-install-description {
+    margin: 16px 0 0;
+    color: var(--text-body);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.pwa-install-steps {
+    display: grid;
+    gap: 10px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: pwa-install-step;
+}
+
+.pwa-install-steps li {
+    position: relative;
+    min-height: 38px;
+    padding: 8px 10px 8px 48px;
+    color: var(--text-body);
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-btn);
+    counter-increment: pwa-install-step;
+    font-size: 0.84rem;
+    line-height: 1.4;
+}
+
+.pwa-install-steps li::before {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    color: var(--text-pure);
+    background: var(--brand-dim);
+    border: 1px solid rgba(72, 124, 145, 0.45);
+    border-radius: 50%;
+    content: counter(pwa-install-step);
+    font-size: 0.75rem;
+    font-weight: 800;
+    transform: translateY(-50%);
+}
+
+.pwa-install-steps strong {
+    color: var(--text-pure);
+}
+
+.pwa-install-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.pwa-install-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-btn);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
+.pwa-install-button--later {
+    flex: 1 1 120px;
+    color: var(--text-pure);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-subtle);
+}
+
+.pwa-install-button--later:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.pwa-install-button--primary {
+    flex: 1 1 150px;
+    color: #fff;
+    background: var(--brand);
+    border-color: var(--brand);
+}
+
+.pwa-install-button--primary:hover:not(:disabled) {
+    background: var(--brand-hover);
+    border-color: var(--brand-hover);
+}
+
+.pwa-install-close:disabled,
+.pwa-install-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.68;
+}
+
+.pwa-install-button--primary:disabled {
+    cursor: wait;
+}
+
+body.pwa-install-open {
+    overflow: hidden;
+}
+
+/* La modal est centrée dès que l'espace le permet ; sur téléphone, elle garde
+   le comportement bottom-sheet plus confortable au pouce. */
+@media (min-width: 600px) {
+    .pwa-install-overlay {
+        align-items: center;
+    }
+}
+
+/* Paysage mobile / fenêtre peu haute : le contenu reste accessible par
+   défilement à l'intérieur de la boîte au lieu de dépasser du viewport. */
+@media (max-height: 520px) {
+    .pwa-install-overlay {
+        align-items: center;
+    }
+
+    .pwa-install-dialog {
+        padding: 18px;
+    }
+
+    .pwa-install-description {
+        margin-top: 12px;
+    }
+
+    .pwa-install-steps {
+        gap: 7px;
+        margin-top: 12px;
+    }
+
+    .pwa-install-actions {
+        margin-top: 16px;
+    }
+}
+
+/* Une télévision ne reçoit jamais l'invitation : le gestionnaire vérifie déjà
+   le marqueur existant html.tv-mode ; cette règle est une sécurité visuelle
+   supplémentaire si l'ordre de chargement change. */
+html.tv-mode .pwa-install-overlay {
+    display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pwa-install-overlay,
+    .pwa-install-dialog,
+    .pwa-install-button,
+    .pwa-install-close {
+        transition: none;
+    }
+}
