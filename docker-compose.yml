@@ -11,10 +11,52 @@ services:
       # et le sitemap. SANS cette valeur, ils dérivent des en-têtes proxy
       # (risque d'URLs http://localhost:8001 dans l'index Google).
       # ⚠️ À adapter à votre vrai domaine de production.
-      - SITE_URL=https://nokatv.xyz
+      - SITE_URL=${SITE_URL:-https://nokatv.xyz}
       - COFLIX_SOURCE_URL=https://coflix.wiki
       - VOIRDRAMA_SOURCE_URL=https://voirdrama.to
       - VOIRANIME_SOURCE_URL=https://voir-anime.to
+      # Réglages partagés avec le worker Telegram séparé ; secrets dans .env.
+      - TELEGRAM_PUBLISH_ENABLED=${TELEGRAM_PUBLISH_ENABLED:-false}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHANNEL_FILMS=${TELEGRAM_CHANNEL_FILMS:-}
+      - TELEGRAM_CHANNEL_SERIES=${TELEGRAM_CHANNEL_SERIES:-}
+      - TELEGRAM_CHANNEL_ANIMES=${TELEGRAM_CHANNEL_ANIMES:-}
+      - TELEGRAM_CHANNEL_MANGA=${TELEGRAM_CHANNEL_MANGA:-}
+      - TELEGRAM_CHANNEL_ANIMATION=${TELEGRAM_CHANNEL_ANIMATION:-}
+      - TELEGRAM_TIMEZONE=${TELEGRAM_TIMEZONE:-Africa/Lagos}
+      - TELEGRAM_PUBLISH_HOUR=${TELEGRAM_PUBLISH_HOUR:-12}
+      - TELEGRAM_REQUEST_RETRIES=${TELEGRAM_REQUEST_RETRIES:-3}
+      - TELEGRAM_RETRY_BASE_SECONDS=${TELEGRAM_RETRY_BASE_SECONDS:-2}
+      - TELEGRAM_LEASE_SECONDS=${TELEGRAM_LEASE_SECONDS:-900}
+      - TELEGRAM_DISCOVERY_MODE=${TELEGRAM_DISCOVERY_MODE:-hybrid}
+    volumes:
+      - ./cache.db:/app/cache.db
+      - ./cache.db-shm:/app/cache.db-shm
+      - ./cache.db-wal:/app/cache.db-wal
+
+  # Planificateur autonome : il attend 12:00 Africa/Lagos puis appelle le
+  # même worker transactionnel que la commande cron documentée dans le README.
+  telegram-publisher:
+    build: .
+    restart: unless-stopped
+    command: ["python", "scripts/publish_telegram.py", "--schedule", "--json"]
+    environment:
+      - SITE_URL=${SITE_URL:-https://nokatv.xyz}
+      - COFLIX_SOURCE_URL=https://coflix.wiki
+      - VOIRANIME_SOURCE_URL=https://voir-anime.to
+      - TELEGRAM_PUBLISH_ENABLED=${TELEGRAM_PUBLISH_ENABLED:-false}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHANNEL_FILMS=${TELEGRAM_CHANNEL_FILMS:-}
+      - TELEGRAM_CHANNEL_SERIES=${TELEGRAM_CHANNEL_SERIES:-}
+      - TELEGRAM_CHANNEL_ANIMES=${TELEGRAM_CHANNEL_ANIMES:-}
+      - TELEGRAM_CHANNEL_MANGA=${TELEGRAM_CHANNEL_MANGA:-}
+      - TELEGRAM_CHANNEL_ANIMATION=${TELEGRAM_CHANNEL_ANIMATION:-}
+      - TELEGRAM_TIMEZONE=${TELEGRAM_TIMEZONE:-Africa/Lagos}
+      - TELEGRAM_PUBLISH_HOUR=${TELEGRAM_PUBLISH_HOUR:-12}
+      - TELEGRAM_REQUEST_RETRIES=${TELEGRAM_REQUEST_RETRIES:-3}
+      - TELEGRAM_RETRY_BASE_SECONDS=${TELEGRAM_RETRY_BASE_SECONDS:-2}
+      - TELEGRAM_LEASE_SECONDS=${TELEGRAM_LEASE_SECONDS:-900}
+      - TELEGRAM_DISCOVERY_MODE=${TELEGRAM_DISCOVERY_MODE:-hybrid}
     volumes:
       - ./cache.db:/app/cache.db
       - ./cache.db-shm:/app/cache.db-shm

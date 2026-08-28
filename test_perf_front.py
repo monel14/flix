@@ -77,8 +77,11 @@ def test_reponses_html_compresses_gzip():
 
 
 def test_service_worker_shell_mis_a_jour():
-    """Le SW pré-cache le CSS versionné, les icônes et la police locale."""
-    assert "nokatv-shell-v6" in SW
+    """Le SW pré-cache les assets versionnés du shell, icônes et police locale."""
+    assert "nokatv-shell-v8" in SW
     assert "/static/style.css?v=6" in SW
+    assert "/static/pwa-install.css?v=2" in SW
+    assert "/static/pwa-install-manager.js?v=2" in SW
+    assert "/static/pwa-install-prompt.js?v=2" in SW
     assert "/static/icons/icons.css?v=1" in SW
     assert "/static/fonts/plus-jakarta-sans-400-latin.woff2" in SW

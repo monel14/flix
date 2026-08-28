@@ -1,7 +1,7 @@
 /* Service Worker minimal — NokaTV (PWA légère)
  *
  * Stratégie volontairement prudente :
- *  - Pré-cache : shell CSS local, favicons, manifeste PWA et tv.js.
+ *  - Pré-cache : CSS/scripts du shell, favicons et manifeste PWA.
  *  - Cache-first n'est appliqué qu'aux fichiers /static/* (assets immuables
  *    par déploiement).
  *  - TOUT le reste passe par le réseau sans interception : pages HTML,
@@ -11,12 +11,15 @@
  *  - Pas de fallback offline inventé : NokaTV dépend de sources externes
  *    dynamiques, et cette passe ne promet aucun mode hors-ligne.
  *
- * Bump STATIC_CACHE à chaque déploiement modifiant le shell CSS.
+ * Bump STATIC_CACHE à chaque déploiement modifiant un asset du shell.
  */
 
-const STATIC_CACHE = 'nokatv-shell-v6';
+const STATIC_CACHE = 'nokatv-shell-v8';
 const SHELL_ASSETS = [
   '/static/style.css?v=6',
+  '/static/pwa-install.css?v=2',
+  '/static/pwa-install-manager.js?v=2',
+  '/static/pwa-install-prompt.js?v=2',
   '/static/icons/icons.css?v=1',
   '/static/fonts/plus-jakarta-sans-400-latin.woff2',
   '/static/fonts/plus-jakarta-sans-500-latin.woff2',
