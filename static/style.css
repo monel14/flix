@@ -418,9 +418,22 @@ img {
     position: absolute;
     inset: 0;
     background-size: cover;
-    background-position: center 20%;
-    filter: brightness(0.68);
+    background-position: center;
     z-index: 1;
+}
+
+/* Les sources ne fournissent que des affiches portrait (2:3) pour le hero :
+   un cover brut sur un fond paysager les agrandit démesurément et coupe les
+   visages. Comme sur coflix, l'affiche de fond est floutée et légèrement
+   agrandie — aucun étirement visible — tandis que l'affiche nette est
+   affichée en carte (voir .hero-slide-poster). Le flou est isolé sur ::before
+   pour ne pas adoucir le dégradé de lisibilité ni le contenu. */
+.hero-slide-backdrop::before {
+    content: '';
+    position: absolute;
+    inset: -6%;
+    background: inherit;
+    filter: blur(24px) brightness(0.68);
 }
 
 /* Gradient subtil uniquement en bas — pas de gradient latéral */
@@ -441,6 +454,28 @@ img {
     position: relative;
     z-index: 2;
     max-width: 540px;
+}
+
+/* Affiche nette du slide : elle reste l'élément de reconnaissance visuelle
+   alors que le fond est désormais flouté. Cachée sur mobile où la hauteur
+   du hero ne laisse pas de place. */
+.hero-slide-poster {
+    position: absolute;
+    right: 52px;
+    bottom: 48px;
+    width: 200px;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+    z-index: 2;
+}
+
+.hero-slide-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .hero-slide-meta {
@@ -1927,6 +1962,11 @@ img {
     .hero-slide-content {
         max-width: 460px;
     }
+    .hero-slide-poster {
+        width: 160px;
+        right: 40px;
+        bottom: 40px;
+    }
 
     /* Sections — Tablet (l'échelle du titre hero est fluide via clamp) */
     .content-section {
@@ -1968,6 +2008,9 @@ img {
     }
     .hero-slide-content {
         max-width: 100%;
+    }
+    .hero-slide-poster {
+        display: none; /* pas de place pour la carte sur petit écran */
     }
     .hero-slide-title {
         font-size: 1.55rem;

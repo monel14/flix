@@ -82,21 +82,47 @@ class AnimeServer(TypedDict):
 # Fonctions de parsing
 # ---------------------------------------------------------------------------
 
+# WordPress suffixe les variantes responsives en « -LARGEURxHAUTEUR » ; le
+# fichier original (sans suffixe) existe toujours à côté. Ce motif permet de
+# remonter à la pleine résolution même quand le srcset ne contient que des
+# vignettes.
+_WORDPRESS_SIZE_SUFFIX = re.compile(r"-\d+x\d+(?=\.(?:jpg|jpeg|png|webp))")
+
+
+def _best_voiranime_src(img_tag) -> str:
+    """Sélectionne la plus grande image disponible (srcset trié décroissant
+    chez voir-anime.to) puis remonte à l'originale pleine résolution."""
+    srcset = img_tag.get("srcset", "")
+    if srcset:
+        candidates: list[tuple[int, str]] = []
+        for part in srcset.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            pieces = part.split()
+            if not pieces:
+                continue
+            width = 0
+            if len(pieces) > 1 and pieces[1].endswith("w") and pieces[1][:-1].isdigit():
+                width = int(pieces[1][:-1])
+            candidates.append((width, pieces[0]))
+        if candidates:
+            # Tri par largeur décroissante : plus grand affichage d'abord,
+            # indépendamment de l'ordre (croissant ou décroissant) du site.
+            candidates.sort(key=lambda item: item[0], reverse=True)
+            return _WORDPRESS_SIZE_SUFFIX.sub("", candidates[0][1])
+    return img_tag.get("src") or img_tag.get("data-src", "")
+
+
 def _extract_voiranime_image(img_tag) -> str:
     """
-    Extrait l'image en haute définition et l'encapsule dans le proxy
+    Extrait l'image en pleine résolution et l'encapsule dans le proxy
     pour contourner l'anti-hotlink 403 de voir-anime.to.
     """
     if not img_tag:
         return ""
 
-    srcset = img_tag.get("srcset", "")
-    if srcset:
-        parts = [p.strip().split()[0] for p in srcset.split(",") if p.strip()]
-        src = parts[-1] if parts else (img_tag.get("src") or img_tag.get("data-src", ""))
-    else:
-        src = img_tag.get("src") or img_tag.get("data-src", "")
-
+    src = _best_voiranime_src(img_tag).strip()
     if not src:
         return ""
 

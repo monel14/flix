@@ -39,6 +39,18 @@
                     </button>
                 </div>
             </div>
+            {% if slide.image %}
+            {# Affiche nette en carte : le fond est flouté, la carte garde
+               l'identité visuelle du titre. Cachée sur mobile (CSS). #}
+            <div class="hero-slide-poster">
+                <img src="{{ hero_image_sd }}"
+                     alt="{{ slide.title }}"
+                     loading="eager"
+                     decoding="async"
+                     width="500" height="750"
+                     onerror="this.closest('.hero-slide-poster').style.display='none'">
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
