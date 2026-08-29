@@ -2008,9 +2008,20 @@ img {
     }
     .hero-slide-content {
         max-width: 100%;
+        flex: 1 1 auto;
+        min-width: 0;
     }
+    /* Sur mobile la carte redevient visible, mais dans le flux flex :
+       en haut à droite, sans jamais recouvrir le titre ni les boutons. */
     .hero-slide-poster {
-        display: none; /* pas de place pour la carte sur petit écran */
+        display: block;
+        position: static;
+        align-self: flex-start;
+        flex: 0 0 auto;
+        width: 96px;
+        margin-left: 14px;
+        border-radius: 10px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
     }
     .hero-slide-title {
         font-size: 1.55rem;
@@ -2278,4 +2289,162 @@ html.tv-webos * {
 }
 html.tv-tizen {
     scroll-behavior: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   FEEDBACK TACTILE — retour visuel à l'appui (le code ne définissait jusqu'ici
+   que des états :hover, invisibles au doigt). Trois couches :
+   1. états :active instantanés sur tous les éléments cliquables ;
+   2. onde "ripple" au point de contact (voir static/tap-feedback.js) ;
+   3. hygiène tactile : pas de délai de double-tap, pas de flash gris iOS.
+--------------------------------------------------------------------------- */
+
+/* Supprime le flash gris/bleu iOS/Android au profit de nos propres effets. */
+html {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Réponse immédiate au doigt + sélection de texte évitée sur les commandes. */
+button,
+.btn-cta,
+.server-pill-btn,
+.episode-btn-card,
+.playlist-ep-chip,
+.player-ctrl-btn,
+.player-back-btn,
+.player-speed-btn,
+.hero-nav,
+.hero-dot,
+.rail-nav,
+.btn-share,
+.top-tab-btn,
+.version-segment-btn,
+.sort-segment-btn,
+.mobile-tab {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* --- 1. États pressés : le visuel change dès le contact --- */
+
+/* Boutons d'action (Regarder, Ma Liste, liens CTA…). */
+.btn-cta:active,
+.btn-share:active,
+.player-ctrl-btn:active,
+.player-back-btn:active,
+.history-remove-btn:active {
+    transform: scale(0.96);
+    filter: brightness(0.9);
+}
+
+/* Cartes de contenu : légère compression + léger enfoncement. */
+.stream-card:active {
+    transform: scale(0.97);
+}
+.stream-card:hover:active {
+    transform: translateY(-6px) scale(0.97);
+}
+.history-card:active {
+    transform: scale(0.98);
+}
+.top-rail-card:active {
+    transform: scale(0.97);
+}
+.top-rail-card:hover:active {
+    transform: translateY(-4px) scale(0.97);
+}
+
+/* Épisodes, serveurs, filtres, chips, liens de rails et navigation. */
+.episode-btn-card:active,
+.server-pill-btn:active,
+.playlist-ep-chip:active,
+.genre-chip:active,
+.detail-genre-badge:active,
+.detail-genre-more:active,
+.synopsis-read-more:active,
+.dd-item:active,
+.list-alias-link:active,
+.see-all-link:active,
+.top-tab-btn:active,
+.version-segment-btn:active,
+.sort-segment-btn:active {
+    transform: scale(0.97);
+}
+
+/* Liens de navigation (barre du haut) et onglets mobiles. */
+.nav-link:active {
+    color: var(--text-pure);
+    transform: scale(0.96);
+}
+.mobile-tab:active {
+    color: var(--text-pure);
+    background: rgba(255, 255, 255, 0.06);
+    transform: scale(0.96);
+}
+
+/* Contrôles du carrousel hero. */
+.hero-nav:active {
+    transform: translateY(-50%) scale(0.88);
+    background: rgba(8, 9, 12, 0.7);
+}
+.hero-dot:active {
+    transform: scale(1.5);
+    background: rgba(255, 255, 255, 0.6);
+}
+.rail-nav:active {
+    transform: scale(0.9);
+}
+
+/* --- 2. Onde "ripple" au point de contact --- */
+
+/* Pose par tap-feedback.js uniquement pendant l'animation, afin de ne pas
+   changer durablement l'empilement ni le rognage des cartes (ex. ombres). */
+.ripple-host {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.28);
+    transform: scale(0);
+    animation: noka-ripple 0.55s ease-out forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes noka-ripple {
+    0% {
+        transform: scale(0);
+        opacity: 0.9;
+    }
+    70% {
+        opacity: 0.35;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+/* --- 3. Accessibilité : mouvement réduit = feedback statique uniquement --- */
+
+@media (prefers-reduced-motion: reduce) {
+    .ripple {
+        display: none;
+    }
+    .btn-cta:active,
+    .stream-card:active,
+    .history-card:active,
+    .top-rail-card:active,
+    .episode-btn-card:active,
+    .server-pill-btn:active,
+    .genre-chip:active,
+    .nav-link:active,
+    .mobile-tab:active {
+        transform: none;
+        filter: brightness(0.93);
+    }
 }

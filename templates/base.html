@@ -93,7 +93,7 @@
        Zéro CDN tiers sur le chemin critique de rendu (plus de DNS/TLS
        bloquants). ?v=N : URLs versionnées -> cache navigateur 1 an sain. -->
     <link rel="stylesheet" href="{{ url_for('static', path='/icons/icons.css') }}?v=1">
-    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}?v=6">
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}?v=7">
     {# Composant PWA autonome : aucun impact tant qu'il reste masqué. #}
     <link rel="stylesheet" href="{{ url_for('static', path='/pwa-install.css') }}?v=2">
     {% block head %}{% endblock %}
@@ -468,6 +468,9 @@
 </script>
 <script src="{{ url_for('static', path='/pwa-install-manager.js') }}?v=2" defer></script>
 <script src="{{ url_for('static', path='/pwa-install-prompt.js') }}?v=2" defer></script>
+{# Retour visuel à l'appui (ripple + états :active) sur tous les éléments
+   interactifs ; écouteur passif, aucune dépendance. #}
+<script src="{{ url_for('static', path='/tap-feedback.js') }}?v=1" defer></script>
 {# Enregistrement du service worker minimal (shell local uniquement ; aucune
    interception des pages, API, players ou contenus externes — cf. sw.js). #}
 <script>
