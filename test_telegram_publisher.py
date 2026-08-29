@@ -70,14 +70,17 @@ def make_publication(
     category: str = CATEGORY_FILMS,
     key: str = "test:one",
     *,
+    target_path: str | None = None,
     image: str = "/static/poster.jpg",
     kind: str = "content",
 ) -> Publication:
+    if target_path is None:
+        target_path = "/anime/titre-vostfr" if category == CATEGORY_ANIMES else "/film/titre-vf"
     return Publication(
         category=category,
         key=key,
         title="Titre <non interprété>",
-        target_path="/film/titre-vf",
+        target_path=target_path,
         image=image,
         subtitle="Épisode 2" if kind == "episode" else "",
         version="VF & VOSTFR",
@@ -89,18 +92,20 @@ def make_post(
     category: str = CATEGORY_FILMS,
     key: str = "test:one",
     *,
+    target_path: str | None = None,
     image: str = "/static/poster.jpg",
     kind: str = "content",
 ):
-    post = make_publication(category, key, image=image, kind=kind).to_post(settings())
+    post = make_publication(category, key, target_path=target_path, image=image, kind=kind).to_post(settings())
     assert post is not None
     return post
 
 
-def claim_one(store: TelegramPublicationStore, post, *, timestamp: float = 10.0) -> ClaimedPost:
+def claim_one(store: TelegramPublicationStore, post, *, image: str | None = None, timestamp: float = 10.0) -> ClaimedPost:
     store.register_discoveries(post.category, [post], timestamp=timestamp)
     # Première insertion = baseline ; la seconde crée une vraie nouveauté.
-    newer = make_post(post.category, post.key + ":new", image="/static/poster.jpg")
+    post_image = image if image is not None else (post.image_url or "/static/poster.jpg")
+    newer = make_post(post.category, post.key + ":new", target_path=post.target_url.replace("https://nokatv.example", ""), image=post_image)
     store.register_discoveries(post.category, [post, newer], timestamp=timestamp + 1)
     claimed = store.claim_due([post.category], timestamp=timestamp + 2)
     assert len(claimed) == 1
@@ -113,7 +118,58 @@ def test_publication_ne_partage_que_la_fiche_locale_et_echappe_la_legende():
     assert post.image_url == "https://nokatv.example/static/poster.jpg"
     assert "&lt;non interprété&gt;" in post.caption
     assert "VF &amp; VOSTFR" in post.caption
-    assert "Nouveau film" in post.caption
+    assert "NOUVEAU FILM" in post.caption
+    assert "Audio :" in post.caption
+    assert "Qualité :" in post.caption
+    assert "Bon visionnage sur NokaTV" in post.caption
+
+
+def test_publication_rich_caption_formatting():
+    # Film avec genres, année et synopsis
+    film_pub = Publication(
+        category=CATEGORY_FILMS,
+        key="film:rich",
+        title="Inception",
+        target_path="/film/inception-vf",
+        genres=["Action", "Science-Fiction"],
+        year="2010",
+        version="VF",
+        quality="4K HDR",
+        synopsis="Un voleur qui s'infiltre dans les rêves est chargé d'implanter une idée.",
+    )
+    post = film_pub.to_post(settings())
+    assert post is not None
+    assert "✨ <b>NOUVEAU FILM</b> ✨" in post.caption
+    assert "🎬 <b>Inception (2010)</b>" in post.caption
+    assert "🏷️ <b>Genre :</b> Action, Science-Fiction" in post.caption
+    assert "🔊 <b>Audio :</b> VF" in post.caption
+    assert "📺 <b>Qualité :</b> 4K HDR" in post.caption
+    assert "<blockquote>Un voleur qui s'infiltre dans les rêves est chargé d'implanter une idée.</blockquote>" in post.caption
+    assert "🍿 <i>Bon visionnage sur NokaTV !</i>" in post.caption
+    assert post.button_text == "🍿 Voir le film"
+
+    # Anime episode
+    anime_pub = Publication(
+        category=CATEGORY_ANIMES,
+        key="anime:ep",
+        title="Solo Leveling",
+        subtitle="Épisode 12",
+        target_path="/anime/solo-leveling-vostfr",
+        genres=["Action", "Fantasy"],
+        version="VOSTFR",
+        synopsis="Dans un monde où des portails s'ouvrent vers des donjons...",
+        kind="episode",
+    )
+    anime_post = anime_pub.to_post(settings())
+    assert anime_post is not None
+    assert "✨ <b>NOUVEL ÉPISODE D’ANIMÉ</b> ✨" in anime_post.caption
+    assert "🎌 <b>Solo Leveling</b>" in anime_post.caption
+    assert "📍 <b>Épisode 12</b>" in anime_post.caption
+    assert "🏷️ <b>Genre :</b> Action, Fantasy" in anime_post.caption
+    assert "🔊 <b>Audio :</b> VOSTFR" in anime_post.caption
+    assert "📺 <b>Qualité :</b> HD" in anime_post.caption
+    assert "<blockquote>Dans un monde où des portails s'ouvrent vers des donjons...</blockquote>" in anime_post.caption
+    assert anime_post.button_text == "⚡ Regarder l'épisode"
 
     # Une URL externe ne peut pas devenir le bouton d'un post, même si elle
     # arrivait d'une source malformée.
@@ -830,3 +886,112 @@ def test_configuration_exige_les_quatre_canaux_lorsque_la_publication_est_active
     )
     with pytest.raises(TelegramConfigurationError, match="TELEGRAM_CHANNEL_SERIES"):
         incomplete.validate_for_publish()
+
+
+def test_client_telegram_telecharge_image_proxiee_et_envoie_multipart(tmp_path):
+    async def scenario():
+        store = TelegramPublicationStore(tmp_path / "telegram.db")
+        proxied_post = make_post(
+            category=CATEGORY_ANIMES,
+            key="anime:multipart-test",
+            image="/api/image-proxy?url=https%3A%2F%2Fvoir-anime.to%2Fwp-content%2Fuploads%2Ftest.jpg",
+            kind="episode",
+        )
+        claimed = claim_one(store, proxied_post, timestamp=1)
+
+        requests: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            if "voir-anime.to" in str(request.url):
+                assert request.headers.get("referer") == "https://voir-anime.to/"
+                return httpx.Response(200, content=b"\xff\xd8\xff\xe0" + b"fake-jpeg-data", headers={"content-type": "image/jpeg"})
+            if request.url.path.endswith("/sendPhoto"):
+                return httpx.Response(200, json={"ok": True, "result": {"message_id": 42}})
+            return httpx.Response(404)
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        bot = TelegramBotClient(settings(), client=client)
+        message_id = await bot.send("@nokatv_manga", claimed)
+        await client.aclose()
+
+        assert message_id == 42
+        assert len(requests) == 2
+        # Première requête : téléchargement de l'image avec Referer
+        assert "voir-anime.to" in str(requests[0].url)
+        # Deuxième requête : sendPhoto en multipart
+        assert requests[1].url.path.endswith("/sendPhoto")
+        assert "multipart/form-data" in requests[1].headers.get("content-type", "")
+
+    asyncio.run(scenario())
+
+
+def test_store_queue_baseline_items_et_reset_category(tmp_path):
+    store = TelegramPublicationStore(tmp_path / "telegram.db")
+    post1 = make_post(category=CATEGORY_ANIMATION, key="anim:one")
+    post2 = make_post(category=CATEGORY_FILMS, key="film:one")
+
+    store.register_discoveries(CATEGORY_ANIMATION, [post1], timestamp=1)
+    store.register_discoveries(CATEGORY_FILMS, [post2], timestamp=1)
+
+    assert store.is_baselined(CATEGORY_ANIMATION) is True
+    assert store.is_baselined(CATEGORY_FILMS) is True
+
+    # Pas de messages dus en baseline initiale
+    assert store.claim_due([CATEGORY_ANIMATION], timestamp=2) == []
+
+    # Queue uniquement les films d'animation
+    queued = store.queue_baseline_items(CATEGORY_ANIMATION)
+    assert queued == 1
+
+    claimed = store.claim_due([CATEGORY_ANIMATION], timestamp=3)
+    assert len(claimed) == 1
+    assert claimed[0].key == "anim:one"
+
+    # Réinitialisation de la catégorie
+    store.reset_category(CATEGORY_ANIMATION)
+    assert store.is_baselined(CATEGORY_ANIMATION) is False
+    assert store.is_baselined(CATEGORY_FILMS) is True
+    assert store.state_for(CATEGORY_ANIMATION, "anim:one") is None
+
+
+def test_cli_publish_baseline_et_reset_baseline(tmp_path, monkeypatch):
+    async def scenario():
+        from scripts.publish_telegram import run_publish_baseline, run_reset_baseline
+
+        database_path = tmp_path / "telegram.db"
+        store = TelegramPublicationStore(database_path)
+        post = make_post(category=CATEGORY_ANIMATION, key="anim:cli-test")
+        store.register_discoveries(CATEGORY_ANIMATION, [post], timestamp=1)
+        assert store.is_baselined(CATEGORY_ANIMATION) is True
+
+        class MockSender:
+            def __init__(self):
+                self.sent: list[tuple[str, str]] = []
+
+            async def send(self, channel_id, post):
+                self.sent.append((channel_id, post.key))
+                return 99
+
+        sender = MockSender()
+        monkeypatch.setattr(
+            "scripts.publish_telegram.TelegramPublicationStore",
+            lambda *args, **kwargs: store,
+        )
+
+        test_settings = settings()
+        publisher = TelegramPublisher(test_settings, store=store, sender=sender)
+        monkeypatch.setattr(
+            "scripts.publish_telegram.TelegramPublisher",
+            lambda *args, **kwargs: publisher,
+        )
+
+        exit_code = await run_publish_baseline(test_settings, "animation", dry_run=False, as_json=True)
+        assert exit_code == 0
+        assert sender.sent == [("@nokatv_animation", "anim:cli-test")]
+
+        reset_code = run_reset_baseline(test_settings, "animation")
+        assert reset_code == 0
+        assert store.is_baselined(CATEGORY_ANIMATION) is False
+
+    asyncio.run(scenario())

@@ -24,7 +24,7 @@ from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import parse_qs, urljoin, urlsplit
 
 import httpx
 
@@ -51,24 +51,24 @@ _DISCOVERY_RETRY_BASE_SECONDS = 5 * 60
 
 _CATEGORY_META = {
     CATEGORY_FILMS: {
-        "content_heading": "🎬 <b>Nouveau film</b>",
-        "episode_heading": "📺 <b>Nouvel épisode de série</b>",
-        "button": "Voir le film",
+        "content_heading": "✨ <b>NOUVEAU FILM</b> ✨",
+        "episode_heading": "✨ <b>NOUVEL ÉPISODE DE SÉRIE</b> ✨",
+        "button": "🍿 Voir le film",
     },
     CATEGORY_SERIES: {
-        "content_heading": "📺 <b>Nouvelle série</b>",
-        "episode_heading": "📺 <b>Nouvel épisode de série</b>",
-        "button": "Voir la série",
+        "content_heading": "✨ <b>NOUVELLE SÉRIE</b> ✨",
+        "episode_heading": "✨ <b>NOUVEL ÉPISODE DE SÉRIE</b> ✨",
+        "button": "📺 Voir la série",
     },
     CATEGORY_ANIMES: {
-        "content_heading": "🍥 <b>Nouvel animé</b>",
-        "episode_heading": "🍥 <b>Nouvel épisode d’animé</b>",
-        "button": "Voir l’animé",
+        "content_heading": "✨ <b>NOUVEL ANIMÉ</b> ✨",
+        "episode_heading": "✨ <b>NOUVEL ÉPISODE D’ANIMÉ</b> ✨",
+        "button": "🍥 Voir l’animé",
     },
     CATEGORY_ANIMATION: {
-        "content_heading": "✨ <b>Nouveau film d’animation</b>",
-        "episode_heading": "✨ <b>Nouvel épisode</b>",
-        "button": "Voir le film",
+        "content_heading": "✨ <b>NOUVEAU FILM D’ANIMATION</b> ✨",
+        "episode_heading": "✨ <b>NOUVEL ÉPISODE</b> ✨",
+        "button": "🍿 Voir le film",
     },
 }
 
@@ -264,6 +264,10 @@ class Publication:
     subtitle: str = ""
     version: str = ""
     kind: str = "content"  # "content" ou "episode"
+    genres: tuple[str, ...] | list[str] = ()
+    year: str = ""
+    synopsis: str = ""
+    quality: str = "HD"
 
     def to_post(self, settings: TelegramSettings) -> TelegramPost | None:
         if self.category not in _CATEGORY_META:
@@ -279,6 +283,19 @@ class Publication:
 
         image_url = _image_url(settings.site_url, self.image)
         caption = build_caption(self)
+
+        if self.kind == "episode":
+            if self.category == CATEGORY_ANIMES:
+                button_text = "⚡ Regarder l'épisode"
+            else:
+                button_text = "▶️ Regarder l'épisode"
+        elif self.category in (CATEGORY_FILMS, CATEGORY_ANIMATION):
+            button_text = "🍿 Voir le film"
+        elif self.category == CATEGORY_SERIES:
+            button_text = "▶️ Voir la série"
+        else:
+            button_text = "⚡ Voir l'animé"
+
         return TelegramPost(
             category=self.category,
             key=key,
@@ -286,27 +303,70 @@ class Publication:
             caption=caption,
             target_url=target_url,
             image_url=image_url,
-            button_text=_CATEGORY_META[self.category]["button"],
+            button_text=button_text,
         )
 
 
 def build_caption(publication: Publication) -> str:
-    """Légende HTML courte, échappée et compatible avec la limite Telegram."""
+    """Légende HTML riche, élégante, échappée et compatible avec la limite Telegram."""
     meta = _CATEGORY_META[publication.category]
     heading = meta["episode_heading"] if publication.kind == "episode" else meta["content_heading"]
-    # Les trois limites cumulées sont volontairement conservatrices : après
-    # échappement HTML (un '&' devient '&amp;'), la caption reste sous les
-    # 1024 caractères imposés par Telegram, même avec une source malformée.
-    title = _clean_text(publication.title, 90)
-    subtitle = _clean_text(publication.subtitle, 60)
-    version = _clean_text(publication.version, 20)
-    lines = [heading, html.escape(title, quote=False)]
 
-    if subtitle:
-        lines.append(html.escape(subtitle, quote=False))
-    if version:
-        lines.append("🎞️ " + html.escape(version, quote=False))
-    lines.append("\nDisponible sur NokaTV.")
+    icon_map = {
+        CATEGORY_FILMS: "🎬",
+        CATEGORY_ANIMATION: "✨",
+        CATEGORY_SERIES: "📺",
+        CATEGORY_ANIMES: "🎌",
+    }
+    icon = icon_map.get(publication.category, "🎬")
+
+    # Limites conservatrices pour respecter les 1024 caractères de caption Telegram
+    clean_title = _clean_text(publication.title, 80)
+    clean_year = _clean_text(publication.year, 10)
+    clean_subtitle = _clean_text(publication.subtitle, 60)
+    clean_version = _clean_text(publication.version, 30)
+    clean_quality = _clean_text(publication.quality, 20) or "HD"
+    clean_synopsis = _clean_text(publication.synopsis, 240)
+
+    lines = [heading, ""]
+
+    # Titre et Année
+    title_escaped = html.escape(clean_title, quote=False)
+    if clean_year and clean_year not in clean_title:
+        lines.append(f"{icon} <b>{title_escaped} ({html.escape(clean_year, quote=False)})</b>")
+    else:
+        lines.append(f"{icon} <b>{title_escaped}</b>")
+
+    # Sous-titre pour les épisodes (ex: Saison 1 • Épisode 08)
+    if clean_subtitle:
+        sub_icon = "📍"
+        lines.append(f"{sub_icon} <b>{html.escape(clean_subtitle, quote=False)}</b>")
+
+    # Genres
+    if publication.genres:
+        clean_genres = [_clean_text(g, 30) for g in publication.genres if _clean_text(g, 30)][:4]
+        if clean_genres:
+            genres_str = ", ".join(html.escape(g, quote=False) for g in clean_genres)
+            lines.append(f"🏷️ <b>Genre :</b> {genres_str}")
+
+    # Audio & Qualité (sans drapeaux, style épuré)
+    info_parts = []
+    if clean_version:
+        info_parts.append(f"🔊 <b>Audio :</b> {html.escape(clean_version, quote=False)}")
+    info_parts.append(f"📺 <b>Qualité :</b> {html.escape(clean_quality, quote=False)}")
+    lines.append("")
+    lines.append("  |  ".join(info_parts))
+
+    # Synopsis en bloc citation blockquote
+    if clean_synopsis:
+        synopsis_escaped = html.escape(clean_synopsis, quote=False)
+        lines.append("")
+        lines.append("📖 <b>Synopsis :</b>")
+        lines.append(f"<blockquote>{synopsis_escaped}</blockquote>")
+
+    # Pied de page
+    lines.append("")
+    lines.append("🍿 <i>Bon visionnage sur NokaTV !</i>")
     return "\n".join(lines)
 
 
@@ -417,6 +477,35 @@ class TelegramPublicationStore:
                 "SELECT 1 FROM telegram_channel_state WHERE category=?", (category,)
             ).fetchone()
         return row is not None
+
+    def queue_baseline_items(self, category: str | None = None) -> int:
+        """Passe les éléments de la baseline à l'état 'pending' pour forcer leur envoi."""
+        categories = [category] if category and category in PUBLISHABLE_CATEGORIES else list(PUBLISHABLE_CATEGORIES)
+        placeholders = ", ".join("?" for _ in categories)
+        with self._transaction() as connection:
+            cursor = connection.execute(
+                f"""
+                UPDATE telegram_publications
+                SET state='pending', next_attempt_at=0, attempts=0, lease_until=0, lease_token=''
+                WHERE category IN ({placeholders}) AND state='baseline'
+                """,
+                categories,
+            )
+            return cursor.rowcount
+
+    def reset_category(self, category: str | None = None) -> None:
+        """Supprime l'état et l'historique d'une catégorie pour rejouer un inventaire complet."""
+        categories = [category] if category and category in PUBLISHABLE_CATEGORIES else list(PUBLISHABLE_CATEGORIES)
+        placeholders = ", ".join("?" for _ in categories)
+        with self._transaction() as connection:
+            connection.execute(
+                f"DELETE FROM telegram_channel_state WHERE category IN ({placeholders})",
+                categories,
+            )
+            connection.execute(
+                f"DELETE FROM telegram_publications WHERE category IN ({placeholders})",
+                categories,
+            )
 
     def register_discoveries(
         self,
@@ -814,6 +903,20 @@ class TelegramPublicationStore:
             ).fetchone()
 
 
+def _extract_image_target_url(image_url: str) -> str:
+    """Extrait l'URL distante réelle si l'image transite par /api/image-proxy."""
+    image_url = (image_url or "").strip()
+    if not image_url:
+        return ""
+    parsed = urlsplit(image_url)
+    if "image-proxy" in parsed.path:
+        query_params = parse_qs(parsed.query)
+        target = query_params.get("url", [""])[0].strip()
+        if target.startswith(("http://", "https://")):
+            return target
+    return image_url
+
+
 class TelegramSender(Protocol):
     async def send(self, channel_id: str, post: ClaimedPost) -> str | int | None:
         """Envoie un post Telegram et retourne son message_id si disponible."""
@@ -851,23 +954,89 @@ class TelegramBotClient:
         if self._owns_client:
             await self._client.aclose()
 
+    async def _download_image(self, image_url: str) -> tuple[bytes, str] | None:
+        """Télécharge l'affiche en injectant les en-têtes/Referer anti-hotlink nécessaires."""
+        target = _extract_image_target_url(image_url)
+        if not target or not target.startswith(("http://", "https://")):
+            return None
+
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+            ),
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        }
+        if "voir-anime" in target:
+            headers["Referer"] = "https://voir-anime.to/"
+        elif "voirdrama" in target:
+            headers["Referer"] = "https://voirdrama.to/"
+        elif "coflix" in target:
+            headers["Referer"] = "https://coflix.wiki/"
+
+        try:
+            response = await self._client.get(target, headers=headers, timeout=15.0)
+            if response.status_code != 200:
+                return None
+            content = response.content
+            # Telegram refuse les photos de plus de 10 Mo pour sendPhoto
+            if not content or len(content) > 10 * 1024 * 1024:
+                return None
+            content_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
+            if content_type.startswith("text/") or "svg" in content_type or "html" in content_type:
+                return None
+            if not content_type.startswith("image/"):
+                if content.startswith(b"\xff\xd8\xff"):
+                    content_type = "image/jpeg"
+                elif content.startswith(b"\x89PNG"):
+                    content_type = "image/png"
+                elif content.startswith(b"RIFF") and b"WEBP" in content[:16]:
+                    content_type = "image/webp"
+                elif content.startswith((b"GIF87a", b"GIF89a")):
+                    content_type = "image/gif"
+                else:
+                    return None
+            return content, content_type
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Téléchargement de l'affiche impossible pour %s : %s", target, exc)
+            return None
+
     async def send(self, channel_id: str, post: ClaimedPost) -> str | int | None:
         await self._wait_for_send_window(channel_id)
         payload = self._base_payload(channel_id, post)
         if post.image_url:
+            is_proxied = "image-proxy" in post.image_url
+
+            # 1. Si l'affiche passe par le proxy anti-hotlink, télécharger directement et envoyer en multipart
+            if is_proxied:
+                image_data = await self._download_image(post.image_url)
+                if image_data is not None:
+                    content, content_type = image_data
+                    ext = "jpg" if "jpeg" in content_type else (content_type.split("/")[-1] or "jpg")
+                    try:
+                        response = await self._send_with_retry(
+                            "sendPhoto",
+                            {**payload, "caption": post.caption},
+                            files={"photo": (f"poster.{ext}", content, content_type)},
+                        )
+                        return _message_id(response)
+                    except TelegramPublishError as exc:
+                        if not exc.image_error:
+                            raise
+                        logger.warning("Affiche multipart rejetée pour %s ; repli URL ou texte : %s", post.key, exc)
+
+            # 2. Envoi par URL distante directe
             try:
                 response = await self._send_with_retry(
                     "sendPhoto", {**payload, "photo": post.image_url, "caption": post.caption}
                 )
                 return _message_id(response)
             except TelegramPublishError as exc:
-                # Une photo inaccessible est le seul échec connu où envoyer le
-                # texte ensuite ne risque pas un double post : Telegram a déjà
-                # répondu qu'il n'a pas accepté sendPhoto.
                 if not exc.image_error:
                     raise
                 logger.warning("Affiche Telegram indisponible pour %s ; envoi texte seul.", post.key)
 
+        # 3. Envoi texte seul en dernier recours
         response = await self._send_with_retry(
             "sendMessage",
             {**payload, "text": post.caption, "disable_web_page_preview": "false"},
@@ -905,11 +1074,17 @@ class TelegramBotClient:
             "reply_markup": json.dumps(keyboard, ensure_ascii=False, separators=(",", ":")),
         }
 
-    async def _send_with_retry(self, method: str, payload: Mapping[str, str]) -> Mapping[str, object]:
+    async def _send_with_retry(
+        self,
+        method: str,
+        payload: Mapping[str, str],
+        *,
+        files: Mapping[str, tuple[str, bytes, str]] | None = None,
+    ) -> Mapping[str, object]:
         last_error: TelegramPublishError | None = None
         for attempt in range(1, self.settings.request_retries + 1):
             try:
-                return await self._call(method, payload)
+                return await self._call(method, payload, files=files)
             except TelegramPublishError as exc:
                 last_error = exc
                 # Une erreur de photo est connue et traitée par le fallback ;
@@ -924,10 +1099,19 @@ class TelegramBotClient:
                 await self._sleep(delay)
         raise last_error or TelegramPublishError("Échec Telegram inconnu.")
 
-    async def _call(self, method: str, payload: Mapping[str, str]) -> Mapping[str, object]:
+    async def _call(
+        self,
+        method: str,
+        payload: Mapping[str, str],
+        *,
+        files: Mapping[str, tuple[str, bytes, str]] | None = None,
+    ) -> Mapping[str, object]:
         endpoint = f"https://api.telegram.org/bot{self.settings.bot_token}/{method}"
         try:
-            response = await self._client.post(endpoint, data=payload)
+            if files:
+                response = await self._client.post(endpoint, data=payload, files=files)
+            else:
+                response = await self._client.post(endpoint, data=payload)
         except httpx.HTTPError as exc:
             # Ne jamais concaténer l'exception ici : certains clients incluent
             # l'URL complète, donc le token, dans leur représentation.
@@ -947,7 +1131,7 @@ class TelegramBotClient:
             error_code = int(raw_error_code or response.status_code or 0)
         except (TypeError, ValueError):
             error_code = response.status_code
-        description = _clean_text(body.get("description") if isinstance(body, Mapping) else "", 200)
+        description = _clean_text(body.get("description") if isinstance(body, Mapping) else "", 300)
         retry_after = None
         if isinstance(body, Mapping):
             parameters = body.get("parameters")
@@ -958,10 +1142,18 @@ class TelegramBotClient:
                 except (TypeError, ValueError):
                     retry_after = None
 
-        image_markers = ("photo", "image", "http url content", "file identifier")
+        image_markers = (
+            "photo",
+            "image",
+            "http url content",
+            "file identifier",
+            "wrong file",
+            "failed to get http url content",
+            "wrong type of the web page content",
+        )
         is_image_error = (
             method == "sendPhoto"
-            and error_code in {400, 403, 413}
+            and (error_code in {400, 403, 413} or response.status_code in {400, 403, 413})
             and any(marker in description.lower() for marker in image_markers)
         )
         if error_code == 429 or response.status_code >= 500:
@@ -971,7 +1163,8 @@ class TelegramBotClient:
             )
         if is_image_error:
             raise TelegramPublishError(
-                "Telegram n'a pas accepté l'affiche distante.", image_error=True
+                f"Telegram n'a pas accepté l'affiche ({description or 'format/url invalide'}).",
+                image_error=True,
             )
         detail = f" ({description})" if description else ""
         raise TelegramPublishError(f"Telegram a refusé le message HTTP {error_code}.{detail}")
@@ -1079,6 +1272,7 @@ async def collect_complete_publications() -> DiscoveryBatch:
         parse_voiranime_list,
     )
 
+    snapshot = _cached_snapshot()
     batch = DiscoveryBatch()
     movies_result, animation_result, series_result, animes_result = await asyncio.gather(
         _collect_paginated_items(
@@ -1124,7 +1318,7 @@ async def collect_complete_publications() -> DiscoveryBatch:
         batch.add_error(CATEGORY_ANIMATION, error)
     merged_animation_items = merge_variants(animation_items)
     batch.publications[CATEGORY_ANIMATION] = _movie_publications(
-        merged_animation_items, CATEGORY_ANIMATION
+        merged_animation_items, CATEGORY_ANIMATION, fallback_details=snapshot.movie_details
     )
 
     for error in movie_errors:
@@ -1146,6 +1340,7 @@ async def collect_complete_publications() -> DiscoveryBatch:
             if canonical_slug(str(item.get("slug") or "")) not in animation_keys
         ],
         CATEGORY_FILMS,
+        fallback_details=snapshot.movie_details,
     )
 
     for error in series_errors:
@@ -1188,7 +1383,12 @@ def _versions_label(item: Mapping[str, object]) -> str:
     return _clean_text(item.get("version"), 60)
 
 
-def _movie_publications(items: Iterable[Mapping[str, object]], category: str) -> list[Publication]:
+def _movie_publications(
+    items: Iterable[Mapping[str, object]],
+    category: str,
+    *,
+    fallback_details: Mapping[str, CachedRecord] | None = None,
+) -> list[Publication]:
     publications: list[Publication] = []
     for item in items:
         slug = _clean_text(item.get("slug"), 220)
@@ -1196,14 +1396,24 @@ def _movie_publications(items: Iterable[Mapping[str, object]], category: str) ->
         title = _clean_text(item.get("title"), 180)
         if not slug or not key_slug or not title:
             continue
+        record = (fallback_details or {}).get(key_slug)
+        cached_data = record.data if record and isinstance(record.data, Mapping) else {}
+        genres = tuple(item.get("genres") or cached_data.get("genres") or ())
+        year = str(item.get("year") or cached_data.get("year") or "")
+        synopsis = str(item.get("synopsis") or cached_data.get("synopsis") or "")
+        image = _clean_text(item.get("image") or cached_data.get("image"), 1000)
         publications.append(
             Publication(
                 category=category,
                 key=f"coflix:{category}:{key_slug}",
                 title=title,
                 target_path=f"/film/{slug}",
-                image=_clean_text(item.get("image"), 1000),
+                image=image,
                 version=_versions_label(item),
+                genres=genres,
+                year=year,
+                synopsis=synopsis,
+                kind="content",
             )
         )
     return publications
@@ -1223,6 +1433,9 @@ def _series_episode_publications(
     series_title = _clean_text(detail.get("title") or title, 180)
     image = _clean_text(detail.get("image") or item.get("image"), 1000)
     version = _clean_text(detail.get("version") or _versions_label(item), 90)
+    genres = tuple(detail.get("genres") or item.get("genres") or ())
+    year = str(detail.get("year") or item.get("year") or "")
+    synopsis = str(detail.get("synopsis") or item.get("synopsis") or "")
     series_key = canonical_slug(slug)
     if not series_key or not series_title:
         return []
@@ -1252,6 +1465,9 @@ def _series_episode_publications(
                 image=image,
                 subtitle=subtitle,
                 version=version,
+                genres=genres,
+                year=year,
+                synopsis=synopsis,
                 kind="episode",
             )
         )
@@ -1333,6 +1549,9 @@ def _anime_episode_publications(
     anime_title = _clean_text(detail.get("title") or title, 180)
     image = _clean_text(detail.get("image") or item.get("image"), 1000)
     version = _clean_text(detail.get("version") or item.get("version"), 90)
+    genres = tuple(detail.get("genres") or item.get("genres") or ())
+    year = str(detail.get("year") or item.get("year") or "")
+    synopsis = str(detail.get("synopsis") or item.get("synopsis") or "")
     anime_key = canonical_slug(slug)
     if not anime_key or not anime_title:
         return []
@@ -1360,6 +1579,9 @@ def _anime_episode_publications(
                 image=image,
                 subtitle=subtitle,
                 version=episode_version,
+                genres=genres,
+                year=year,
+                synopsis=synopsis,
                 kind="episode",
             )
         )
@@ -1421,6 +1643,7 @@ class CachedRecord:
 class CachedSnapshot:
     movies: list[dict] = field(default_factory=list)
     animation_movies: list[dict] = field(default_factory=list)
+    movie_details: dict[str, CachedRecord] = field(default_factory=dict)
     series_details: dict[str, CachedRecord] = field(default_factory=dict)
     anime_details: dict[str, CachedRecord] = field(default_factory=dict)
 
@@ -1481,13 +1704,21 @@ def _detail_slug(record: CachedRecord, *, anime: bool) -> str:
     return _clean_text(record.key[len(prefix):] if record.key.startswith(prefix) else "", 220)
 
 
-def _detail_map_from_cache(records: Iterable[CachedRecord], *, anime: bool) -> dict[str, CachedRecord]:
+def _detail_map_from_cache(
+    records: Iterable[CachedRecord],
+    *,
+    anime: bool = False,
+    movies_only: bool = False,
+) -> dict[str, CachedRecord]:
     details: dict[str, CachedRecord] = {}
     for record in records:
         if not isinstance(record.data, Mapping):
             continue
         if anime:
             if not record.key.startswith("detail:anime:"):
+                continue
+        elif movies_only:
+            if record.key.startswith("detail:anime:") or record.data.get("type") == "series":
                 continue
         elif record.key.startswith("detail:anime:") or record.data.get("type") != "series":
             continue
@@ -1525,6 +1756,7 @@ def _cached_snapshot(cache_backend=cache) -> CachedSnapshot:
     return CachedSnapshot(
         movies=merge_variants(regular_movies),
         animation_movies=merge_variants(animation_items),
+        movie_details=_detail_map_from_cache(detail_records, anime=False, movies_only=True),
         series_details=_detail_map_from_cache(detail_records, anime=False),
         anime_details=_detail_map_from_cache(detail_records, anime=True),
     )
@@ -1637,9 +1869,11 @@ async def collect_default_publications() -> DiscoveryBatch:
 
     snapshot = _cached_snapshot()
     batch = DiscoveryBatch()
-    batch.baseline_publications[CATEGORY_FILMS] = _movie_publications(snapshot.movies, CATEGORY_FILMS)
+    batch.baseline_publications[CATEGORY_FILMS] = _movie_publications(
+        snapshot.movies, CATEGORY_FILMS, fallback_details=snapshot.movie_details
+    )
     batch.baseline_publications[CATEGORY_ANIMATION] = _movie_publications(
-        snapshot.animation_movies, CATEGORY_ANIMATION
+        snapshot.animation_movies, CATEGORY_ANIMATION, fallback_details=snapshot.movie_details
     )
     batch.baseline_publications[CATEGORY_SERIES] = _cached_series_baseline(snapshot)
     batch.baseline_publications[CATEGORY_ANIMES] = _cached_anime_baseline(snapshot)
@@ -1679,7 +1913,9 @@ async def collect_default_publications() -> DiscoveryBatch:
     if animation_error:
         batch.add_error(CATEGORY_ANIMATION, animation_error)
     merged_animation = merge_variants(animation_items)
-    batch.publications[CATEGORY_ANIMATION] = _movie_publications(merged_animation, CATEGORY_ANIMATION)
+    batch.publications[CATEGORY_ANIMATION] = _movie_publications(
+        merged_animation, CATEGORY_ANIMATION, fallback_details=snapshot.movie_details
+    )
 
     if movie_error:
         batch.add_error(CATEGORY_FILMS, movie_error)
@@ -1699,6 +1935,7 @@ async def collect_default_publications() -> DiscoveryBatch:
             if canonical_slug(_clean_text(item.get("slug"), 220)) not in animation_keys
         ],
         CATEGORY_FILMS,
+        fallback_details=snapshot.movie_details,
     )
 
     if series_error:

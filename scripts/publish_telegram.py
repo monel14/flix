@@ -63,6 +63,20 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Vide les retries Telegram et rejoue une collecte seulement après une panne source persistée.",
     )
+    execution.add_argument(
+        "--publish-baseline",
+        metavar="CATEGORY",
+        nargs="?",
+        const="all",
+        help="Force l'envoi des éléments existants en baseline pour une catégorie (ex: animation, films, all).",
+    )
+    execution.add_argument(
+        "--reset-baseline",
+        metavar="CATEGORY",
+        nargs="?",
+        const="all",
+        help="Réinitialise la baseline pour une catégorie afin de réexécuter l'inventaire initial.",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -173,10 +187,46 @@ async def run_schedule(settings: TelegramSettings, *, dry_run: bool, as_json: bo
         await run_once(settings, dry_run=dry_run, as_json=as_json, retry_only=retry_only)
 
 
+async def run_publish_baseline(
+    settings: TelegramSettings,
+    category: str,
+    *,
+    dry_run: bool,
+    as_json: bool,
+) -> int:
+    """Active et envoie les publications déjà enregistrées en baseline."""
+    target_category = None if category.lower() == "all" else category.lower()
+    store = TelegramPublicationStore(lease_seconds=settings.lease_seconds)
+    count = store.queue_baseline_items(target_category)
+    logger.info("%d publication(s) de baseline passée(s) en file d'attente (catégorie: %s).", count, category)
+    return await run_once(settings, dry_run=dry_run, as_json=as_json, retry_only=True)
+
+
+def run_reset_baseline(
+    settings: TelegramSettings,
+    category: str,
+) -> int:
+    """Réinitialise l'état de la baseline pour une catégorie."""
+    target_category = None if category.lower() == "all" else category.lower()
+    store = TelegramPublicationStore(lease_seconds=settings.lease_seconds)
+    store.reset_category(target_category)
+    logger.info("Baseline réinitialisée pour la catégorie : %s", category)
+    return 0
+
+
 async def main() -> int:
     args = parse_arguments()
     settings = TelegramSettings.from_environment()
     try:
+        if args.publish_baseline:
+            return await run_publish_baseline(
+                settings,
+                args.publish_baseline,
+                dry_run=args.dry_run,
+                as_json=args.json,
+            )
+        if args.reset_baseline:
+            return run_reset_baseline(settings, args.reset_baseline)
         if args.schedule:
             return await run_schedule(settings, dry_run=args.dry_run, as_json=args.json)
         return await run_once(
