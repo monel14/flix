@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
-from fastapi import FastAPI
-from fastapi import Request
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -20,9 +19,15 @@ def make_server(name: str, link: str):
     )
 
 
-def test_player_sandbox_vidzy_only():
+def test_player_sandbox_vidzy_and_mytv():
+    # Vidzy
     assert player_sandbox(make_server("Serveur #1", "https://vidzy.cc/embed-123.html")) == VIDZY_SANDBOX
     assert player_sandbox(make_server("Vidzy", "https://vidzy.cc/e/abc")) == VIDZY_SANDBOX
+    # MyTV / Mail.ru
+    assert player_sandbox(make_server("MyTV", "https://mytv.to/e/abc")) == VIDZY_SANDBOX
+    assert player_sandbox(make_server("Serveur My TV", "https://example.com/embed")) == VIDZY_SANDBOX
+    assert player_sandbox(make_server("Mail.ru", "https://my.mail.ru/video/embed/abc")) == VIDZY_SANDBOX
+    # Autres lecteurs sans sandbox
     assert player_sandbox(make_server("VOE", "https://voe.sx/e/abc")) == ""
     assert player_sandbox(make_server("Vidmoly", "https://vidmoly.to/e/abc")) == ""
     assert player_sandbox(make_server("Streamtape", "https://streamtape.com/e/abc")) == ""
@@ -40,7 +45,8 @@ def test_player_templates_render_per_server_sandbox():
     servers = [
         make_server("Vidzy", "https://vidzy.cc/embed-1"),
         make_server("VOE", "https://voe.sx/e/2"),
-        make_server("Inconnu", "https://example.test/3"),
+        make_server("MyTV", "https://my.mail.ru/video/embed/3"),
+        make_server("Inconnu", "https://example.test/4"),
     ]
 
     @app.get("/player", response_class=HTMLResponse)

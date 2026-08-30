@@ -1,6 +1,6 @@
 """Politique de sandbox iframe ciblée par serveur.
 
-Le sandbox n'est activé que pour les serveurs spécifiquement ciblés (ex: vidzy.cc)
+Le sandbox n'est activé que pour les serveurs spécifiquement ciblés (ex: vidzy.cc, mytv)
 afin de bloquer les redirections et popups intempestifs.
 Pour tous les autres lecteurs tiers, aucun sandbox n'est appliqué pour préserver
 leurs fonctionnalités natives.
@@ -9,15 +9,20 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-# Sandbox strict pour vidzy.cc : lecture, scripts, communication avec son origine,
+# Sandbox pour les lecteurs ciblés : lecture, scripts, communication avec son origine,
 # formulaires et affichage plein écran, mais sans popups ni navigation top-level.
 VIDZY_SANDBOX = "allow-scripts allow-same-origin allow-forms allow-presentation"
+RESTRICTED_SANDBOX = VIDZY_SANDBOX
 DEFAULT_SANDBOX = VIDZY_SANDBOX
 
-# Mots-clés pour identifier les URLs ou noms de serveurs Vidzy
+# Mots-clés pour identifier les URLs ou noms de serveurs nécessitant un sandbox
 _SANDBOX_RULES: tuple[tuple[tuple[str, ...], str], ...] = (
     (
         ("vidzy", "vidzy.cc"),
+        VIDZY_SANDBOX,
+    ),
+    (
+        ("mytv", "my tv", "mail.ru", "my.mail.ru"),
         VIDZY_SANDBOX,
     ),
 )
