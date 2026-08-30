@@ -53,24 +53,54 @@ _CATEGORY_META = {
     CATEGORY_FILMS: {
         "content_heading": "✨ <b>NOUVEAU FILM</b> ✨",
         "episode_heading": "✨ <b>NOUVEL ÉPISODE DE SÉRIE</b> ✨",
+        "episodes_heading": "✨ <b>NOUVEAUX ÉPISODES DE SÉRIE</b> ✨",
         "button": "🍿 Voir le film",
     },
     CATEGORY_SERIES: {
         "content_heading": "✨ <b>NOUVELLE SÉRIE</b> ✨",
         "episode_heading": "✨ <b>NOUVEL ÉPISODE DE SÉRIE</b> ✨",
+        "episodes_heading": "✨ <b>NOUVEAUX ÉPISODES DE SÉRIE</b> ✨",
         "button": "📺 Voir la série",
     },
     CATEGORY_ANIMES: {
         "content_heading": "✨ <b>NOUVEL ANIMÉ</b> ✨",
         "episode_heading": "✨ <b>NOUVEL ÉPISODE D’ANIMÉ</b> ✨",
+        "episodes_heading": "✨ <b>NOUVEAUX ÉPISODES D’ANIMÉ</b> ✨",
         "button": "🍥 Voir l’animé",
     },
     CATEGORY_ANIMATION: {
         "content_heading": "✨ <b>NOUVEAU FILM D’ANIMATION</b> ✨",
         "episode_heading": "✨ <b>NOUVEL ÉPISODE</b> ✨",
+        "episodes_heading": "✨ <b>NOUVEAUX ÉPISODES</b> ✨",
         "button": "🍿 Voir le film",
     },
 }
+
+# Erreurs Bot API qui ne deviendront jamais un succès par un simple retry :
+# un canal mal configuré, un bot sans droits de publication, un token
+# invalide, un chat supprimé... Les classer en état terminal évite des retries
+# à l'infini qui ne font que polluer les journaux et la file SQLite.
+PERMANENT_ERROR_MARKERS = (
+    "need administrator rights in the channel chat",
+    "need administrator rights",
+    "chat admin privileges are required",
+    "not enough rights",
+    "chat not found",
+    "channel not found",
+    "wrong chat identifier",
+    "chat_id is empty",
+    "user not found",
+    "user is deactivated",
+    "bot was kicked from the channel chat",
+    "bot was blocked by the user",
+    "group chat was deactivated",
+    "supergroup chat is not accessible",
+    "there is no chat",
+    "can't post messages",
+    "bot cannot initiate conversation with a user",
+    "method is available only for supergroups",
+    "message is not modified",
+)
 
 
 class TelegramConfigurationError(ValueError):
@@ -80,10 +110,21 @@ class TelegramConfigurationError(ValueError):
 class TelegramPublishError(RuntimeError):
     """Erreur connue de l'API Telegram, sans jamais exposer le token."""
 
-    def __init__(self, message: str, *, retry_after: float | None = None, image_error: bool = False):
+    def __init__(
+        self,
+        message: str,
+        *,
+        retry_after: float | None = None,
+        image_error: bool = False,
+        permanent: bool = False,
+    ):
         super().__init__(message)
         self.retry_after = retry_after
         self.image_error = image_error
+        # Une erreur permanente ne deviendra jamais un succès par un simple
+        # retry (droits administrateur manquants, chat introuvable, token
+        # invalide...) : elle doit passer en état terminal, pas en retry.
+        self.permanent = permanent
 
 
 @dataclass(frozen=True)
@@ -102,6 +143,13 @@ class TelegramSettings:
     # « hybrid » lit cache.db puis les seules listes récentes ; « complete »
     # reste disponible pour un inventaire exhaustif volontaire.
     discovery_mode: str = "hybrid"
+    # 0 = illimité ; sinon, nombre maximal de messages envoyés par canal sur
+    # une fenêtre glissante de 24 h (les éléments différés restent en file).
+    daily_limit_per_channel: int = 0
+    # Budget de tentatives avant de passer une publication en échec définitif.
+    max_attempts: int = 10
+    # Regroupe les épisodes d'une même série en un seul post par passage.
+    digest_episodes: bool = False
 
     @classmethod
     def from_environment(cls) -> TelegramSettings:
@@ -130,6 +178,11 @@ class TelegramSettings:
             discovery_mode=_environment_choice(
                 "TELEGRAM_DISCOVERY_MODE", default="hybrid", choices={"hybrid", "complete"}
             ),
+            daily_limit_per_channel=_environment_int(
+                "TELEGRAM_DAILY_LIMIT_PER_CHANNEL", 0, 0, 1000
+            ),
+            max_attempts=_environment_int("TELEGRAM_MAX_ATTEMPTS", 10, 1, 50),
+            digest_episodes=_environment_flag("TELEGRAM_DIGEST_EPISODES", default=False),
         )
 
     @property
@@ -310,7 +363,12 @@ class Publication:
 def build_caption(publication: Publication) -> str:
     """Légende HTML riche, élégante, échappée et compatible avec la limite Telegram."""
     meta = _CATEGORY_META[publication.category]
-    heading = meta["episode_heading"] if publication.kind == "episode" else meta["content_heading"]
+    if publication.kind == "episodes":
+        heading = meta["episodes_heading"]
+    elif publication.kind == "episode":
+        heading = meta["episode_heading"]
+    else:
+        heading = meta["content_heading"]
 
     icon_map = {
         CATEGORY_FILMS: "🎬",
@@ -463,6 +521,7 @@ class TelegramPublicationStore:
                     published_at REAL,
                     telegram_message_id TEXT,
                     last_error TEXT NOT NULL DEFAULT '',
+                    failed_at REAL,
                     PRIMARY KEY (category, publication_key)
                 );
 
@@ -470,6 +529,16 @@ class TelegramPublicationStore:
                     ON telegram_publications (category, state, next_attempt_at, lease_until);
                 """
             )
+            # Migration douce des bases créées par une version antérieure : les
+            # tables existantes ne reçoivent jamais de colonne en trop ici,
+            # seulement les manquantes nécessaires à l'état terminal 'failed'.
+            self._migrate_columns(connection)
+
+    @staticmethod
+    def _migrate_columns(connection: sqlite3.Connection) -> None:
+        columns = {row["name"] for row in connection.execute("PRAGMA table_info(telegram_publications)")}
+        if "failed_at" not in columns:
+            connection.execute("ALTER TABLE telegram_publications ADD COLUMN failed_at REAL")
 
     def is_baselined(self, category: str) -> bool:
         with self._connection() as connection:
@@ -488,6 +557,26 @@ class TelegramPublicationStore:
                 UPDATE telegram_publications
                 SET state='pending', next_attempt_at=0, attempts=0, lease_until=0, lease_token=''
                 WHERE category IN ({placeholders}) AND state='baseline'
+                """,
+                categories,
+            )
+            return cursor.rowcount
+
+    def queue_failed_items(self, category: str | None = None) -> int:
+        """Repasse des échecs définitifs en file pour une tentative manuelle.
+
+        Utilisé par le CLI ``--requeue-failed`` après correction de la
+        configuration (droits du bot, identifiant du canal, token...).
+        """
+        categories = [category] if category and category in PUBLISHABLE_CATEGORIES else list(PUBLISHABLE_CATEGORIES)
+        placeholders = ", ".join("?" for _ in categories)
+        with self._transaction() as connection:
+            cursor = connection.execute(
+                f"""
+                UPDATE telegram_publications
+                SET state='pending', next_attempt_at=0, attempts=0,
+                    lease_until=0, lease_token='', failed_at=NULL
+                WHERE category IN ({placeholders}) AND state='failed'
                 """,
                 categories,
             )
@@ -563,6 +652,58 @@ class TelegramPublicationStore:
                 return DiscoveryRegistration(True, inserted, 0)
 
         return DiscoveryRegistration(False, 0, inserted)
+
+    def register_known_posts(self, category: str, posts: Iterable[TelegramPost]) -> int:
+        """Marque des épisodes comme connus sans jamais les mettre en file.
+
+        Utilisé par le mode digest : chaque épisode agrégé dans un post unique
+        garde une ligne en état 'baseline' (jamais envoyée) afin que la
+        déduplication reste exacte au niveau de l'épisode.
+        """
+        if category not in PUBLISHABLE_CATEGORIES:
+            raise ValueError(f"Catégorie Telegram inconnue : {category}")
+        now = time.time()
+        inserted = 0
+        with self._transaction() as connection:
+            for post in posts:
+                if post.category != category or not post.key:
+                    continue
+                cursor = connection.execute(
+                    """
+                    INSERT OR IGNORE INTO telegram_publications (
+                        category, publication_key, title, caption, target_url,
+                        image_url, button_text, state, discovered_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'baseline', ?)
+                    """,
+                    (
+                        category,
+                        post.key,
+                        post.title,
+                        post.caption,
+                        post.target_url,
+                        post.image_url,
+                        post.button_text,
+                        now,
+                    ),
+                )
+                inserted += max(cursor.rowcount, 0)
+        return inserted
+
+    def known_keys(self, category: str, keys: Iterable[str]) -> set[str]:
+        """Retourne les clés déjà enregistrées, tout état confondu."""
+        key_list = [_clean_text(key, 360) for key in keys if _clean_text(key, 360)]
+        if not key_list:
+            return set()
+        placeholders = ", ".join("?" for _ in key_list)
+        with self._connection() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT publication_key FROM telegram_publications
+                WHERE category=? AND publication_key IN ({placeholders})
+                """,
+                (category, *key_list),
+            ).fetchall()
+        return {row["publication_key"] for row in rows}
 
     def _unique_posts(self, category: str, posts: Iterable[TelegramPost]) -> list[TelegramPost]:
         unique: dict[str, TelegramPost] = {}
@@ -704,6 +845,32 @@ class TelegramPublicationStore:
                 WHERE category=? AND publication_key=? AND state='sending' AND lease_token=?
                 """,
                 (now + delay, error_text, post.category, post.key, post.lease_token),
+            )
+        return cursor.rowcount == 1
+
+    def mark_failed(
+        self,
+        post: ClaimedPost,
+        error: Exception | str,
+        *,
+        timestamp: float | None = None,
+    ) -> bool:
+        """Classe un échec comme définitif : plus aucun retry automatique.
+
+        Une erreur permanente (droits administrateur manquants, chat
+        introuvable, token invalide...) ou un budget de tentatives épuisé
+        aboutit ici. ``--requeue-failed`` permet une reprise manuelle.
+        """
+        now = time.time() if timestamp is None else timestamp
+        error_text = _clean_text(str(error), 500)
+        with self._transaction() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE telegram_publications
+                SET state='failed', last_error=?, lease_until=0, lease_token='', failed_at=?
+                WHERE category=? AND publication_key=? AND state='sending' AND lease_token=?
+                """,
+                (error_text, now, post.category, post.key, post.lease_token),
             )
         return cursor.rowcount == 1
 
@@ -894,6 +1061,33 @@ class TelegramPublicationStore:
             return due_at
         return min(due_at, discovery_due_at)
 
+    def sent_since(self, category: str, since: float) -> int:
+        """Nombre de messages envoyés sur un canal depuis un instant donné."""
+        with self._connection() as connection:
+            row = connection.execute(
+                """
+                SELECT COUNT(*) AS total FROM telegram_publications
+                WHERE category=? AND state='sent' AND published_at>=?
+                """,
+                (category, since),
+            ).fetchone()
+        return int(row["total"]) if row else 0
+
+    def due_count(self, category: str, *, timestamp: float | None = None) -> int:
+        """Nombre d'éléments dus, même sémantique que ``claim_due``."""
+        now = time.time() if timestamp is None else timestamp
+        with self._connection() as connection:
+            row = connection.execute(
+                """
+                SELECT COUNT(*) AS total FROM telegram_publications
+                WHERE category=?
+                  AND ((state IN ('pending', 'retry') AND next_attempt_at <= ?)
+                       OR (state = 'sending' AND lease_until <= ?))
+                """,
+                (category, now, now),
+            ).fetchone()
+        return int(row["total"]) if row else 0
+
     def state_for(self, category: str, key: str) -> sqlite3.Row | None:
         """Petit accès de diagnostic / test ; aucun secret Telegram n'y est stocké."""
         with self._connection() as connection:
@@ -1005,27 +1199,28 @@ class TelegramBotClient:
         await self._wait_for_send_window(channel_id)
         payload = self._base_payload(channel_id, post)
         if post.image_url:
-            is_proxied = "image-proxy" in post.image_url
+            # 1. Toujours tenter le téléchargement direct (avec les en-têtes
+            #    anti-hotlink selon la source), puis l'envoi en multipart. C'est
+            #    le seul chemin fiable pour les affiches protégées par Referer
+            #    (voir-anime, voirdrama, coflix) ; l'URL distante que Telegram
+            #    récupérerait lui-même ne transporte aucun Referer et échoue.
+            image_data = await self._download_image(post.image_url)
+            if image_data is not None:
+                content, content_type = image_data
+                ext = "jpg" if "jpeg" in content_type else (content_type.split("/")[-1] or "jpg")
+                try:
+                    response = await self._send_with_retry(
+                        "sendPhoto",
+                        {**payload, "caption": post.caption},
+                        files={"photo": (f"poster.{ext}", content, content_type)},
+                    )
+                    return _message_id(response)
+                except TelegramPublishError as exc:
+                    if not exc.image_error:
+                        raise
+                    logger.warning("Affiche multipart rejetée pour %s ; repli URL ou texte : %s", post.key, exc)
 
-            # 1. Si l'affiche passe par le proxy anti-hotlink, télécharger directement et envoyer en multipart
-            if is_proxied:
-                image_data = await self._download_image(post.image_url)
-                if image_data is not None:
-                    content, content_type = image_data
-                    ext = "jpg" if "jpeg" in content_type else (content_type.split("/")[-1] or "jpg")
-                    try:
-                        response = await self._send_with_retry(
-                            "sendPhoto",
-                            {**payload, "caption": post.caption},
-                            files={"photo": (f"poster.{ext}", content, content_type)},
-                        )
-                        return _message_id(response)
-                    except TelegramPublishError as exc:
-                        if not exc.image_error:
-                            raise
-                        logger.warning("Affiche multipart rejetée pour %s ; repli URL ou texte : %s", post.key, exc)
-
-            # 2. Envoi par URL distante directe
+            # 2. Envoi par URL distante directe en repli
             try:
                 response = await self._send_with_retry(
                     "sendPhoto", {**payload, "photo": post.image_url, "caption": post.caption}
@@ -1167,6 +1362,14 @@ class TelegramBotClient:
                 image_error=True,
             )
         detail = f" ({description})" if description else ""
+        permanent = error_code == 401 or any(
+            marker in description.lower() for marker in PERMANENT_ERROR_MARKERS
+        )
+        if permanent:
+            raise TelegramPublishError(
+                f"Telegram a refusé le message HTTP {error_code}.{detail}",
+                permanent=True,
+            )
         raise TelegramPublishError(f"Telegram a refusé le message HTTP {error_code}.{detail}")
 
 
@@ -1983,6 +2186,8 @@ class PublishReport:
     queued: dict[str, int] = field(default_factory=dict)
     sent: int = 0
     retried: int = 0
+    failed: int = 0
+    limited: dict[str, int] = field(default_factory=dict)
     skipped: dict[str, str] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
@@ -1994,9 +2199,105 @@ class PublishReport:
             "queued": self.queued,
             "sent": self.sent,
             "retried": self.retried,
+            "failed": self.failed,
+            "limited": self.limited,
             "skipped": self.skipped,
             "errors": self.errors,
         }
+
+
+def _series_key_of_publication(key: str) -> str | None:
+    """Identifiant stable d'une série/animé à partir de la clé d'un épisode.
+
+    ``coflix:series:slug:s1:e2`` -> ``coflix:series:slug`` et
+    ``voiranime:anime:slug:episode-01`` -> ``voiranime:anime:slug``.
+    """
+    if key.startswith("coflix:series:"):
+        parts = key.split(":")
+        if len(parts) >= 3:
+            return ":".join(parts[:3])
+    if key.startswith("voiranime:anime:"):
+        parts = key.split(":")
+        if len(parts) >= 3:
+            return ":".join(parts[:3])
+    return None
+
+
+_EPISODE_IDENTITY_RE = re.compile(r"^s(\d+):e(\d+)$")
+
+
+def _episode_identity(key: str) -> str:
+    """Identité d'épisode d'une clé : ``s1:e2`` ou le dernier slug source.
+
+    Les clés Coflix sont ``coflix:series:slug:s1:e2`` : l'identité s'étend sur
+    les deux derniers segments, tandis qu'une clé Voiranime
+    (``voiranime:anime:slug:episode-01``) ne tient qu'en un seul.
+    """
+    parts = key.split(":")
+    tail = parts[-2:]
+    if (
+        len(tail) == 2
+        and re.fullmatch(r"s\d+", tail[0])
+        and re.fullmatch(r"e\d+", tail[1])
+    ):
+        return ":".join(tail)
+    return parts[-1]
+
+
+def _episode_season_number(identity: str) -> tuple[int, int] | None:
+    """``s2:e5`` -> (2, 5) ; tout autre identifiant reste non comparable."""
+    match = _EPISODE_IDENTITY_RE.match(identity)
+    if not match:
+        return None
+    return int(match.group(1)), int(match.group(2))
+
+
+def _digest_subtitle(posts: list[Publication]) -> str:
+    """« Saison 2 • Épisodes 3 à 8 » ou « 12 nouveaux épisodes »."""
+    identities = sorted({_episode_identity(post.key) for post in posts})
+    parsed = [_episode_season_number(identity) for identity in identities]
+    if all(value is not None for value in parsed):
+        seasons = sorted({season for season, _ in parsed})
+        if len(seasons) == 1:
+            season = seasons[0]
+            numbers = sorted(number for s, number in parsed if s == season)
+            if numbers == list(range(numbers[0], numbers[-1] + 1)):
+                if len(numbers) == 1:
+                    return f"Saison {season} • Épisode {numbers[0]}"
+                return f"Saison {season} • Épisodes {numbers[0]} à {numbers[-1]}"
+            if len(numbers) <= 6:
+                return f"Saison {season} • Épisodes {', '.join(str(number) for number in numbers)}"
+            return f"Saison {season} • {len(numbers)} nouveaux épisodes"
+        return f"{len(identities)} nouveaux épisodes"
+    if len(identities) == 1:
+        return "Nouvel épisode"
+    return f"{len(identities)} nouveaux épisodes"
+
+
+def _digest_key(series_key: str, posts: list[Publication]) -> str:
+    """Clé stable d'un lot : elle ne change que lorsque le lot change."""
+    identities = sorted({_episode_identity(post.key) for post in posts})
+    if len(identities) == 1:
+        return f"{series_key}:digest:{identities[0]}"
+    return f"{series_key}:digest:{identities[0]}..{identities[-1]}"
+
+
+def _digest_publication(series_key: str, posts: list[Publication]) -> Publication:
+    """Regroupe les épisodes d'une même série en une seule publication."""
+    base = next((post for post in posts if post.image), posts[0])
+    return Publication(
+        category=posts[0].category,
+        key=_digest_key(series_key, posts),
+        title=posts[0].title,
+        target_path=posts[0].target_path,
+        image=base.image,
+        subtitle=_digest_subtitle(posts),
+        version=next((post.version for post in posts if post.version), ""),
+        genres=next((post.genres for post in posts if post.genres), ()),
+        year=next((post.year for post in posts if post.year), ""),
+        synopsis=next((post.synopsis for post in posts if post.synopsis), ""),
+        kind="episodes",
+    )
 
 
 class TelegramPublisher:
@@ -2019,6 +2320,45 @@ class TelegramPublisher:
         else:
             self.collector = collect_default_publications
         self.sender = sender
+
+    def _digest_episodes(self, category: str, publications: list[Publication]) -> list[Publication]:
+        """Regroupe les épisodes nouveaux d'une même série en un post unique.
+
+        Chaque épisode agrégé est d'abord enregistré comme connu (état
+        'baseline') pour ne jamais redevenir une nouveauté ; seuls les posts
+        digest passent ensuite par la file d'attente normale. Les épisodes
+        sans identifiant de série restent des posts individuels.
+        """
+        episodes = [publication for publication in publications if publication.kind == "episode"]
+        if not episodes:
+            return publications
+        others = [publication for publication in publications if publication.kind != "episode"]
+        keys = [episode.key for episode in episodes]
+        known = self.store.known_keys(category, keys)
+        new_episodes = [episode for episode in episodes if episode.key not in known]
+        if not new_episodes:
+            return others
+
+        groupable = [episode for episode in new_episodes if _series_key_of_publication(episode.key)]
+        ungroupable = [episode for episode in new_episodes if not _series_key_of_publication(episode.key)]
+        known_posts = [
+            post
+            for episode in groupable
+            if (post := episode.to_post(self.settings)) is not None
+        ]
+        self.store.register_known_posts(category, known_posts)
+
+        grouped: dict[str, list[Publication]] = {}
+        for episode in groupable:
+            series_key = _series_key_of_publication(episode.key)
+            if series_key:
+                grouped.setdefault(series_key, []).append(episode)
+        digests = [
+            _digest_publication(series_key, posts)
+            for series_key, posts in grouped.items()
+            if posts
+        ]
+        return others + digests + ungroupable
 
     async def _send_with_lease_renewal(
         self,
@@ -2090,7 +2430,25 @@ class TelegramPublisher:
             # attente derrière les messages précédents. Il n'y a aucune limite
             # de posts : la boucle continue jusqu'à ce que la file ne soit plus
             # due, avec un lease frais pour chaque publication.
-            while claimed := self.store.claim_due(self.settings.active_categories, limit=1):
+            daily_window = 24 * 60 * 60
+            daily_limit = self.settings.daily_limit_per_channel
+            while True:
+                active_categories = self.settings.active_categories
+                if daily_limit:
+                    # Fenêtre glissante de 24 h : un canal à pleine capacité est
+                    # retiré de la réservation ; ses éléments restent 'pending'
+                    # et partent au passage suivant (lendemain ou retry).
+                    since = time.time() - daily_window
+                    active_categories = tuple(
+                        category
+                        for category in active_categories
+                        if self.store.sent_since(category, since) < daily_limit
+                    )
+                    if not active_categories:
+                        break
+                claimed = self.store.claim_due(active_categories, limit=1)
+                if not claimed:
+                    break
                 post = claimed[0]
                 channel_id = self.settings.channel_for(post.category)
                 if not channel_id:
@@ -2113,18 +2471,46 @@ class TelegramPublisher:
                             f"{post.category}/{post.key} : confirmation locale du lease impossible."
                         )
                         logger.error("Lease Telegram perdu après l'envoi de %s.", post.key)
-                except Exception as exc:  # noqa: BLE001 - toute erreur d'envoi est retentable
+                except Exception as exc:  # noqa: BLE001 - toute erreur d'envoi est classée
                     retry_after = exc.retry_after if isinstance(exc, TelegramPublishError) else None
                     safe_error = _safe_error_text(exc, secret=self.settings.bot_token, limit=240)
-                    if self.store.mark_retry(
+                    # Une erreur permanente (droits manquants, chat introuvable,
+                    # token invalide...) ou un budget de tentatives épuisé passe
+                    # en état terminal au lieu de retenter à l'infini.
+                    permanent = (
+                        isinstance(exc, TelegramPublishError) and exc.permanent
+                    ) or post.attempts >= self.settings.max_attempts
+                    if permanent:
+                        if self.store.mark_failed(post, safe_error):
+                            report.failed += 1
+                        report.errors.append(
+                            f"{post.category}/{post.key} : {safe_error} "
+                            f"(échec définitif, tentative {post.attempts})"
+                        )
+                        logger.error(
+                            "Publication Telegram en échec définitif après %d tentative(s) : %s",
+                            post.attempts,
+                            post.key,
+                        )
+                    elif self.store.mark_retry(
                         post,
                         safe_error,
                         retry_base_seconds=self.settings.retry_base_seconds,
                         retry_after=retry_after,
                     ):
                         report.retried += 1
-                    report.errors.append(f"{post.category}/{post.key} : {safe_error}")
-                    logger.warning("Publication Telegram différée pour %s : %s", post.key, safe_error)
+                        report.errors.append(f"{post.category}/{post.key} : {safe_error}")
+                        logger.warning("Publication Telegram différée pour %s : %s", post.key, safe_error)
+
+            if daily_limit:
+                # Rapport : combien d'éléments dus attendent derrière un canal
+                # arrivé à sa capacité quotidienne.
+                since = time.time() - daily_window
+                for category in self.settings.active_categories:
+                    if self.store.sent_since(category, since) >= daily_limit:
+                        deferred = self.store.due_count(category)
+                        if deferred:
+                            report.limited[category] = deferred
         finally:
             if owned_sender:
                 await sender.aclose()  # type: ignore[union-attr]
@@ -2199,6 +2585,15 @@ class TelegramPublisher:
                 if category_errors:
                     report.errors.extend(category_errors)
                 continue
+
+            # Mode digest : les épisodes d'une même série détectés dans un même
+            # passage sont regroupés en un seul post (« Saison 2 • Épisodes 3 à
+            # 8 ») au lieu d'un post par épisode, pour ne pas inonder le canal.
+            if self.settings.digest_episodes and is_baselined and category in (
+                CATEGORY_SERIES,
+                CATEGORY_ANIMES,
+            ):
+                publications = self._digest_episodes(category, publications)
 
             posts = [post for publication in publications if (post := publication.to_post(self.settings))]
             registration = self.store.register_discoveries(category, posts)

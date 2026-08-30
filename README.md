@@ -161,7 +161,8 @@ Au premier passage, l'union du cache local et de ces listes constitue une
 suivants, seuls les candidats des listes récentes peuvent devenir de nouveaux
 posts ; une vieille fiche ouverte par un visiteur ne sera donc jamais publiée.
 Tous les éléments détectés et valides sont traités, sans taille maximale de lot :
-un post par film ou film d'animation, et un post par épisode de série ou animé.
+un post par film ou film d'animation, et un post par épisode de série ou animé
+(sauf en mode digest, voir ci-dessous).
 
 Ce mode accepte explicitement le compromis suivant : un contenu qui n'a jamais
 été en cache et qui a déjà disparu des listes récentes de sa source peut être
@@ -173,6 +174,41 @@ avec le même bouton. Les sources et l'API Telegram sont retentées ; une panne
 de collecte est aussi mémorisée dans SQLite puis rejouée par
 `--flush-retries` après un backoff persistant. Les retries Telegram respectent
 également `retry_after`.
+
+### Maîtrise du volume et des échecs
+
+Trois réglages optionnels protègent les canaux et les journaux :
+
+| Variable | Défaut | Effet |
+|---|---|---|
+| `TELEGRAM_DIGEST_EPISODES` | `false` | Regroupe en **un seul post par série** les épisodes détectés dans un même passage (« Saison 2 • Épisodes 3 à 8 ») au lieu d'un post par épisode. Les épisodes agrégés restent enregistrés comme connus pour la déduplication ; chaque nouveau lot change la clé et produit un nouveau post. |
+| `TELEGRAM_DAILY_LIMIT_PER_CHANNEL` | `0` (illimité) | Plafonne les envois par canal sur une **fenêtre glissante de 24 h**. Les éléments au-delà restent en file (`pending`) et partent au passage suivant ; le rapport `limited` indique combien attendent. |
+| `TELEGRAM_MAX_ATTEMPTS` | `10` | Budget de tentatives avant de passer une publication en **échec définitif** (état `failed`), même pour une erreur temporaire qui ne se résorbe pas. |
+
+Deux catégories d'erreurs passent directement en état terminal `failed`, sans
+retry :
+
+- les **erreurs permanentes** détectées par l'API Telegram : droits
+  administrateur manquants dans le canal, chat introuvable, token invalide
+  (HTTP 401)... Un simple retry ne peut pas les résoudre ;
+- les erreurs qui épuisent `TELEGRAM_MAX_ATTEMPTS`.
+
+Une publication `failed` n'est **jamais** re-tentée automatiquement et ne pollue
+plus les journaux. Après correction de la configuration (droits du bot,
+identifiant du canal), reprenez-la manuellement :
+
+```bash
+python scripts/publish_telegram.py --requeue-failed animation   # ou: films, series, animes, all
+```
+
+Le rapport JSON (`--json`) expose `failed` (nombre d'échecs définitifs) et
+`limited` (éléments différés par plafond quotidien) en plus des compteurs
+habituels.
+
+Les affiches sont désormais téléchargées et envoyées en **multipart** pour
+toute URL (et pas seulement via `/api/image-proxy`), avec les en-têtes
+anti-hotlink appropriés selon la source ; l'envoi par URL distante puis le
+message texte restent les replis successifs si Telegram refuse l'image.
 
 1. Copiez les variables Telegram de `.env.example` dans votre `.env` local.
    Le bot doit être administrateur avec l'autorisation de publier dans chacun

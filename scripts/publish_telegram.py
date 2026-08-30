@@ -9,6 +9,7 @@ Exemples :
     python scripts/publish_telegram.py --dry-run
     python scripts/publish_telegram.py --once
     python scripts/publish_telegram.py --schedule
+    python scripts/publish_telegram.py --requeue-failed animation
 """
 from __future__ import annotations
 
@@ -76,6 +77,13 @@ def parse_arguments() -> argparse.Namespace:
         nargs="?",
         const="all",
         help="Réinitialise la baseline pour une catégorie afin de réexécuter l'inventaire initial.",
+    )
+    execution.add_argument(
+        "--requeue-failed",
+        metavar="CATEGORY",
+        nargs="?",
+        const="all",
+        help="Repasse en file d'attente les échecs définitifs d'une catégorie (ex: animation, films, all) après correction de la configuration.",
     )
     parser.add_argument(
         "--dry-run",
@@ -214,6 +222,23 @@ def run_reset_baseline(
     return 0
 
 
+def run_requeue_failed(
+    settings: TelegramSettings,
+    category: str,
+) -> int:
+    """Repasse les échecs définitifs en file d'attente pour une reprise manuelle.
+
+    À utiliser après avoir corrigé la configuration (droits du bot dans le
+    canal, identifiant du canal, token) ; les éléments sont ensuite envoyés par
+    ``--flush-retries`` ou le prochain passage quotidien.
+    """
+    target_category = None if category.lower() == "all" else category.lower()
+    store = TelegramPublicationStore(lease_seconds=settings.lease_seconds)
+    count = store.queue_failed_items(target_category)
+    logger.info("%d échec(s) définitif(s) remis en file (catégorie : %s).", count, category)
+    return 0
+
+
 async def main() -> int:
     args = parse_arguments()
     settings = TelegramSettings.from_environment()
@@ -227,6 +252,8 @@ async def main() -> int:
             )
         if args.reset_baseline:
             return run_reset_baseline(settings, args.reset_baseline)
+        if args.requeue_failed:
+            return run_requeue_failed(settings, args.requeue_failed)
         if args.schedule:
             return await run_schedule(settings, dry_run=args.dry_run, as_json=args.json)
         return await run_once(

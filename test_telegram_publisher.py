@@ -7,6 +7,7 @@ messages.
 from __future__ import annotations
 
 import asyncio
+import sqlite3
 import time
 from datetime import datetime
 from typing import ClassVar
@@ -48,6 +49,7 @@ def settings(
     channels: dict[str, str] | None = None,
     enabled: bool = True,
     discovery_mode: str = "hybrid",
+    **overrides,
 ) -> TelegramSettings:
     return TelegramSettings(
         enabled=enabled,
@@ -63,6 +65,7 @@ def settings(
         retry_base_seconds=0.01,
         lease_seconds=60,
         discovery_mode=discovery_mode,
+        **overrides,
     )
 
 
@@ -626,9 +629,12 @@ def test_client_telegram_envoie_photo_caption_bouton_sans_reseau_reel(tmp_path):
         await client.aclose()
 
         assert message_id == 7
-        assert len(requests) == 1
-        assert requests[0].url.path.endswith("/sendPhoto")
-        data = parse_qs(requests[0].content.decode())
+        # Le client tente d'abord le téléchargement direct de l'affiche ; le
+        # contenu renvoyé n'étant pas une image, il envoie ensuite par URL.
+        assert len(requests) == 2
+        assert requests[0].url.path == "/static/poster.jpg"
+        assert requests[1].url.path.endswith("/sendPhoto")
+        data = parse_qs(requests[1].content.decode())
         assert data["chat_id"] == ["@nokatv_films"]
         assert data["caption"] == [claimed.caption]
         assert "text" not in data
@@ -659,7 +665,9 @@ def test_client_telegram_retombe_sur_texte_si_telegram_refuse_seulement_l_affich
         await client.aclose()
 
         assert message_id == 8
-        assert methods == ["sendPhoto", "sendMessage"]
+        # Téléchargement direct (contenu non image) puis sendPhoto refusé par
+        # Telegram, puis repli sur un message texte.
+        assert methods == ["poster.jpg", "sendPhoto", "sendMessage"]
 
     asyncio.run(scenario())
 
@@ -692,7 +700,11 @@ def test_client_telegram_respecte_exactement_retry_after(tmp_path):
         calls = 0
         delays: list[float] = []
 
-        def handler(_request: httpx.Request) -> httpx.Response:
+        def handler(request: httpx.Request) -> httpx.Response:
+            # Le téléchargement direct de l'affiche échoue (404) ; seul le
+            # sendPhoto par URL est soumis au rate-limit à tester.
+            if not request.url.path.endswith("/sendPhoto"):
+                return httpx.Response(404)
             nonlocal calls
             calls += 1
             if calls == 1:
@@ -995,3 +1007,315 @@ def test_cli_publish_baseline_et_reset_baseline(tmp_path, monkeypatch):
         assert store.is_baselined(CATEGORY_ANIMATION) is False
 
     asyncio.run(scenario())
+
+
+def test_store_marque_un_echec_definitif_et_ne_le_reclame_plus(tmp_path):
+    store = TelegramPublicationStore(tmp_path / "telegram.db", lease_seconds=60)
+    claimed = claim_one(store, make_post(key="failed:one"), timestamp=1)
+
+    assert store.mark_failed(
+        claimed,
+        "Telegram a refusé le message HTTP 400. (need administrator rights in the channel chat)",
+        timestamp=2,
+    ) is True
+    row = store.state_for(CATEGORY_FILMS, claimed.key)
+    assert row is not None
+    assert row["state"] == "failed"
+    assert row["failed_at"] == 2
+    assert "administrator rights" in row["last_error"]
+    # Un échec définitif n'est jamais réclamé à nouveau, même longtemps après.
+    assert store.claim_due([CATEGORY_FILMS], timestamp=1000) == []
+    assert store.due_count(CATEGORY_FILMS, timestamp=1000) == 0
+
+    # La reprise manuelle le repasse en file d'attente.
+    requeued = store.queue_failed_items(CATEGORY_FILMS)
+    assert requeued == 1
+    row = store.state_for(CATEGORY_FILMS, claimed.key)
+    assert row["state"] == "pending"
+    assert row["failed_at"] is None
+
+
+def test_schema_existant_recoit_la_colonne_failed_at(tmp_path):
+    # Simule une base créée par une version antérieure (sans failed_at).
+    database = tmp_path / "telegram.db"
+    connection = sqlite3.connect(database)
+    connection.executescript(
+        """
+        CREATE TABLE telegram_channel_state (category TEXT PRIMARY KEY, baseline_at REAL NOT NULL);
+        CREATE TABLE telegram_discovery_retry (
+            retry_name TEXT PRIMARY KEY, attempts INTEGER NOT NULL DEFAULT 0,
+            next_attempt_at REAL NOT NULL DEFAULT 0, lease_until REAL NOT NULL DEFAULT 0,
+            lease_token TEXT NOT NULL DEFAULT '', last_error TEXT NOT NULL DEFAULT ''
+        );
+        CREATE TABLE telegram_publications (
+            category TEXT NOT NULL, publication_key TEXT NOT NULL, title TEXT NOT NULL,
+            caption TEXT NOT NULL, target_url TEXT NOT NULL, image_url TEXT NOT NULL DEFAULT '',
+            button_text TEXT NOT NULL, state TEXT NOT NULL, discovered_at REAL NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at REAL NOT NULL DEFAULT 0,
+            lease_until REAL NOT NULL DEFAULT 0, lease_token TEXT NOT NULL DEFAULT '',
+            published_at REAL, telegram_message_id TEXT, last_error TEXT NOT NULL DEFAULT '',
+            PRIMARY KEY (category, publication_key)
+        );
+        """
+    )
+    connection.close()
+
+    store = TelegramPublicationStore(database, lease_seconds=60)
+    connection = sqlite3.connect(database)
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(telegram_publications)")}
+    connection.close()
+    assert "failed_at" in columns
+    # L'état reste utilisable sur la base migrée.
+    claimed = claim_one(store, make_post(key="migrated:one"), timestamp=1)
+    assert store.mark_failed(claimed, "échec", timestamp=2) is True
+    assert store.state_for(CATEGORY_FILMS, claimed.key)["state"] == "failed"
+
+
+def test_client_telegram_classe_permanente_une_erreur_droits_administrateur(tmp_path):
+    async def scenario():
+        store = TelegramPublicationStore(tmp_path / "telegram.db")
+        claimed = claim_one(store, make_post(key="perm:admin"), timestamp=1)
+
+        def handler(_request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                400,
+                json={
+                    "ok": False,
+                    "error_code": 400,
+                    "description": "Bad Request: need administrator rights in the channel chat",
+                },
+            )
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        bot = TelegramBotClient(settings(), client=client)
+        with pytest.raises(TelegramPublishError) as excinfo:
+            await bot.send("@nokatv_films", claimed)
+        await client.aclose()
+        assert excinfo.value.permanent is True
+        assert excinfo.value.retry_after is None
+
+    asyncio.run(scenario())
+
+
+def test_publisher_marque_definitif_un_echec_permanent(tmp_path):
+    async def scenario():
+        store = TelegramPublicationStore(tmp_path / "telegram.db")
+        first = make_publication(key="perm:initial")
+        second = make_publication(key="perm:new")
+        batches = [
+            DiscoveryBatch(publications={CATEGORY_FILMS: [first]}),
+            DiscoveryBatch(publications={CATEGORY_FILMS: [first, second]}),
+        ]
+
+        async def collector():
+            return batches.pop(0)
+
+        class Sender:
+            async def send(self, _channel_id, _post):
+                raise TelegramPublishError(
+                    "Telegram a refusé le message HTTP 400. (need administrator rights in the channel chat)",
+                    permanent=True,
+                )
+
+        publisher = TelegramPublisher(settings(), store=store, collector=collector, sender=Sender())
+        await publisher.run()
+        report = await publisher.run()
+        assert report.failed == 1
+        assert report.retried == 0
+        row = store.state_for(CATEGORY_FILMS, "perm:new")
+        assert row is not None
+        assert row["state"] == "failed"
+        assert "échec définitif" in report.errors[0]
+        assert store.claim_due([CATEGORY_FILMS], timestamp=time.time() + 1000) == []
+
+    asyncio.run(scenario())
+
+
+def test_publisher_respecte_le_budget_de_tentatives(tmp_path):
+    async def scenario():
+        store = TelegramPublicationStore(tmp_path / "telegram.db")
+        first = make_publication(key="budget:initial")
+        second = make_publication(key="budget:new")
+        batches = [
+            DiscoveryBatch(publications={CATEGORY_FILMS: [first]}),
+            DiscoveryBatch(publications={CATEGORY_FILMS: [first, second]}),
+        ]
+
+        async def collector():
+            return batches.pop(0)
+
+        class Sender:
+            async def send(self, _channel_id, _post):
+                raise TelegramPublishError("erreur temporaire récurrente")
+
+        publisher = TelegramPublisher(
+            settings(max_attempts=1), store=store, collector=collector, sender=Sender()
+        )
+        await publisher.run()
+        report = await publisher.run()
+        assert report.failed == 1
+        assert report.retried == 0
+        assert store.state_for(CATEGORY_FILMS, "budget:new")["state"] == "failed"
+
+    asyncio.run(scenario())
+
+
+def test_publisher_respecte_le_plafond_quotidien_par_canal(tmp_path):
+    async def scenario():
+        store = TelegramPublicationStore(tmp_path / "telegram.db")
+        first = make_publication(key="limit:initial")
+        new_items = [make_publication(key=f"limit:new:{i}") for i in range(3)]
+        batches = [
+            DiscoveryBatch(publications={CATEGORY_FILMS: [first]}),
+            DiscoveryBatch(publications={CATEGORY_FILMS: [first, *new_items]}),
+        ]
+
+        async def collector():
+            return batches.pop(0)
+
+        class Sender:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, _channel_id, post):
+                self.sent.append(post.key)
+                return len(self.sent)
+
+        sender = Sender()
+        publisher = TelegramPublisher(
+            settings(daily_limit_per_channel=2), store=store, collector=collector, sender=sender
+        )
+        await publisher.run()
+        report = await publisher.run()
+        assert report.sent == 2
+        assert report.limited == {CATEGORY_FILMS: 1}
+        assert sender.sent == ["limit:new:0", "limit:new:1"]
+        # L'élément différé reste en file pour le passage suivant.
+        assert store.state_for(CATEGORY_FILMS, "limit:new:2")["state"] == "pending"
+
+    asyncio.run(scenario())
+
+
+def test_publisher_digest_regroupe_les_episodes_d_une_serie(tmp_path):
+    async def scenario():
+        store = TelegramPublicationStore(tmp_path / "telegram.db")
+        ep1 = make_publication(
+            CATEGORY_SERIES,
+            "coflix:series:serie-test:s1:e1",
+            target_path="/film/serie-test-vf",
+            kind="episode",
+        )
+        ep2 = make_publication(
+            CATEGORY_SERIES,
+            "coflix:series:serie-test:s1:e2",
+            target_path="/film/serie-test-vf",
+            kind="episode",
+        )
+        ep3 = make_publication(
+            CATEGORY_SERIES,
+            "coflix:series:serie-test:s1:e3",
+            target_path="/film/serie-test-vf",
+            kind="episode",
+        )
+        batches = [
+            DiscoveryBatch(publications={CATEGORY_SERIES: [ep1]}),
+            DiscoveryBatch(publications={CATEGORY_SERIES: [ep1, ep2, ep3]}),
+        ]
+
+        async def collector():
+            return batches.pop(0)
+
+        class Sender:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, _channel_id, post):
+                self.sent.append((post.key, post.caption))
+                return len(self.sent)
+
+        sender = Sender()
+        publisher = TelegramPublisher(
+            settings(digest_episodes=True), store=store, collector=collector, sender=sender
+        )
+        first = await publisher.run()
+        assert first.baselined == {CATEGORY_SERIES: 1}
+        assert sender.sent == []
+
+        second = await publisher.run()
+        # Un seul post digest au lieu de deux posts épisode.
+        assert second.queued == {CATEGORY_SERIES: 1}
+        assert len(sender.sent) == 1
+        key, caption = sender.sent[0]
+        assert key == "coflix:series:serie-test:digest:s1:e2..s1:e3"
+        assert "NOUVEAUX ÉPISODES DE SÉRIE" in caption
+        assert "Saison 1 • Épisodes 2 à 3" in caption
+        # Les épisodes agrégés sont connus mais jamais postés individuellement.
+        assert store.state_for(CATEGORY_SERIES, "coflix:series:serie-test:s1:e2")["state"] == "baseline"
+        assert store.state_for(CATEGORY_SERIES, "coflix:series:serie-test:s1:e3")["state"] == "baseline"
+
+        # Un troisième passage avec les mêmes épisodes ne publie plus rien.
+        batches.append(DiscoveryBatch(publications={CATEGORY_SERIES: [ep1, ep2, ep3]}))
+        third = await publisher.run()
+        assert third.queued == {}
+        assert len(sender.sent) == 1
+
+    asyncio.run(scenario())
+
+
+def test_digest_desactive_par_defaut_conserve_un_post_par_episode(tmp_path):
+    async def scenario():
+        store = TelegramPublicationStore(tmp_path / "telegram.db")
+        ep1 = make_publication(
+            CATEGORY_ANIMES,
+            "voiranime:anime:anime-x:anime-x-01",
+            target_path="/anime/anime-x-vostfr",
+            kind="episode",
+        )
+        ep2 = make_publication(
+            CATEGORY_ANIMES,
+            "voiranime:anime:anime-x:anime-x-02",
+            target_path="/anime/anime-x-vostfr",
+            kind="episode",
+        )
+        batches = [
+            DiscoveryBatch(publications={CATEGORY_ANIMES: [ep1]}),
+            DiscoveryBatch(publications={CATEGORY_ANIMES: [ep1, ep2]}),
+        ]
+
+        async def collector():
+            return batches.pop(0)
+
+        class Sender:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, _channel_id, post):
+                self.sent.append(post.key)
+                return len(self.sent)
+
+        sender = Sender()
+        publisher = TelegramPublisher(settings(), store=store, collector=collector, sender=sender)
+        await publisher.run()
+        second = await publisher.run()
+        assert second.queued == {CATEGORY_ANIMES: 1}
+        assert sender.sent == ["voiranime:anime:anime-x:anime-x-02"]
+
+    asyncio.run(scenario())
+
+
+def test_cli_requeue_failed(tmp_path, monkeypatch):
+    from scripts.publish_telegram import run_requeue_failed
+
+    store = TelegramPublicationStore(tmp_path / "telegram.db")
+    post = make_post(category=CATEGORY_ANIMATION, key="anim:failed-cli")
+    claim = claim_one(store, post, timestamp=1)
+    store.mark_failed(claim, "échec définitif", timestamp=2)
+    assert store.state_for(CATEGORY_ANIMATION, claim.key)["state"] == "failed"
+
+    monkeypatch.setattr(
+        "scripts.publish_telegram.TelegramPublicationStore",
+        lambda *args, **kwargs: store,
+    )
+    exit_code = run_requeue_failed(settings(), "animation")
+    assert exit_code == 0
+    assert store.state_for(CATEGORY_ANIMATION, claim.key)["state"] == "pending"
