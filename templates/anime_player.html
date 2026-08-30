@@ -54,7 +54,6 @@
         {% for srv in servers %}
         <button class="server-pill-btn {% if loop.first %}active{% endif %}"
                 data-link="{{ srv.server_link }}"
-                data-sandbox="{{ player_sandbox(srv) }}"
                 data-idx="{{ loop.index0 }}">
             {{ srv.server_name }}
         </button>
@@ -63,15 +62,12 @@
 
     <!-- 3. CADRE CINÉMA THEATER (Iframe) -->
     <div class="theater-frame-box" id="theater-box">
-        {# Sandbox adaptée au lecteur sélectionné : permissions ciblées selon
-           son nom / hôte, avec politique restrictive par défaut. #}
         <iframe id="player-frame"
                 src="{{ default_server.server_link if default_server else '' }}"
                 allowfullscreen
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 referrerpolicy="no-referrer-when-downgrade"
-                scrolling="no"
-                sandbox="{{ player_sandbox(default_server) }}">
+                scrolling="no">
         </iframe>
         {% if not servers %}
         <div class="player-frame-status">
@@ -120,7 +116,6 @@
         btn.addEventListener('click', () => {
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            frame.sandbox = btn.dataset.sandbox || '';
             frame.src = btn.dataset.link;
         });
     });

@@ -34,7 +34,7 @@ def test_templates_lecteur_ont_controles_tv():
         html = (ROOT / "templates" / name).read_text(encoding="utf-8")
         assert 'id="player-fullscreen-btn"' in html, name
         assert 'id="media-session-data"' in html, name
-        assert "player_sandbox" in html  # la politique existante reste intacte
+        assert 'id="player-frame"' in html, name
 
 
 def test_base_charge_tv_js_et_manifeste_v3():

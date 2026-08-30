@@ -100,7 +100,6 @@ def test_player_templates_render_per_server_sandbox():
         response = client.get(path)
         assert response.status_code == 200, response.text
         html = response.text
-        assert 'data-sandbox="allow-scripts allow-same-origin allow-presentation allow-pointer-lock"' in html
-        assert 'data-sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"' in html
-        assert f'sandbox="{DEFAULT_SANDBOX}"' in html
-        assert "frame.sandbox = btn.dataset.sandbox || '';" in html
+        assert 'data-link="https://vidmoly.to/e/1"' in html
+        assert 'sandbox="' not in html
+        assert "frame.src = btn.dataset.link;" in html
