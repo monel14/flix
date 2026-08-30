@@ -157,6 +157,65 @@ def parse_coflix_hero(html: str) -> list[CoflixHeroItem]:
     return items
 
 
+def _extract_coflix_version(card=None, slug: str = "", title: str = "", default: str = "") -> str:
+    """Extrait la version linguistique depuis le DOM, le slug ou le titre."""
+    if card is not None:
+        version_tag = card.select_one(".version, .badge, .status, .quality, .meta .quality, .meta .version")
+        if version_tag and version_tag.text.strip():
+            raw = version_tag.text.strip().upper()
+            if "VOSTFR" in raw or "VOST" in raw:
+                return "VOSTFR"
+            if "TRUEFRENCH" in raw:
+                return "TRUEFRENCH"
+            if "VF" in raw or "FRENCH" in raw:
+                return "VF" if "FRENCH" not in raw else "FRENCH"
+            return raw
+
+    slug_lower = (slug or "").lower()
+    title_lower = (title or "").lower()
+
+    if (
+        re.search(r"(?:^|[\s\-_(\[])(vostfr|vost|sub)(?:$|[\s\-_)\]])", title_lower)
+        or slug_lower.endswith("-vostfr")
+        or "-vostfr-" in slug_lower
+        or "vostfr" in slug_lower
+    ):
+        return "VOSTFR"
+
+    if (
+        re.search(r"(?:^|[\s\-_(\[])(truefrench|true-french)(?:$|[\s\-_)\]])", title_lower)
+        or slug_lower.endswith("-truefrench")
+        or "truefrench" in slug_lower
+    ):
+        return "TRUEFRENCH"
+
+    if (
+        re.search(r"(?:^|[\s\-_(\[])(french)(?:$|[\s\-_)\]])", title_lower)
+        or slug_lower.endswith("-french")
+        or "-french-" in slug_lower
+    ):
+        return "FRENCH"
+
+    if (
+        re.search(r"(?:^|[\s\-_(\[])(vf|vff|vfq)(?:$|[\s\-_)\]])", title_lower)
+        or slug_lower.endswith("-vf")
+        or "-vf-" in slug_lower
+        or " vf" in title_lower
+        or "(vf)" in title_lower
+        or "[vf]" in title_lower
+    ):
+        return "VF"
+
+    if (
+        re.search(r"(?:^|[\s\-_(\[])(multi)(?:$|[\s\-_)\]])", title_lower)
+        or slug_lower.endswith("-multi")
+        or "-multi-" in slug_lower
+    ):
+        return "MULTI"
+
+    return default
+
+
 def parse_coflix_list(html: str, section: str) -> list[CoflixItem]:
     """Parse une page /movies/ ou /series/."""
     soup = BeautifulSoup(html, "html.parser")
@@ -176,12 +235,12 @@ def parse_coflix_list(html: str, section: str) -> list[CoflixItem]:
         if title_tag:
             title = title_tag.get("data-jp") or title_tag.text.strip()
 
-        version_tag = card.select_one(".version")
-        version = version_tag.text.strip() if version_tag else ""
+        slug = _extract_slug(href)
+        version = _extract_coflix_version(card=card, slug=slug, title=title)
 
         items.append(CoflixItem(
             title=title,
-            slug=_extract_slug(href),
+            slug=slug,
             url=href,
             image=_extract_image(card),
             version=version,
@@ -202,12 +261,14 @@ def parse_coflix_top(html: str) -> list[CoflixItem]:
             continue
         name_tag = a.select_one(".name.d-title")
         title = (name_tag.get("data-jp") or name_tag.text.strip()) if name_tag else ""
+        slug = _extract_slug(href)
+        version = _extract_coflix_version(card=a, slug=slug, title=title)
         items.append(CoflixItem(
             title=title,
-            slug=_extract_slug(href),
+            slug=slug,
             url=href,
             image=_extract_image(a),
-            version="",
+            version=version,
             type="movie",
         ))
 
@@ -374,8 +435,8 @@ def parse_coflix_search(html: str) -> list[CoflixItem]:
         if title_tag:
             title = title_tag.get("data-jp") or title_tag.text.strip()
 
-        version_tag = card.select_one(".version")
-        version = version_tag.text.strip() if version_tag else ""
+        slug = _extract_slug(href)
+        version = _extract_coflix_version(card=card, slug=slug, title=title)
 
         # Détecter séries ou films depuis la section de la page
         is_series = "series" in html[:500].lower()
@@ -383,7 +444,7 @@ def parse_coflix_search(html: str) -> list[CoflixItem]:
 
         items.append(CoflixItem(
             title=title,
-            slug=_extract_slug(href),
+            slug=slug,
             url=href,
             image=_extract_image(card),
             version=version,

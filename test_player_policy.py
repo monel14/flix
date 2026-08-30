@@ -102,4 +102,4 @@ def test_player_templates_render_per_server_sandbox():
         html = response.text
         assert 'data-link="https://vidmoly.to/e/1"' in html
         assert 'sandbox="' not in html
-        assert "frame.src = btn.dataset.link;" in html
+        assert "frame.src = link;" in html

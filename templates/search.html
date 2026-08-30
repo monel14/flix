@@ -51,6 +51,9 @@
                 <p class="card-title">{{ item.title }}</p>
                 <p class="card-meta-line">
                     <span>{{ 'Animé' if item.type == 'anime' else ('K-Drama' if item.type == 'drama' else ('Série' if item.type == 'series' else 'Film')) }}</span>
+                    {% if item.version %}
+                    <span>• {{ item.version }}</span>
+                    {% endif %}
                 </p>
             </div>
         </a>

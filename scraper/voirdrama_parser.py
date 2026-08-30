@@ -132,6 +132,33 @@ def _extract_drama_slug(url: str) -> str:
     return url.rstrip("/").split("/")[-1]
 
 
+def _extract_drama_version(card=None, slug: str = "", title: str = "") -> str:
+    """Détecte la version pour un drama (VF ou VOSTFR)."""
+    if card is not None:
+        v_tag = card.select_one(".version, .badge, .status, .quality, .meta .quality, .meta .version")
+        if v_tag and v_tag.text.strip():
+            raw = v_tag.text.strip().upper()
+            if "VF" in raw:
+                return "VF"
+            if "VOSTFR" in raw or "VOST" in raw:
+                return "VOSTFR"
+
+    slug_lower = (slug or "").lower()
+    title_lower = (title or "").lower()
+
+    if (
+        re.search(r"(?:^|[\s\-_(\[])(vf|vff|vfq)(?:$|[\s\-_)\]])", title_lower)
+        or slug_lower.endswith("-vf")
+        or "-vf-" in slug_lower
+        or " vf" in title_lower
+        or "(vf)" in title_lower
+        or "[vf]" in title_lower
+    ):
+        return "VF"
+
+    return "VOSTFR"
+
+
 def parse_voirdrama_list(html: str) -> list[DramaItem]:
     """Parse une page de liste ou de catégorie de dramas."""
     soup = BeautifulSoup(html, "html.parser")
@@ -152,7 +179,7 @@ def parse_voirdrama_list(html: str) -> list[DramaItem]:
         latest_ep_tag = card.select_one(".list-chapter .chapter-item a, .chapter a, .btn-link")
         latest_ep = latest_ep_tag.text.strip() if latest_ep_tag else None
 
-        version = "VF" if "vf" in title.lower() or "vf" in slug.lower() else "VOSTFR"
+        version = _extract_drama_version(card=card, slug=slug, title=title)
 
         items.append(DramaItem(
             title=title,
@@ -304,7 +331,7 @@ def parse_voirdrama_search(html: str) -> list[DramaItem]:
         img_tag = row.select_one(".tab-thumb img")
         image = _extract_voirdrama_image(img_tag)
 
-        version = "VF" if "vf" in title.lower() or "vf" in slug.lower() else "VOSTFR"
+        version = _extract_drama_version(card=row, slug=slug, title=title)
 
         items.append(DramaItem(
             title=title,

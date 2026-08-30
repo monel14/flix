@@ -123,6 +123,7 @@ async def api_search(q: str = Query(default="")) -> JSONResponse:
                 "slug": r["slug"],
                 "image": r["image"],
                 "type": t,
+                "version": r.get("version", ""),
                 "url": link,
             })
         return JSONResponse({"results": lite})

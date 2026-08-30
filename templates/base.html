@@ -267,12 +267,14 @@
                             else if (r.type === 'anime') badge = 'Animé';
                             else if (r.type === 'series') badge = 'Série';
 
+                            const versionTag = r.version ? ` • ${r.version}` : '';
+
                             return `
                             <a href="${r.url || ('/film/' + r.slug)}" class="dd-item">
                                 <img class="dd-poster" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">
                                 <div class="dd-info">
                                     <span class="dd-title">${r.title}</span>
-                                    <span class="dd-badge">${badge}</span>
+                                    <span class="dd-badge">${badge}${versionTag}</span>
                                 </div>
                             </a>`;
                         }).join('');
