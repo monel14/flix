@@ -1,72 +1,24 @@
-"""Politiques de sandbox iframe adaptées à chaque lecteur tiers.
+"""Politique de sandbox iframe ciblée par serveur.
 
-Le site ne connaît pas à l'avance la liste exacte des serveurs renvoyés par
-Coflix / Voiranime / Voirdrama. Cette fonction choisit donc des permissions
-selon le nom ou l'hôte du lecteur, avec une politique sûre par défaut.
+Le sandbox n'est activé que pour les serveurs spécifiquement ciblés (ex: vidzy.cc)
+afin de bloquer les redirections et popups intempestifs.
+Pour tous les autres lecteurs tiers, aucun sandbox n'est appliqué pour préserver
+leurs fonctionnalités natives.
 """
 from __future__ import annotations
 
 from urllib.parse import urlparse
 
-# Politique utilisée quand un lecteur n'est pas reconnu.
-# Équivaut à l'ancienne configuration du projet : lecture, scripts, formulaires
-# et présentation, mais sans popups ni navigation top-level automatique.
-DEFAULT_SANDBOX = "allow-scripts allow-same-origin allow-forms allow-presentation"
+# Sandbox strict pour vidzy.cc : lecture, scripts, communication avec son origine,
+# formulaires et affichage plein écran, mais sans popups ni navigation top-level.
+VIDZY_SANDBOX = "allow-scripts allow-same-origin allow-forms allow-presentation"
+DEFAULT_SANDBOX = VIDZY_SANDBOX
 
-# Permissions de base souvent suffisantes pour une simple iframe vidéo.
-BASE_VIDEO_TOKENS = (
-    "allow-scripts",
-    "allow-same-origin",
-    "allow-presentation",
-)
-
-# Certains lecteurs ouvrent des sous-titres / miroirs dans un popup.
-POPUP_TOKENS = (
-    "allow-popups",
-    "allow-popups-to-escape-sandbox",
-)
-
-# Règles par mots-clés. Les mots-clés sont testés en minuscules contre le nom
-# du serveur et l'hôte de son URL.
-_PLAYER_RULES: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
+# Mots-clés pour identifier les URLs ou noms de serveurs Vidzy
+_SANDBOX_RULES: tuple[tuple[tuple[str, ...], str], ...] = (
     (
-        ("vidmoly",),
-        (
-            *BASE_VIDEO_TOKENS,
-            "allow-pointer-lock",
-        ),
-    ),
-    (
-        ("voe.", "voe.sx", "voe-" ),
-        (
-            *BASE_VIDEO_TOKENS,
-            "allow-forms",
-            *POPUP_TOKENS,
-            "allow-top-navigation-by-user-activation",
-        ),
-    ),
-    (
-        ("streamtape", "stape",),
-        (
-            *BASE_VIDEO_TOKENS,
-            *POPUP_TOKENS,
-        ),
-    ),
-    (
-        ("mail.ru", "my.mail.ru",),
-        (
-            *BASE_VIDEO_TOKENS,
-            "allow-forms",
-        ),
-    ),
-    (
-        ("kokoflix", "voembed", "vidsrc", "vidcloud", "upcloud", "filemoon",),
-        (
-            *BASE_VIDEO_TOKENS,
-            "allow-forms",
-            "allow-pointer-lock",
-            *POPUP_TOKENS,
-        ),
+        ("vidzy", "vidzy.cc"),
+        VIDZY_SANDBOX,
     ),
 )
 
@@ -82,20 +34,16 @@ def _server_value(server, key: str, default: str = "") -> str:
     return str(value or default)
 
 
-def _tokens_for(name: str, link: str) -> tuple[str, ...]:
+def player_sandbox(server) -> str:
+    """Retourne la valeur de l'attribut iframe sandbox pour un serveur (vide si non sandboxed)."""
+    name = _server_value(server, "server_name")
+    link = _server_value(server, "server_link")
     label = name.lower()
     host = (urlparse(link).hostname or "").lower()
-    haystack = f"{label} {host}"
+    haystack = f"{label} {host} {link.lower()}"
 
-    for keywords, tokens in _PLAYER_RULES:
+    for keywords, tokens in _SANDBOX_RULES:
         if any(keyword in haystack for keyword in keywords):
             return tokens
 
-    return tuple(DEFAULT_SANDBOX.split())
-
-
-def player_sandbox(server) -> str:
-    """Retourne la valeur de l'attribut iframe sandbox pour un serveur."""
-    name = _server_value(server, "server_name")
-    link = _server_value(server, "server_link")
-    return " ".join(_tokens_for(name, link))
+    return ""

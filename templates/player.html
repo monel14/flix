@@ -54,6 +54,7 @@
         {% for srv in servers %}
         <button class="server-pill-btn {% if loop.first %}active{% endif %}"
                 data-link="{{ srv.server_link }}"
+                data-sandbox="{{ player_sandbox(srv) }}"
                 data-idx="{{ loop.index0 }}">
             {{ srv.server_name }}
             {% if srv.version %}<small>({{ srv.version }})</small>{% endif %}
@@ -67,7 +68,8 @@
                 src="{{ (default_server.server_link ~ ('&autoplay=1' if '?' in default_server.server_link else '?autoplay=1')) if default_server and default_server.server_link else '' }}"
                 allowfullscreen
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                referrerpolicy="no-referrer-when-downgrade">
+                referrerpolicy="no-referrer-when-downgrade"
+                {% if player_sandbox(default_server) %}sandbox="{{ player_sandbox(default_server) }}"{% endif %}>
         </iframe>
         {% if not servers %}
         <div class="player-frame-status">
@@ -136,6 +138,12 @@
             let link = btn.dataset.link || '';
             if (link && !link.includes('autoplay=')) {
                 link += (link.includes('?') ? '&' : '?') + 'autoplay=1';
+            }
+            const sandboxPolicy = btn.dataset.sandbox || '';
+            if (sandboxPolicy) {
+                frame.setAttribute('sandbox', sandboxPolicy);
+            } else {
+                frame.removeAttribute('sandbox');
             }
             frame.src = link;
         });

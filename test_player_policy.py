@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.testclient import TestClient
 
-from services.player_policy import DEFAULT_SANDBOX, player_sandbox
+from services.player_policy import VIDZY_SANDBOX, player_sandbox
 from services.templates import TEMPLATES_DIR
 
 
@@ -20,20 +20,13 @@ def make_server(name: str, link: str):
     )
 
 
-def test_player_sandbox_known_servers():
-    assert "allow-popups" in player_sandbox(make_server("VOE", "https://voe.sx/e/abc"))
-    assert "allow-top-navigation-by-user-activation" in player_sandbox(
-        make_server("VOE", "https://voe.sx/e/abc")
-    )
-    assert "allow-pointer-lock" in player_sandbox(make_server("Vidmoly", "https://vidmoly.to/e/abc"))
-    assert "allow-popups" in player_sandbox(make_server("Streamtape", "https://streamtape.com/e/abc"))
-    assert player_sandbox(make_server("Mail.ru", "https://my.mail.ru/video/embed/abc")) == (
-        "allow-scripts allow-same-origin allow-presentation allow-forms"
-    )
-
-
-def test_player_sandbox_unknown_server_uses_default():
-    assert player_sandbox(make_server("Lecteur inconnu", "https://example.test/embed")) == DEFAULT_SANDBOX
+def test_player_sandbox_vidzy_only():
+    assert player_sandbox(make_server("Serveur #1", "https://vidzy.cc/embed-123.html")) == VIDZY_SANDBOX
+    assert player_sandbox(make_server("Vidzy", "https://vidzy.cc/e/abc")) == VIDZY_SANDBOX
+    assert player_sandbox(make_server("VOE", "https://voe.sx/e/abc")) == ""
+    assert player_sandbox(make_server("Vidmoly", "https://vidmoly.to/e/abc")) == ""
+    assert player_sandbox(make_server("Streamtape", "https://streamtape.com/e/abc")) == ""
+    assert player_sandbox(make_server("Lecteur inconnu", "https://example.test/embed")) == ""
 
 
 def test_player_templates_render_per_server_sandbox():
@@ -45,7 +38,7 @@ def test_player_templates_render_per_server_sandbox():
     env.env.globals["player_sandbox"] = player_sandbox
 
     servers = [
-        make_server("Vidmoly", "https://vidmoly.to/e/1"),
+        make_server("Vidzy", "https://vidzy.cc/embed-1"),
         make_server("VOE", "https://voe.sx/e/2"),
         make_server("Inconnu", "https://example.test/3"),
     ]
@@ -100,6 +93,7 @@ def test_player_templates_render_per_server_sandbox():
         response = client.get(path)
         assert response.status_code == 200, response.text
         html = response.text
-        assert 'data-link="https://vidmoly.to/e/1"' in html
-        assert 'sandbox="' not in html
+        assert 'data-link="https://vidzy.cc/embed-1"' in html
+        assert f'data-sandbox="{VIDZY_SANDBOX}"' in html
+        assert f'sandbox="{VIDZY_SANDBOX}"' in html
         assert "frame.src = link;" in html
