@@ -2405,6 +2405,18 @@ button,
     overflow: hidden;
 }
 
+/* Garde anti-régression : .ripple-host force position:relative au pointerdown
+   (tap-feedback.js). Sur les contrôles positionnés en absolute — boutons du
+   hero (hero-nav) et flèches des rails (rail-nav) — ce changement faisait
+   "sauter" le bouton pendant le clic : le mouseup atterrissait hors du bouton,
+   le clic était retargeté sur la section et le carrousel ne répondait jamais.
+   Spécificité supérieure à .ripple-host : on restaure la position sans toucher
+   au rognage (overflow:hidden) qui contient l'onde. */
+.hero-nav.ripple-host,
+.rail-nav.ripple-host {
+    position: absolute;
+}
+
 .ripple {
     position: absolute;
     border-radius: 50%;
