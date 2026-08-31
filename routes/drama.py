@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
+from services.dedup import canonical_path_for
 from services.seo import page_seo
 from services.seo import content_seo, item_list_json_ld, page_seo
 from scraper.voirdrama_client import (
@@ -24,6 +25,12 @@ from scraper.voirdrama_parser import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 from services.templates import templates
+
+
+def _known_paths() -> set[str]:
+    """Chemins indexables connus (cache du sitemap), pour le canonical VF/VOSTFR."""
+    cached = cache.get("sitemap:paths") or []
+    return {p for p in cached if isinstance(p, str)}
 
 
 async def _load_dramas_list(page: int = 1, genre: str | None = None, sort: str = "latest") -> dict:
@@ -159,6 +166,9 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
     if not data or not data.get("title"):
         raise HTTPException(status_code=404, detail="Drama introuvable")
 
+    # Canonical VF/VOSTFR : la version préférée (VF d'abord) si elle est connue.
+    canonical_path = canonical_path_for(slug, "/drama/", _known_paths())
+
     return templates.TemplateResponse(request, "drama_detail.html", {
         "request": request,
         "drama": data,
@@ -168,7 +178,7 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
         "seo": content_seo(
             request,
             item=data,
-            path=f"/drama/{slug}",
+            path=canonical_path,
             title_suffix="K-Drama en Streaming HD",
             kind_label="Drama en Streaming VOSTFR & VF",
             breadcrumbs=[("K-Dramas", "/dramas")],

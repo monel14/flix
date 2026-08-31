@@ -22,6 +22,7 @@ from scraper.voiranime_client import voiranime_get_html
 from scraper.voiranime_parser import get_voiranime_last_page, parse_voiranime_list
 from scraper.voirdrama_client import voirdrama_get_html
 from scraper.voirdrama_parser import get_voirdrama_last_page, parse_voirdrama_list
+from services.dedup import merge_variants
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,19 @@ def _slugs_of(items: list) -> set[str]:
     return {(it.get("slug") or "").strip() for it in items if it.get("slug")}
 
 
+def _preferred_slugs(items: list) -> set[str]:
+    """Slugs des versions préférées (VF d'abord) après fusion des variantes.
+
+    Un même titre existe souvent en plusieurs fiches dont le slug porte un
+    suffixe de version (`-vf`, `-vostfr`, `-french`, `-truefrench`, `-vo`).
+    Le sitemap ne doit référencer QUE la variante préférée (celle qui porte le
+    canonical) : les doublons VF/VOSTFR dupliquaient le contenu et divisaient
+    la confiance (cannibalisation constatée dans GSC, ex. `/film/lodyssee-vf`
+    vs `/film/lodyssee-vostfr`).
+    """
+    return _slugs_of(merge_variants(items))
+
+
 async def _collect_coflix(section: str, prefix: str, list_path: str) -> set[str]:
     """Slugs coflix d'une section (« movies » / « series ») + pages de liste."""
     max_pages = _max_pages()
@@ -53,7 +67,7 @@ async def _collect_coflix(section: str, prefix: str, list_path: str) -> set[str]
 
     html_1 = await coflix_get_html(f"/{section}/")
     items = parse_coflix_list(html_1, section)
-    slugs = _slugs_of(items)
+    slugs = _preferred_slugs(items)
     paths |= {f"{prefix}{slug}" for slug in slugs}
     paths.add(list_path)
 
@@ -64,7 +78,7 @@ async def _collect_coflix(section: str, prefix: str, list_path: str) -> set[str]
 
     async def fetch_page(page: int) -> set[str]:
         html = await coflix_get_html(f"/{section}/?page={page}")
-        return _slugs_of(parse_coflix_list(html, section))
+        return _preferred_slugs(parse_coflix_list(html, section))
 
     results = await asyncio.gather(
         *(fetch_page(p) for p in range(2, last + 1)), return_exceptions=True
@@ -85,7 +99,7 @@ async def _collect_paged_source(
     paths: set[str] = set()
 
     html_1 = await fetch_html(first_path)
-    paths |= {f"{prefix}{slug}" for slug in _slugs_of(parse_list(html_1))}
+    paths |= {f"{prefix}{slug}" for slug in _preferred_slugs(parse_list(html_1))}
     paths.add(list_path)
 
     last = min(get_last(html_1), max_pages)
@@ -94,7 +108,7 @@ async def _collect_paged_source(
 
     async def fetch_page(page: int) -> set[str]:
         html = await fetch_html(page_tpl.format(page=page))
-        return _slugs_of(parse_list(html))
+        return _preferred_slugs(parse_list(html))
 
     results = await asyncio.gather(
         *(fetch_page(p) for p in range(2, last + 1)), return_exceptions=True

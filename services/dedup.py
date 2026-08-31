@@ -48,6 +48,52 @@ def sibling_slugs(slug: str) -> list[str]:
     return [base + suf for suf in VERSION_SUFFIXES if base + suf != slug]
 
 
+def preferred_version_slug(slug: str) -> str:
+    """Slug de la variante la plus préférée (VF > TRUEFRENCH > FRENCH > VOSTFR > VO).
+
+    Retourne le slug courant s'il est déjà la version préférée, ou si aucun
+    suffixe de version ne le qualifie (ex: slugs nus comme `reacher-saison-4`).
+    Exemples :
+        preferred_version_slug("lodyssee-vostfr") == "lodyssee-vf"
+        preferred_version_slug("lodyssee-vf")     == "lodyssee-vf"
+        preferred_version_slug("reacher-saison-4") == "reacher-saison-4"
+    """
+    base = canonical_slug(slug)
+    if not base or base == slug:
+        return slug
+    current = (version_label(slug) or "").lower()
+    current_rank = _PREFERENCE.get(current, 99) if current else 99
+
+    best_slug: str | None = None
+    best_rank = current_rank
+    for suffix in VERSION_SUFFIXES:
+        candidate = base + suffix
+        if candidate == slug:
+            continue
+        rank = _PREFERENCE.get(suffix[1:], 99)
+        if rank < best_rank:
+            best_slug, best_rank = candidate, rank
+    return best_slug if best_slug else slug
+
+
+def canonical_path_for(slug: str, prefix: str, known_paths: set[str] | None = None) -> str:
+    """Chemin canonique d'une fiche : la version préférée si elle est réellement
+    connue (indexée), sinon le chemin courant.
+
+    `known_paths` : ensemble des chemins réellement servis (ex. issus du cache
+    sitemap). Sans preuve que la variante préférée existe, on garde le chemin
+    courant : pointer un canonical vers une URL inexistante serait pire que de
+    ne rien faire.
+    """
+    preferred = preferred_version_slug(slug)
+    path = f"{prefix}{slug}"
+    if preferred == slug:
+        return path
+    if known_paths and f"{prefix}{preferred}" in known_paths:
+        return f"{prefix}{preferred}"
+    return path
+
+
 def merge_variants(items: list[dict]) -> list[dict]:
     """Regroupe les items par slug canonique : un titre = une entrée.
 

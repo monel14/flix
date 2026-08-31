@@ -11,3 +11,4 @@ build/
 .DS_Store
 cache.db-shm
 cache.db-wal
+indexnow_key.txt

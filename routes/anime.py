@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
+from services.dedup import canonical_path_for
 from services.seo import page_seo
 from services.seo import content_seo, item_list_json_ld, page_seo
 from scraper.voiranime_client import (
@@ -24,6 +25,12 @@ from scraper.voiranime_parser import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 from services.templates import templates
+
+
+def _known_paths() -> set[str]:
+    """Chemins indexables connus (cache du sitemap), pour le canonical VF/VOSTFR."""
+    cached = cache.get("sitemap:paths") or []
+    return {p for p in cached if isinstance(p, str)}
 
 
 async def _load_animes_list(page: int = 1, genre: str | None = None, sort: str = "latest") -> dict:
@@ -119,6 +126,15 @@ async def animes_list(
         canon_params.append(f"page={page}")
     canon_path = request.url.path + (f"?{'&'.join(canon_params)}" if canon_params else "")
 
+    # Title SEO orienté intention de recherche : le libellé de genre et la
+    # version en clair (« Animation Chinoise (Donghua) en streaming VOSTFR »)
+    # matchent les requêtes réelles (ex. « donghua vostfr », pos 9,9 sur GSC).
+    version_label = {"vf": "VF", "vostfr": "VOSTFR"}.get(version or "", "")
+    if genre and genre_label:
+        list_title = f"{genre_label} en streaming {version_label} — NokaTV".replace("  ", " ").strip()
+    else:
+        list_title = f"{section_label} en Streaming HD — NokaTV"
+
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
         "items": items,
@@ -134,7 +150,7 @@ async def animes_list(
         "current_version": version or "all",
         "base_path": "/animes",
            "seo": page_seo(request,
-                        title=f"{section_label} en Streaming HD — NokaTV",
+                        title=list_title,
                         path=canon_path,
                         extra_json_ld=[item_list_json_ld(
                             request,
@@ -159,6 +175,21 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
     if not data or not data.get("title"):
         raise HTTPException(status_code=404, detail="Animé introuvable")
 
+    # Canonical VF/VOSTFR : la version préférée (VF d'abord) si elle est connue.
+    canonical_path = canonical_path_for(slug, "/anime/", _known_paths())
+
+    # Title orienté intention de recherche : la version (VF/VOSTFR) et l'année
+    # sont les deux signaux qui font cliquer les fiches d'animés (les requêtes
+    # GSC sont du type « lv999 no murabito vostfr »). Données réelles du
+    # parseur, jamais fabriquées.
+    version = (data.get("version") or "").strip()
+    year = (data.get("year") or "").strip()
+    title_suffix = "Animé en Streaming HD"
+    if version:
+        title_suffix = f"en Streaming {version}"
+    if year:
+        title_suffix += f" ({year})"
+
     return templates.TemplateResponse(request, "anime_detail.html", {
         "request": request,
         "anime": data,
@@ -168,8 +199,8 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
         "seo": content_seo(
             request,
             item=data,
-            path=f"/anime/{slug}",
-            title_suffix="Animé en Streaming HD",
+            path=canonical_path,
+            title_suffix=title_suffix,
             kind_label="Animé en Streaming VF & VOSTFR",
             breadcrumbs=[("Animés", "/animes")],
         ),

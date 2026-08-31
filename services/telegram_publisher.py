@@ -30,6 +30,7 @@ import httpx
 
 from cache import DB_PATH, cache
 from services.dedup import canonical_slug, merge_variants
+from services.indexnow import submit_urls
 
 logger = logging.getLogger(__name__)
 
@@ -2310,6 +2311,7 @@ class TelegramPublisher:
         store: TelegramPublicationStore | None = None,
         collector: DiscoveryCollector | None = None,
         sender: TelegramSender | None = None,
+        indexnow_submitter: Callable[[list[str]], Awaitable[tuple[bool, str]]] | None = None,
     ):
         self.settings = settings
         self.store = store or TelegramPublicationStore(lease_seconds=settings.lease_seconds)
@@ -2320,6 +2322,25 @@ class TelegramPublisher:
         else:
             self.collector = collect_default_publications
         self.sender = sender
+        # Notifie IndexNow à chaque passe : sans clé configurée, le service est
+        # un no-op silencieux (aucun réseau, aucune régression).
+        self.indexnow_submitter = indexnow_submitter or submit_urls
+
+    async def _notify_indexnow(self, post: ClaimedPost) -> None:
+        """Signale la fiche nouvellement publiée à IndexNow (fire-and-forget).
+
+        Sans clé configurée, submit_urls est un no-op silencieux : cette étape
+        ne retarde ni ne casse jamais la publication Telegram. On ne soumet
+        que les URLs de fiches (jamais les players /regarder-*).
+        """
+        if not post.target_url or "/regarder" in post.target_url:
+            return
+        try:
+            ok, message = await self.indexnow_submitter([post.target_url])
+            if not ok:
+                logger.debug("IndexNow ignoré pour %s : %s", post.target_url, message)
+        except Exception as exc:  # noqa: BLE001 - IndexNow ne doit jamais casser la publication
+            logger.warning("IndexNow en échec pour %s : %s", post.target_url, exc)
 
     def _digest_episodes(self, category: str, publications: list[Publication]) -> list[Publication]:
         """Regroupe les épisodes nouveaux d'une même série en un post unique.
@@ -2466,6 +2487,7 @@ class TelegramPublisher:
                     message_id = await self._send_with_lease_renewal(sender, channel_id, post)
                     if self.store.mark_sent(post, message_id):
                         report.sent += 1
+                        await self._notify_indexnow(post)
                     else:
                         report.errors.append(
                             f"{post.category}/{post.key} : confirmation locale du lease impossible."

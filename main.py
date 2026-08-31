@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
+from services.indexnow import ensure_indexnow_key, indexnow_key
 from services.seo import page_seo, site_origin
 from services.sitemap import LEGAL_PATHS as LEGAL_SITEMAP_PATHS
 from services.sitemap import STATIC_PATHS as STATIC_SITEMAP_PATHS
@@ -41,6 +42,11 @@ async def lifespan(app: FastAPI):
             logger.info("Cache nettoyé au démarrage : %d entrée(s) temporaire(s) expirée(s) supprimée(s)", purged)
     except Exception as exc:
         logger.warning("Impossible de purger le cache : %s", exc)
+    # Clé IndexNow stable entre redémarrages (servie à /{clé}.txt)
+    try:
+        ensure_indexnow_key()
+    except Exception as exc:
+        logger.warning("IndexNow indisponible au démarrage : %s", exc)
     yield
     await close_coflix_client()
     await close_voirdrama_client()
@@ -210,6 +216,25 @@ async def sitemap_xml(request: Request):
         media_type="application/xml",
         headers={"Cache-Control": "public, max-age=3600"},
     )
+
+
+# ---------------------------------------------------------------------------
+# IndexNow : fichier de vérification de la clé (https://{hôte}/{clé}.txt)
+# ---------------------------------------------------------------------------
+
+
+@app.get("/{key}.txt", response_class=PlainTextResponse)
+async def indexnow_key_file(key: str):
+    """Sert la clé IndexNow à l'emplacement exact exigé par le protocole.
+
+    IndexNow vérifie la propriété du domaine en demandant ce fichier
+    (https://nokatv.xyz/{clé}.txt). Sans clé configurée (ou avec une clé qui
+    ne correspond pas), on répond 404 : la route n'expose jamais autre chose.
+    """
+    expected = indexnow_key()
+    if expected and key == expected:
+        return expected
+    raise HTTPException(status_code=404, detail="Clé inconnue")
 
 
 # ---------------------------------------------------------------------------

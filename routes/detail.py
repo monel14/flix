@@ -10,11 +10,24 @@ from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_
 from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
 from scraper.voirdrama_client import VoirdramaNotFoundError, voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_detail
+from services.dedup import canonical_path_for
 from services.seo import content_seo
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 from services.templates import templates
+
+
+def _known_paths() -> set[str]:
+    """Chemins indexables connus (cache du sitemap), pour le canonical VF/VOSTFR.
+
+    Le canonical d'une fiche pointe vers la version préférée (ex: `lodyssee-vf`)
+    uniquement si cette URL est réellement connue comme servie : pointer vers
+    une variante inexistante serait pire que ne rien faire. Tant que le sitemap
+    n'a pas été généré, l'ensemble est vide → canonical = page courante.
+    """
+    cached = cache.get("sitemap:paths") or []
+    return {p for p in cached if isinstance(p, str)}
 
 
 async def load_detail(slug: str) -> dict:
@@ -66,6 +79,10 @@ async def film_detail(request: Request, slug: str):
             f"detail:{slug}", DETAIL_TTL, lambda: load_detail(slug)
         )
         if data and data.get("title") and data.get("movie_id"):
+            # Canonical VF/VOSTFR : pointe vers la version préférée (VF d'abord)
+            # si elle est réellement connue — sinon la page courante est son
+            # propre canonical (aucune URL cassée).
+            canonical_path = canonical_path_for(slug, "/film/", _known_paths())
             return templates.TemplateResponse(request, "detail.html", {
                 "request": request,
                 "film": data,
@@ -77,7 +94,7 @@ async def film_detail(request: Request, slug: str):
                 "seo": content_seo(
                     request,
                     item=data,
-                    path=f"/film/{slug}",
+                    path=canonical_path,
                     title_suffix="Streaming HD",
                     kind_label="en Streaming VF & VOSTFR HD",
                     content_type=data.get("content_type", ""),
