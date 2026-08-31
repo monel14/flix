@@ -94,7 +94,9 @@ def test_fiche_canonical_self_quand_la_vf_est_inconnue(monkeypatch):
     assert canonical.group(1) == "http://testserver/film/lodyssee-vostfr"
 
 
-def test_fiche_anime_title_inclut_version_et_annee(monkeypatch):
+def test_fiche_anime_title_slug_nu_affiche_annee_seule(monkeypatch):
+    """Slug sans suffixe de version → la version n'est pas prouvée : rien
+    d'ajouté ; l'année réelle de la fiche est affichée."""
     import routes.anime
 
     fake_anime = {
@@ -116,7 +118,120 @@ def test_fiche_anime_title_inclut_version_et_annee(monkeypatch):
     assert r.status_code == 200
     title = re.search(r"<title>(.*?)</title>", r.text, re.S)
     assert title is not None
-    assert "en Streaming VOSTFR (2024)" in title.group(1)
+    assert "LV999 no Murabito (2024) — Animé en Streaming HD" in title.group(1)
+
+
+def test_fiche_anime_title_affiche_version_prouvee_par_le_slug(monkeypatch):
+    """Slug avec suffixe « -vf » → la version est prouvée : affichée."""
+    import routes.anime
+
+    fake_anime = {
+        "title": "Solo Leveling", "slug": "solo-leveling-vf", "image": "",
+        "version": "VF", "year": "2024", "genres": [], "status": "Ongoing",
+        "synopsis": "Un chasseur faible redevient fort.",
+        "episodes": [], "type": "anime",
+    }
+
+    async def fake_load(slug: str):
+        return dict(fake_anime)
+
+    monkeypatch.setattr(routes.anime, "_load_anime_detail", fake_load)
+
+    r = client.get("/anime/solo-leveling-vf")
+    assert r.status_code == 200
+    title = re.search(r"<title>(.*?)</title>", r.text, re.S)
+    assert title is not None
+    assert "Solo Leveling (VF, 2024) — Animé en Streaming HD" in title.group(1)
+
+
+# ── Titles : données réelles, jamais d'ajout automatique ────────────────────
+
+def test_title_qualifiers_uniquement_donnees_reelles():
+    from services.seo import title_qualifiers
+
+    # Version connue seule
+    assert title_qualifiers("The Last Sunrise", versions=["VF"]) == "(VF)"
+    assert title_qualifiers("L'Odyssée", versions=["VOSTFR"]) == "(VOSTFR)"
+    # Plusieurs versions connues
+    assert title_qualifiers("X", versions=["VF", "VOSTFR"]) == "(VF/VOSTFR)"
+    # Année seule
+    assert title_qualifiers("The First Jasmine", year="2024") == "(2024)"
+    # Version + année
+    assert title_qualifiers("The Last Sunrise", versions=["VF"], year="2026") == "(VF, 2026)"
+    # Rien d'utile → rien
+    assert title_qualifiers("Reacher") == ""
+    assert title_qualifiers("Reacher", versions=[""], year="") == ""
+    # Version déjà dans le titre → jamais dupliquée
+    assert title_qualifiers("Black Torch (VF)", versions=["VF"]) == ""
+    # Année déjà dans le titre → jamais dupliquée
+    assert title_qualifiers("Vaiana 2 (2024)", year="2024") == ""
+    # Valeurs vides et doublons ignorés
+    assert title_qualifiers("X", versions=["VF", "", "VF", "vf"]) == "(VF)"
+
+
+def test_fiche_film_title_affiche_version_et_annee_reelles(monkeypatch):
+    import routes.detail
+
+    fake = {
+        "title": "The Last Sunrise", "slug": "the-last-sunrise-vf", "movie_id": "42",
+        "type": "movie", "content_type": "Movie", "image": "", "version": "VF",
+        "year": "2026", "genres": ["Action"], "status": "Released",
+        "synopsis": "Synopsis.", "episodes": [], "first_episode_id": "42",
+        "first_episode_url": "/regarder/the-last-sunrise-vf/ep-1", "related": [],
+    }
+
+    async def fake_load(slug: str):
+        return dict(fake)
+
+    monkeypatch.setattr(routes.detail, "load_detail", fake_load)
+    r = client.get("/film/the-last-sunrise-vf")
+    assert r.status_code == 200
+    title = re.search(r"<title>(.*?)</title>", r.text, re.S)
+    assert title is not None
+    assert "The Last Sunrise (VF, 2026) — Streaming HD — NokaTV" in title.group(1)
+
+
+def test_fiche_sans_version_ni_annee_title_inchange(monkeypatch):
+    """Aucune donnée réelle → le title reste tel quel (pas d'ajout automatique)."""
+    import routes.detail
+
+    fake = {
+        "title": "Reacher", "slug": "reacher-saison-4", "movie_id": "42",
+        "type": "series", "content_type": "Series", "image": "", "version": "",
+        "year": "", "genres": [], "status": "", "synopsis": "Synopsis.",
+        "episodes": [], "first_episode_id": "42",
+        "first_episode_url": "/regarder/reacher-saison-4/ep-1", "related": [],
+    }
+
+    async def fake_load(slug: str):
+        return dict(fake)
+
+    monkeypatch.setattr(routes.detail, "load_detail", fake_load)
+    r = client.get("/film/reacher-saison-4")
+    assert r.status_code == 200
+    title = re.search(r"<title>(.*?)</title>", r.text, re.S)
+    assert title is not None
+    assert "Reacher — Streaming HD — NokaTV" in title.group(1)
+
+
+def test_fiche_drama_title_affiche_annee_reelle(monkeypatch):
+    import routes.drama
+
+    fake_drama = {
+        "title": "The First Jasmine", "slug": "the-first-jasmine", "image": "",
+        "version": "VOSTFR", "year": "2024", "genres": ["Romance"], "status": "Ongoing",
+        "synopsis": "Un drame coréen.", "episodes": [], "type": "drama",
+    }
+
+    async def fake_load(slug: str):
+        return dict(fake_drama)
+
+    monkeypatch.setattr(routes.drama, "_load_drama_detail", fake_load)
+    r = client.get("/drama/the-first-jasmine")
+    assert r.status_code == 200
+    title = re.search(r"<title>(.*?)</title>", r.text, re.S)
+    assert title is not None
+    assert "The First Jasmine (2024) — K-Drama en Streaming HD" in title.group(1)
 
 
 def test_liste_animes_title_contient_genre_et_version(monkeypatch):

@@ -6,9 +6,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
-from services.dedup import canonical_path_for
+from services.dedup import canonical_path_for, version_label
 from services.seo import page_seo
-from services.seo import content_seo, item_list_json_ld, page_seo
+from services.seo import content_seo, item_list_json_ld, page_seo, title_qualifiers
 from scraper.voiranime_client import (
     VoiranimeFetchError,
     VoiranimeNotFoundError,
@@ -178,17 +178,16 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
     # Canonical VF/VOSTFR : la version préférée (VF d'abord) si elle est connue.
     canonical_path = canonical_path_for(slug, "/anime/", _known_paths())
 
-    # Title orienté intention de recherche : la version (VF/VOSTFR) et l'année
-    # sont les deux signaux qui font cliquer les fiches d'animés (les requêtes
-    # GSC sont du type « lv999 no murabito vostfr »). Données réelles du
-    # parseur, jamais fabriquées.
-    version = (data.get("version") or "").strip()
-    year = (data.get("year") or "").strip()
-    title_suffix = "Animé en Streaming HD"
-    if version:
-        title_suffix = f"en Streaming {version}"
-    if year:
-        title_suffix += f" ({year})"
+    # Qualificatifs réels du title : la fiche voiranime ne fournit pas de label
+    # de version fiable (elle retombe sur « VOSTFR » par défaut) — on n'affiche
+    # donc la version que lorsqu'elle est prouvée par le slug (suffixe réel).
+    # L'année vient de la fiche. « LV999 no Murabito (2024) — Animé en
+    # Streaming HD — NokaTV », « Solo Leveling (VF) — … » selon les données.
+    qualifiers = title_qualifiers(
+        data.get("title", ""),
+        versions=(version_label(slug),),
+        year=data.get("year", ""),
+    )
 
     return templates.TemplateResponse(request, "anime_detail.html", {
         "request": request,
@@ -200,8 +199,9 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
             request,
             item=data,
             path=canonical_path,
-            title_suffix=title_suffix,
+            title_suffix="Animé en Streaming HD",
             kind_label="Animé en Streaming VF & VOSTFR",
+            qualifiers=qualifiers,
             breadcrumbs=[("Animés", "/animes")],
         ),
     })

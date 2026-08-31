@@ -6,9 +6,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
-from services.dedup import canonical_path_for
+from services.dedup import canonical_path_for, version_label
 from services.seo import page_seo
-from services.seo import content_seo, item_list_json_ld, page_seo
+from services.seo import content_seo, item_list_json_ld, page_seo, title_qualifiers
 from scraper.voirdrama_client import (
     VoirdramaFetchError,
     VoirdramaNotFoundError,
@@ -169,6 +169,16 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
     # Canonical VF/VOSTFR : la version préférée (VF d'abord) si elle est connue.
     canonical_path = canonical_path_for(slug, "/drama/", _known_paths())
 
+    # Qualificatifs réels du title : la fiche voirdrama ne fournit pas de label
+    # de version fiable (défaut « VOSTFR ») — on n'affiche la version que si le
+    # slug la porte explicitement. L'année vient de la fiche (ex. « The First
+    # Jasmine (2024) — K-Drama en Streaming HD — NokaTV »).
+    qualifiers = title_qualifiers(
+        data.get("title", ""),
+        versions=(version_label(slug),),
+        year=data.get("year", ""),
+    )
+
     return templates.TemplateResponse(request, "drama_detail.html", {
         "request": request,
         "drama": data,
@@ -181,6 +191,7 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
             path=canonical_path,
             title_suffix="K-Drama en Streaming HD",
             kind_label="Drama en Streaming VOSTFR & VF",
+            qualifiers=qualifiers,
             breadcrumbs=[("K-Dramas", "/dramas")],
         ),
     })

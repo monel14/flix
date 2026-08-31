@@ -12,6 +12,7 @@ Sans elle, on retombe sur l'origine réellement vue par la requête
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 
 from fastapi import Request
@@ -238,6 +239,46 @@ def item_list_json_ld(request: Request, entries: list[tuple[str, str]]) -> dict:
     }
 
 
+def title_qualifiers(
+    title: str,
+    *,
+    versions: Iterable[str] = (),
+    year: str = "",
+) -> str:
+    """Qualificatifs réels d'une fiche, insérés dans son <title>.
+
+    Stratégie « données réelles de la fiche, jamais d'ajout automatique » :
+    - une version n'est affichée que si elle est réellement connue (label de
+      la source, ou suffixe porté par le slug) — l'appelant ne transmet que
+      ces cas, jamais de valeur par défaut ;
+    - une mention déjà présente dans le titre (ex. « Black Torch (VF) ») n'est
+      jamais dupliquée ;
+    - l'année n'est ajoutée que si elle est présente et pas déjà dans le titre.
+
+    Retourne « (VF) », « (VF/VOSTFR) », « (2024) », « (VF, 2024) » ou « ».
+    """
+    seen: list[str] = []
+    for v in versions or ():
+        label = (v or "").strip().upper()
+        if not label or label in seen:
+            continue
+        if re.search(rf"\(\s*{re.escape(label)}\s*\)", title, re.IGNORECASE):
+            continue  # déjà mentionné dans le titre : ne pas dupliquer
+        seen.append(label)
+
+    year_s = (year or "").strip()
+    if year_s and re.search(rf"\b{re.escape(year_s)}\b", title):
+        year_s = ""
+
+    if not seen and not year_s:
+        return ""
+    if seen and year_s:
+        return f"({'/'.join(seen)}, {year_s})"
+    if seen:
+        return f"({'/'.join(seen)})"
+    return f"({year_s})"
+
+
 def content_seo(
     request: Request,
     *,
@@ -246,6 +287,7 @@ def content_seo(
     title_suffix: str,
     kind_label: str,
     content_type: str = "",
+    qualifiers: str = "",
     breadcrumbs: list[tuple[str, str]] | None = None,
 ) -> SeoMeta:
     """SeoMeta d'une fiche de contenu (film, série).
@@ -254,6 +296,9 @@ def content_seo(
       Toute autre valeur (inconnue, non fiable) -> pas de JSON-LD.
     - Le synopsis, les genres et l'année proviennent de la source réelle ;
       rien n'est fabriqué.
+    - `qualifiers` : chaîne déjà formatée (ex. « (VF, 2024) ») produite par
+      `title_qualifiers()` ; elle ne contient que des données réelles de la
+      fiche (version connue, année présente). Vide = rien à afficher.
     - `breadcrumbs` : sections mères (nom, chemin) ; le fil d'Ariane complet
       Accueil > section > œuvre est dérivé, la fiche en étant le dernier
       élément.
@@ -272,9 +317,10 @@ def content_seo(
     if title and breadcrumbs:
         trail = [("Accueil", "/"), *breadcrumbs, (title, path)]
         extra.append(breadcrumb_json_ld(request, trail))
+    base_title = f"{title} {qualifiers}".strip() if qualifiers else title
     return page_seo(
         request,
-        title=f"{title} — {title_suffix} — {SITE_NAME}" if title else "",
+        title=f"{base_title} — {title_suffix} — {SITE_NAME}" if base_title else "",
         og_title=f"{title} {kind_label} — {SITE_NAME}" if title else "",
         description=description,
         path=path,

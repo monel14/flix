@@ -10,8 +10,8 @@ from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_
 from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
 from scraper.voirdrama_client import VoirdramaNotFoundError, voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_detail
-from services.dedup import canonical_path_for
-from services.seo import content_seo
+from services.dedup import canonical_path_for, version_label
+from services.seo import content_seo, title_qualifiers
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -83,6 +83,19 @@ async def film_detail(request: Request, slug: str):
             # si elle est réellement connue — sinon la page courante est son
             # propre canonical (aucune URL cassée).
             canonical_path = canonical_path_for(slug, "/film/", _known_paths())
+            # Qualificatifs réels du title : la version vient du label « Version: »
+            # de la source coflix (donnée réelle, jamais un défaut) ; l'année de
+            # « Date aired ». En fallback drama (pas de content_type), la version
+            # n'est affichée que si le slug la porte explicitement.
+            if data.get("content_type"):
+                versions = (data.get("version") or "").split("/")
+            else:
+                versions = (version_label(slug),)
+            qualifiers = title_qualifiers(
+                data.get("title", ""),
+                versions=versions,
+                year=data.get("year", ""),
+            )
             return templates.TemplateResponse(request, "detail.html", {
                 "request": request,
                 "film": data,
@@ -98,6 +111,7 @@ async def film_detail(request: Request, slug: str):
                     title_suffix="Streaming HD",
                     kind_label="en Streaming VF & VOSTFR HD",
                     content_type=data.get("content_type", ""),
+                    qualifiers=qualifiers,
                     breadcrumbs=[
                         ("Séries" if data.get("type") == "series" else "Films",
                          "/series" if data.get("type") == "series" else "/films")
