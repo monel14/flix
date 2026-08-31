@@ -23,7 +23,16 @@
                         <span class="hero-meta-text">{{ slide.year }}</span>
                     {% endif %}
                 </div>
+                {# Un seul H1 par page (règle Bing/Google) : seule la première
+                   slide du carrousel porte le H1 éditorial ; les autres slides
+                   restent en H2, avec exactement le même rendu (CSS par classe).
+                   Le slider JS ne déplace que la classe `active`, jamais les
+                   balises de titre. #}
+                {% if loop.first %}
                 <h1 class="hero-slide-title">{{ slide.title }}</h1>
+                {% else %}
+                <h2 class="hero-slide-title">{{ slide.title }}</h2>
+                {% endif %}
                 {% if slide.synopsis %}
                 <p class="hero-slide-synopsis">{{ slide.synopsis }}</p>
                 {% endif %}
