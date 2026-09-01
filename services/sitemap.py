@@ -22,11 +22,18 @@ from scraper.voiranime_client import voiranime_get_html
 from scraper.voiranime_parser import get_voiranime_last_page, parse_voiranime_list
 from scraper.voirdrama_client import voirdrama_get_html
 from scraper.voirdrama_parser import get_voirdrama_last_page, parse_voirdrama_list
+from scraper.frenchstream_client import (
+    FrenchstreamFetchError,
+    frenchstream_get_html,
+)
+from scraper.frenchstream_parser import parse_frenchstream_category
 from services.dedup import merge_variants
 
 logger = logging.getLogger(__name__)
 
 SITEMAP_CACHE_KEY = "sitemap:paths"
+# Fiches voirdrama seules (exclusions FrenchStream) — voir `_collect_all`.
+SITEMAP_VOIDRAMA_DRAMA_KEY = "sitemap:voirdrama_drama"
 SITEMAP_TTL = 12 * 3600  # 12 h — un sitemap n'a pas besoin d'être plus frais
 
 STATIC_PATHS = ["/", "/films", "/series", "/dramas", "/animes"]
@@ -121,6 +128,35 @@ async def _collect_paged_source(
     return paths
 
 
+async def _collect_frenchstream_kdrama() -> set[str]:
+    """Fiches K-Drama FrenchStream (catégorie k-drama-) — nouveautés absentes
+    de voirdrama. Ne garde que celles qui n'ont pas de fiche voirdrama
+    existante (pas de doublon dans le sitemap).
+
+    L'exclusion voirdrama est faite dans `_collect_all` (union de sets, les
+    chemins identiques se dédoublonnent) : une lecture du cache sitemap ici
+    ferait osciller le sitemap (le cache contient aussi les fiches FS du build
+    précédent, ce qui exclurait tout FrenchStream un build sur deux)."""
+    paths: set[str] = set()
+    for page in range(1, int(os.getenv("FRENCHSTREAM_CATALOG_PAGES", "39")) + 1):
+        path = (
+            f"/index.php?cstart={page}&do=cat&category=k-drama-"
+            if page > 1
+            else "/k-drama-//"
+        )
+        try:
+            html = await frenchstream_get_html(path)
+        except FrenchstreamFetchError as exc:
+            logger.warning("Sitemap : FrenchStream page %d indisponible (%s)", page, exc)
+            break
+        for it in parse_frenchstream_category(html):
+            slug = it.get("slug", "")
+            if slug:
+                paths.add(f"/drama/{slug}")
+        await asyncio.sleep(0.1)
+    return paths
+
+
 async def _collect_all() -> list[str]:
     """Collecte en parallèle toutes les sources ; chacune est isolée en erreur."""
     tasks = {
@@ -134,6 +170,7 @@ async def _collect_all() -> list[str]:
             voiranime_get_html, parse_voiranime_list, get_voiranime_last_page,
             "/liste-danimes/", "/liste-danimes/page/{page}/", "/anime/", "/animes",
         ),
+        "dramas_fs": _collect_frenchstream_kdrama(),
     }
     results = await asyncio.gather(*tasks.values(), return_exceptions=True)
 
@@ -143,6 +180,16 @@ async def _collect_all() -> list[str]:
             logger.warning("Sitemap : source « %s » indisponible (%s)", name, res)
             continue
         paths |= res
+
+    # Cache dédié des fiches voirdrama seules (pas l'union) : les exclusions
+    # FrenchStream (catalogue /dramas, fusion) doivent comparer au voirdrama
+    # uniquement — le cache `sitemap:paths` contient aussi les fiches FS.
+    try:
+        dramas = dict(zip(tasks.keys(), results)).get("dramas")
+        if isinstance(dramas, set):
+            cache.set(SITEMAP_VOIDRAMA_DRAMA_KEY, sorted(dramas), SITEMAP_TTL)
+    except Exception as exc:
+        logger.warning("Sitemap : cache voirdrama drama indisponible (%s)", exc)
 
     # Filet de sécurité : si aucune fiche n'a été collectée (sources down ou
     # HTML source qui a changé), on ne met PAS en cache 12 h un sitemap

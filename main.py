@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import urllib.parse
@@ -26,6 +27,7 @@ from services.templates import templates
 SITE_NAME = "NokaTV"
 from routes import anime, detail, drama, home, player, search
 from scraper.coflix_client import close_coflix_client
+from scraper.frenchstream_client import close_frenchstream_client
 from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_client
 from scraper.voiranime_client import close_voiranime_client, get_voiranime_client
 
@@ -47,10 +49,19 @@ async def lifespan(app: FastAPI):
         ensure_indexnow_key()
     except Exception as exc:
         logger.warning("IndexNow indisponible au démarrage : %s", exc)
+    # Pré-chauffage du catalogue FrenchStream en arrière-plan (non bloquant) :
+    # la 1ʳᵉ construction prend ~70 s (39 pages + posters), on ne veut pas la
+    # déclencher sur la 1ʳᵉ requête /dramas d'un visiteur.
+    try:
+        from routes.drama import _frenchstream_catalog
+        asyncio.create_task(_frenchstream_catalog())
+    except Exception as exc:
+        logger.warning("Pré-chauffage catalogue FrenchStream impossible : %s", exc)
     yield
     await close_coflix_client()
     await close_voirdrama_client()
     await close_voiranime_client()
+    await close_frenchstream_client()
 
 
 app = FastAPI(title="NokaTV", lifespan=lifespan)

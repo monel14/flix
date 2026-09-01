@@ -64,17 +64,45 @@ async def _load_top(top_type: str = "day") -> list:
 
 
 async def _load_popular_dramas() -> list:
-    """Charge les K-Dramas populaires / récents."""
+    """Charge les K-Dramas populaires / récents.
+
+    Sources : voirdrama.to (nouveaux épisodes & sorties du jour) + FrenchStream
+    en tête de rail (les nouveautés de la catégorie K-Drama FS absentes de
+    voirdrama). Best-effort : si FS est indisponible, le rail reste voirdrama.
+    """
     try:
         html = await voirdrama_get_html("/")
         items = parse_voirdrama_list(html)
         if not items:
             html_all = await voirdrama_get_html("/liste-dramas/")
             items = parse_voirdrama_list(html_all)
-        return items[:18]
+        items = items[:18]
     except Exception as exc:
         logger.warning("Erreur chargement K-Dramas accueil : %s", exc)
-        return []
+        items = []
+
+    # Fusion des nouveautés FrenchStream (absentes de voirdrama) en tête du rail.
+    try:
+        from routes.drama import _frenchstream_catalog
+        fs_catalog = await _frenchstream_catalog()
+        vd_slugs = {it.get("slug") for it in items if it.get("slug")}
+        fs_rail = [
+            {
+                "title": it["title"],
+                "slug": it["slug"],
+                "image": it.get("image", ""),
+                "version": "VOSTFR",
+                "type": "drama",
+                "latest_episode": None,
+            }
+            for it in fs_catalog
+            if it["slug"] not in vd_slugs
+        ][:6]  # 6 nouveautés FS max en tête, le reste vient de voirdrama
+        items = (fs_rail + items)[:18]
+    except Exception as exc:
+        logger.debug("Fusion FrenchStream dans le rail K-Dramas ignorée : %s", exc)
+
+    return items
 
 
 async def _load_popular_animes() -> list:
