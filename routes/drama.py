@@ -7,8 +7,10 @@ import os
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from fastapi.responses import RedirectResponse
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
-from services.dedup import canonical_path_for, version_label
+from services.dedup import canonical_path_for, should_redirect_to_preferred, version_label
+from services.related import get_similar_items
 from services.seo import page_seo
 from services.seo import content_seo, item_list_json_ld, page_seo, title_qualifiers
 from scraper.voirdrama_client import (
@@ -446,6 +448,13 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
     Sources : voirdrama.to d'abord, puis FrenchStream en repli (les séries
     récentes de la catégorie K-Drama FS absentes de voirdrama).
     """
+    # P0 Fix: redirect 301 si non préféré
+    known = _known_paths()
+    redirect_path = should_redirect_to_preferred(slug, "/drama/", known)
+    if redirect_path:
+        logger.info("Redirect 301 /drama/%s -> %s", slug, redirect_path)
+        return RedirectResponse(url=redirect_path, status_code=301)
+
     try:
         data = await cache.get_or_set(
             f"detail:drama:{slug}", DETAIL_TTL, lambda: _load_drama_detail(slug)
@@ -467,7 +476,7 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
         raise HTTPException(status_code=404, detail="Drama introuvable")
 
     # Canonical VF/VOSTFR : la version préférée (VF d'abord) si elle est connue.
-    canonical_path = canonical_path_for(slug, "/drama/", _known_paths())
+    canonical_path = canonical_path_for(slug, "/drama/", known)
 
     # Qualificatifs réels du title : la fiche voirdrama ne fournit pas de label
     # de version fiable (défaut « VOSTFR ») — on n'affiche la version que si le
@@ -479,10 +488,16 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
         year=data.get("year", ""),
     )
 
+    try:
+        similar = await get_similar_items(slug, data.get("genres", []), limit=6, pool="dramas")
+    except Exception:
+        similar = []
+
     return templates.TemplateResponse(request, "drama_detail.html", {
         "request": request,
         "drama": data,
         "slug": slug,
+        "similar": similar,
         # Le type d'œuvre n'est pas fourni de façon fiable par cette source :
         # pas de JSON-LD plutôt qu'un type deviné (cf. services/seo.py).
         "seo": content_seo(

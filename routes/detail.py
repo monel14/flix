@@ -10,7 +10,8 @@ from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_
 from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
 from scraper.voirdrama_client import VoirdramaNotFoundError, voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_detail
-from services.dedup import canonical_path_for, version_label
+from services.dedup import canonical_path_for, should_redirect_to_preferred, version_label
+from services.related import get_similar_items
 from services.seo import content_seo, title_qualifiers
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,13 @@ async def load_detail(slug: str) -> dict:
 
 @router.get("/film/{slug}", response_class=HTMLResponse)
 async def film_detail(request: Request, slug: str):
+    # P0 Fix: 301 redirect si version non préférée existe (corrige 13 canonical mismatch + 404)
+    known = _known_paths()
+    redirect_path = should_redirect_to_preferred(slug, "/film/", known)
+    if redirect_path:
+        logger.info("Redirect 301 /film/%s -> %s (préférence VF)", slug, redirect_path)
+        return RedirectResponse(url=redirect_path, status_code=301)
+
     # 1. Tentative de chargement depuis Coflix (Films / Séries)
     try:
         data = await cache.get_or_set(
@@ -82,7 +90,7 @@ async def film_detail(request: Request, slug: str):
             # Canonical VF/VOSTFR : pointe vers la version préférée (VF d'abord)
             # si elle est réellement connue — sinon la page courante est son
             # propre canonical (aucune URL cassée).
-            canonical_path = canonical_path_for(slug, "/film/", _known_paths())
+            canonical_path = canonical_path_for(slug, "/film/", known)
             # Qualificatifs réels du title : la version vient du label « Version: »
             # de la source coflix (donnée réelle, jamais un défaut) ; l'année de
             # « Date aired ». En fallback drama (pas de content_type), la version
@@ -96,11 +104,26 @@ async def film_detail(request: Request, slug: str):
                 versions=versions,
                 year=data.get("year", ""),
             )
+            # P1: Contenu similaire pour maillage interne + SEO (corrige 936 explorée non indexée)
+            try:
+                similar = await get_similar_items(slug, data.get("genres", []), limit=6, pool="films")
+            except Exception:
+                similar = []
+            related_all = (data.get("related", []) or []) + similar
+            # dédoublonne par slug
+            seen = set()
+            deduped = []
+            for it in related_all:
+                s = (it.get("slug") or "").lower()
+                if s and s not in seen and s != slug.lower():
+                    seen.add(s)
+                    deduped.append(it)
             return templates.TemplateResponse(request, "detail.html", {
                 "request": request,
                 "film": data,
                 "slug": slug,
-                "related": data.get("related", []),
+                "related": deduped[:12],
+                "similar": similar,
                 # content_type ("Movie"/"Series") provient de la source :
                 # c'est le seul signal fiable pour typer le JSON-LD.
                 # Fil d'Ariane réel : Accueil > Films ou Séries > œuvre.

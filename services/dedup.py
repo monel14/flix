@@ -83,15 +83,39 @@ def canonical_path_for(slug: str, prefix: str, known_paths: set[str] | None = No
     `known_paths` : ensemble des chemins réellement servis (ex. issus du cache
     sitemap). Sans preuve que la variante préférée existe, on garde le chemin
     courant : pointer un canonical vers une URL inexistante serait pire que de
-    ne rien faire.
+    ne rien faire. Si known_paths est vide (sitemap pas encore généré), on
+    retourne le chemin courant pour éviter les 13 erreurs 'canonical mismatch'
+    de GSC.
     """
     preferred = preferred_version_slug(slug)
     path = f"{prefix}{slug}"
     if preferred == slug:
         return path
-    if known_paths and f"{prefix}{preferred}" in known_paths:
+    # Si cache vide, ne pas deviner - retourne self canonical (fix GSC 13 pages)
+    if not known_paths:
+        return path
+    if f"{prefix}{preferred}" in known_paths:
         return f"{prefix}{preferred}"
     return path
+
+
+def should_redirect_to_preferred(slug: str, prefix: str, known_paths: set[str] | None = None) -> str | None:
+    """Retourne le chemin de redirection 301 si slug non préféré et préféré existe.
+
+    Utilisé pour corriger les 404 et canonical mismatch de GSC:
+    - /film/lodyssee-vostfr -> 301 -> /film/lodyssee-vf si VF existe
+    - Évite les boucles si déjà sur préféré
+    """
+    if not known_paths:
+        return None
+    preferred = preferred_version_slug(slug)
+    if preferred == slug:
+        return None
+    current_path = f"{prefix}{slug}"
+    preferred_path = f"{prefix}{preferred}"
+    if preferred_path in known_paths and current_path != preferred_path:
+        return preferred_path
+    return None
 
 
 def merge_variants(items: list[dict]) -> list[dict]:

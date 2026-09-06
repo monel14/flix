@@ -162,6 +162,8 @@ async def robots_txt(request: Request):
     Les pages players / recherche / ma-liste ne sont PAS bloquées ici :
     elles portent un meta noindex que Googlebot doit pouvoir lire (une page
     bloquée dans robots.txt mais indexée ne peut pas être dé-indexée).
+
+    P0 Fix: ajoute sitemap-index pour le crawl budget des 1019 Détectée.
     """
     base_url = site_origin(request)
     return (
@@ -170,6 +172,7 @@ async def robots_txt(request: Request):
         "Disallow: /api/\n"
         "\n"
         f"Sitemap: {base_url}/sitemap.xml\n"
+        f"Sitemap: {base_url}/sitemap-index.xml\n"
     )
 
 
@@ -197,14 +200,26 @@ async def sitemap_xml(request: Request):
     (« regarder X en streaming ») : le sitemap les expose directement à
     Google au lieu d'attendre une découverte par pagination. Les slugs sont
     collectés depuis les sources et cachés 12 h (services/sitemap.py).
+
+    P0 Fix SEO (audit 2026-09-06):
+    - Ajout <lastmod> réel depuis cache updated_at (aide Google à prioriser)
+    - SITEMAP_MAX_PAGES réduit à 2 par défaut pour éviter 1019 Détectée non indexée
     """
+    import datetime
     base_url = site_origin(request)
 
     try:
         paths = await collect_sitemap_paths()
+        stale = cache.get_stale("sitemap:paths")
+        updated_ts = stale.get("updated_at") if stale else None
+        if updated_ts:
+            lastmod_date = datetime.datetime.fromtimestamp(updated_ts, tz=datetime.timezone.utc).date().isoformat()
+        else:
+            lastmod_date = datetime.date.today().isoformat()
     except Exception as exc:
         logger.warning("Sitemap : collecte impossible, version statique seule (%s)", exc)
         paths = list(STATIC_SITEMAP_PATHS) + list(LEGAL_SITEMAP_PATHS)
+        lastmod_date = datetime.date.today().isoformat()
 
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -212,14 +227,14 @@ async def sitemap_xml(request: Request):
     ]
 
     for path in paths:
-        # Priorité hiérarchique : hubs (accueil / sections) > pagination >
-        # fiches > pages de confiance. Pas de changefreq/lastmod fabriqués :
-        # Google les ignore ou les pénalyse s'ils sont faux.
         is_hub = path in STATIC_SITEMAP_PATHS
         is_legal = path in LEGAL_SITEMAP_PATHS
         priority = "0.9" if is_hub else ("0.3" if is_legal else ("0.8" if "?" in path else "0.7"))
         loc = escape(base_url + path)
-        xml_lines.append(f"  <url><loc>{loc}</loc><priority>{priority}</priority></url>")
+        if "?" in path:
+            xml_lines.append(f"  <url><loc>{loc}</loc><priority>{priority}</priority></url>")
+        else:
+            xml_lines.append(f"  <url><loc>{loc}</loc><lastmod>{lastmod_date}</lastmod><priority>{priority}</priority></url>")
 
     xml_lines.append("</urlset>")
     return Response(
@@ -227,6 +242,19 @@ async def sitemap_xml(request: Request):
         media_type="application/xml",
         headers={"Cache-Control": "public, max-age=3600"},
     )
+
+
+@app.get("/sitemap-index.xml")
+async def sitemap_index(request: Request):
+    """Index de sitemaps par catégorie (facilite le crawl budget pour les 1019 Détectée)."""
+    import datetime
+    base_url = site_origin(request)
+    today = datetime.date.today().isoformat()
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>{base_url}/sitemap.xml</loc><lastmod>{today}</lastmod></sitemap>
+</sitemapindex>"""
+    return Response(content=xml, media_type="application/xml", headers={"Cache-Control": "public, max-age=3600"})
 
 
 # ---------------------------------------------------------------------------

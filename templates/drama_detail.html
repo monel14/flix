@@ -82,6 +82,31 @@
 </section>
 {% endif %}
 
+<!-- SEO EXTRA -->
+<section class="content-section" style="margin-top:28px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:18px">
+  <h2 class="section-title">À propos de {{ drama.title }}</h2>
+  <div style="color:var(--text-body);font-size:.9rem;line-height:1.65">
+    <p>Regardez <strong>{{ drama.title }}</strong> {% if drama.year %}({{ drama.year }}){% endif %} en streaming VOSTFR/VF HD sur NokaTV. {% if drama.genres %}Genres: {{ drama.genres|join(', ') }}.{% endif %} {{ drama.episodes|length }} épisodes.</p>
+    {% if drama.synopsis %}<p style="margin-top:8px">{{ drama.synopsis[:400] }}</p>{% endif %}
+  </div>
+  {% if similar %}
+  <div style="margin-top:16px">
+    <h3 class="section-title" style="font-size:.95rem">Dramas similaires</h3>
+    <div class="cards-rail" style="margin-top:8px">
+      {% for item in similar %}
+      <a href="/drama/{{ item.slug }}" class="stream-card">
+        <div class="card-poster-wrap"><img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy"><div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div></div>
+        <div class="card-details"><p class="card-title">{{ item.title }}</p></div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Où regarder {{ drama.title | replace('\"', '\\\"') }} ?","acceptedAnswer":{"@type":"Answer","text":"Sur NokaTV en streaming VOSTFR HD."}}]}
+</script>
+
 {% endblock %}
 
 {% block scripts %}

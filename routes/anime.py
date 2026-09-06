@@ -5,8 +5,10 @@ import logging
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from fastapi.responses import RedirectResponse
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
-from services.dedup import canonical_path_for, version_label
+from services.dedup import canonical_path_for, should_redirect_to_preferred, version_label
+from services.related import get_similar_items
 from services.seo import page_seo
 from services.seo import content_seo, item_list_json_ld, page_seo, title_qualifiers
 from scraper.voiranime_client import (
@@ -162,6 +164,12 @@ async def animes_list(
 @router.get("/anime/{slug}", response_class=HTMLResponse)
 async def anime_detail(request: Request, slug: str) -> HTMLResponse:
     """Fiche détaillée d'un animé avec liste des épisodes."""
+    known = _known_paths()
+    redirect_path = should_redirect_to_preferred(slug, "/anime/", known)
+    if redirect_path:
+        logger.info("Redirect 301 /anime/%s -> %s", slug, redirect_path)
+        return RedirectResponse(url=redirect_path, status_code=301)
+
     try:
         data = await cache.get_or_set(
             f"detail:anime:{slug}", DETAIL_TTL, lambda: _load_anime_detail(slug)
@@ -176,7 +184,7 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
         raise HTTPException(status_code=404, detail="Animé introuvable")
 
     # Canonical VF/VOSTFR : la version préférée (VF d'abord) si elle est connue.
-    canonical_path = canonical_path_for(slug, "/anime/", _known_paths())
+    canonical_path = canonical_path_for(slug, "/anime/", known)
 
     # Qualificatifs réels du title : la fiche voiranime ne fournit pas de label
     # de version fiable (elle retombe sur « VOSTFR » par défaut) — on n'affiche
@@ -189,10 +197,16 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
         year=data.get("year", ""),
     )
 
+    try:
+        similar = await get_similar_items(slug, data.get("genres", []), limit=6, pool="animes")
+    except Exception:
+        similar = []
+
     return templates.TemplateResponse(request, "anime_detail.html", {
         "request": request,
         "anime": data,
         "slug": slug,
+        "similar": similar,
         # Le type d'œuvre n'est pas fourni de façon fiable par cette source :
         # pas de JSON-LD plutôt qu'un type deviné (cf. services/seo.py).
         "seo": content_seo(

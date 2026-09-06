@@ -91,9 +91,40 @@
 </section>
 {% endif %}
 
-<!-- 3. TITRES SIMILAIRES (#related) -->
+<!-- 3. SEO EXTRA - Contenu unique pour corriger 936 Explorée non indexée -->
+<section class="content-section" style="margin-top:28px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:18px">
+  <h2 class="section-title">À propos de {{ film.title }}</h2>
+  <div style="color:var(--text-body);font-size:.9rem;line-height:1.65">
+    <p>
+      Regardez <strong>{{ film.title }}</strong> {% if film.year %}({{ film.year }}){% endif %} en streaming complet
+      {% if film.version %}en {{ film.version }}{% else %}en VF et VOSTFR{% endif %} HD sur NokaTV.
+      {% if film.genres %}Genre{% if film.genres|length>1 %}s{% endif %}: {{ film.genres|join(', ') }}.{% endif %}
+      {% if film.type == 'series' and film.episodes %}Série avec {{ film.episodes|length }} épisodes disponibles.{% endif %}
+    </p>
+    {% if film.synopsis %}
+    <p style="margin-top:8px">{{ film.synopsis[:400] }}{% if film.synopsis|length>400 %}...{% endif %}</p>
+    {% endif %}
+    <p style="margin-top:10px">
+      Où regarder {{ film.title }} ? Sur NokaTV, plateforme d'agrégation qui référence les sources
+      sans héberger les vidéos. Si un lien est mort, signalez-le via <a href="/contact" style="color:var(--brand-hover);text-decoration:underline">contact</a>.
+    </p>
+  </div>
+
+  <!-- FAQ JSON-LD visible pour utilisateur + SEO -->
+  <div style="margin-top:18px">
+    <h3 class="section-title" style="font-size:.95rem">Questions fréquentes</h3>
+    <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:600">Où regarder {{ film.title }} en streaming gratuit ?</summary>
+      <p style="margin-top:6px;color:var(--text-muted)">Sur NokaTV, en cliquant sur le bouton Regarder ci-dessus. Choisissez la source (Voembed, Vidmoly, etc.) qui fonctionne.</p>
+    </details>
+    <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:600">{{ film.title }} est-il en VF ou VOSTFR ?</summary>
+      <p style="margin-top:6px;color:var(--text-muted)">{% if film.version %}Version disponible: {{ film.version }}.{% else %}VF et VOSTFR disponibles selon les sources.{% endif %} Utilisez le filtre version en haut du catalogue.</p>
+    </details>
+  </div>
+</section>
+
+<!-- 4. TITRES SIMILAIRES (#related + similar) -->
 {% if related %}
-<section class="content-section">
+<section class="content-section" style="margin-top:28px">
     <div class="section-header">
         <h2 class="section-title">Vous aimerez aussi</h2>
     </div>
@@ -113,6 +144,26 @@
     </div>
 </section>
 {% endif %}
+
+<!-- JSON-LD FAQ pour SEO -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Où regarder {{ film.title | replace('\"', '\\\"') }} en streaming ?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Regardez {{ film.title | replace('\"', '\\\"') }} en streaming HD sur NokaTV en cliquant sur Regarder. Plusieurs sources disponibles."}
+    },
+    {
+      "@type": "Question",
+      "name": "{{ film.title | replace('\"', '\\\"') }} est-il en VF ?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Oui, {{ film.title | replace('\"', '\\\"') }} est disponible en {{ film.version or 'VF et VOSTFR' }} selon les sources."}
+    }
+  ]
+}
+</script>
 
 {% endblock %}
 

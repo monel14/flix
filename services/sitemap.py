@@ -43,11 +43,16 @@ BASE_PATHS = STATIC_PATHS + LEGAL_PATHS
 
 
 def _max_pages() -> int:
-    """Profondeur de collecte par catégorie (surchivable via SITEMAP_MAX_PAGES)."""
+    """Profondeur de collecte par catégorie (surchivable via SITEMAP_MAX_PAGES).
+
+    P0 Fix SEO: réduit de 5 à 2 par défaut pour éviter d'inonder GSC avec 2361 URLs
+    d'un coup sur un site jeune (cause 1019 Détectée non indexée). Augmenter
+    progressivement quand taux indexation >60%.
+    """
     try:
-        return max(1, int(os.getenv("SITEMAP_MAX_PAGES", "5")))
+        return max(1, int(os.getenv("SITEMAP_MAX_PAGES", "2")))
     except ValueError:
-        return 5
+        return 2
 
 
 def _slugs_of(items: list) -> set[str]:

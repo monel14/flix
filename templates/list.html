@@ -2,6 +2,11 @@
 {% from "_macros.html" import version_badge %}
 {# Métadonnées SEO construites par la route via services/seo.py (contexte `seo`) #}
 
+{% block head %}
+{% if prev_url %}<link rel="prev" href="{{ prev_url }}">{% endif %}
+{% if next_url %}<link rel="next" href="{{ next_url }}">{% endif %}
+{% endblock %}
+
 {% block content %}
 <section class="content-section">
     <div class="section-header">
