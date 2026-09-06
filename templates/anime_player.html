@@ -61,11 +61,11 @@
         {% endfor %}
     </div>
 
-    <!-- 3. CADRE CINÉMA THEATER (Iframe) -->
-    <div class="theater-frame-box" id="theater-box">
+    <!-- 3. CADRE CINÉMA THEATER (Iframe) - autoplay fs16 style -->
+    <div class="theater-frame-box" id="theater-box" data-slug="anime-{{ slug }}-{{ episode_slug }}">
         <iframe id="player-frame"
                 src="{{ (default_server.server_link ~ ('&autoplay=1' if '?' in default_server.server_link else '?autoplay=1')) if default_server and default_server.server_link else '' }}"
-                allowfullscreen
+
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 referrerpolicy="no-referrer-when-downgrade"
                 scrolling="no"
@@ -165,6 +165,7 @@
         {% endif %}
     });
 
+    // Autoplay fs16.lol style - voir /static/flix-autoplay.js
     // Enregistrement dans l'historique "Reprendre la lecture"
     if (window.NokaTVHistory) {
         window.NokaTVHistory.save({
@@ -179,4 +180,5 @@
     }
 })();
 </script>
+<script src="{{ url_for('static', path='/flix-autoplay.js') }}?v=1"></script>
 {% endblock %}

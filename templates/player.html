@@ -62,11 +62,11 @@
         {% endfor %}
     </div>
 
-    <!-- 3. CADRE CINÉMA THEATER (Iframe) -->
-    <div class="theater-frame-box" id="theater-box">
+    <!-- 3. CADRE CINÉMA THEATER (Iframe) - autoplay fs16 style -->
+    <div class="theater-frame-box" id="theater-box" data-slug="{{ slug }}-{{ episode_id or 'film' }}">
         <iframe id="player-frame"
                 src="{{ (default_server.server_link ~ ('&autoplay=1' if '?' in default_server.server_link else '?autoplay=1')) if default_server and default_server.server_link else '' }}"
-                allowfullscreen
+
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 referrerpolicy="no-referrer-when-downgrade"
                 {% if player_sandbox(default_server) %}sandbox="{{ player_sandbox(default_server) }}"{% endif %}>
@@ -182,6 +182,8 @@
         {% endif %}
     });
 
+    // Autoplay fs16.lol style (Lecture Auto / Plein écran auto)
+    // Le script /static/flix-autoplay.js est chargé après ce bloc
     // Enregistrement dans l'historique "Reprendre la lecture"
     if (window.NokaTVHistory) {
         window.NokaTVHistory.save({
@@ -196,4 +198,5 @@
     }
 })();
 </script>
+<script src="{{ url_for('static', path='/flix-autoplay.js') }}?v=1"></script>
 {% endblock %}
