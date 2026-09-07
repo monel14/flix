@@ -28,7 +28,8 @@
   if (/AppleTV|tvOS/i.test(ua)) platforms.push('apple');
   if (/\bRoku\b|Roku ?TV/i.test(ua)) platforms.push('roku');
 
-  var isSmartTv = platforms.length > 0 || /Smart-?TV|HbbTV/i.test(ua);
+  var isDebugTv = /[?&]tv(=1)?\b/i.test(location.search);
+  var isSmartTv = platforms.length > 0 || /Smart-?TV|HbbTV/i.test(ua) || isDebugTv;
   var root = document.documentElement;
 
   if (isSmartTv) {
@@ -36,7 +37,9 @@
     platforms.forEach(function (p) { root.classList.add('tv-' + p); });
   }
 
-  var isTvMode = root.classList.contains('tv-mode');
+  function getIsTvMode() {
+    return root.classList.contains('tv-mode');
+  }
 
   /* ---------------------------------------------------------------------
      2. NAVIGATION D-PAD (flèches)
@@ -148,7 +151,7 @@
   }
 
   function restoreFocus() {
-    if (!isTvMode) return;
+    if (!getIsTvMode()) return;
     try {
       var raw = sessionStorage.getItem(FOCUS_KEY);
       if (!raw) return;
@@ -248,7 +251,7 @@
     if (isTextEntry(document.activeElement) && !isBackKey(e)) return;
 
     // Flèches : uniquement en mode TV (le clavier desktop garde son comportement natif).
-    if (isTvMode && !isBackKey(e)) {
+    if (getIsTvMode() && !isBackKey(e)) {
       var direction = directionKey(e);
       if (direction === 'left') { nav(-1, 0); e.preventDefault(); return; }
       if (direction === 'right') { nav(1, 0); e.preventDefault(); return; }
@@ -306,5 +309,5 @@
   /* ---------------------------------------------------------------------
      Démarrage
   --------------------------------------------------------------------- */
-  if (isTvMode) restoreFocus();
+  if (getIsTvMode()) restoreFocus();
 })();
