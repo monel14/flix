@@ -20,6 +20,7 @@ from scraper.voirdrama_parser import parse_voirdrama_list
 from scraper.voiranime_client import voiranime_get_html
 from scraper.voiranime_parser import parse_voiranime_list
 from services.dedup import canonical_slug, merge_variants
+from services.genre_seo import get_genre_seo
 from services.seo import item_list_json_ld, page_seo, website_json_ld
 
 logger = logging.getLogger(__name__)
@@ -36,14 +37,12 @@ async def _load_home_section(section: str, page: int = 1, genre: str | None = No
 
     html = await coflix_get_html(path)
     items = parse_coflix_list(html, section)
-    # Fusion des doublons de version (ex: black-box-vf et black-box-vostfr)
     merged_items = merge_variants(items)
     last_page = get_last_page(html)
     return {"items": merged_items, "last_page": last_page}
 
 
 async def _load_hero() -> list:
-    """Charge les slides phares du carrousel d'accueil (#slider-main)."""
     try:
         html = await coflix_get_html("/")
         return parse_coflix_hero(html)
@@ -53,7 +52,6 @@ async def _load_hero() -> list:
 
 
 async def _load_top(top_type: str = "day") -> list:
-    """Charge le top tendances (day, week, month)."""
     try:
         raw = await coflix_get_html(f"/ajax/movie/top?type={top_type}")
         items = parse_coflix_top(raw)
@@ -64,12 +62,6 @@ async def _load_top(top_type: str = "day") -> list:
 
 
 async def _load_popular_dramas() -> list:
-    """Charge les K-Dramas populaires / récents.
-
-    Sources : voirdrama.to (nouveaux épisodes & sorties du jour) + FrenchStream
-    en tête de rail (les nouveautés de la catégorie K-Drama FS absentes de
-    voirdrama). Best-effort : si FS est indisponible, le rail reste voirdrama.
-    """
     try:
         html = await voirdrama_get_html("/")
         items = parse_voirdrama_list(html)
@@ -81,7 +73,6 @@ async def _load_popular_dramas() -> list:
         logger.warning("Erreur chargement K-Dramas accueil : %s", exc)
         items = []
 
-    # Fusion des nouveautés FrenchStream (absentes de voirdrama) en tête du rail.
     try:
         from routes.drama import _frenchstream_catalog
         fs_catalog = await _frenchstream_catalog()
@@ -97,7 +88,7 @@ async def _load_popular_dramas() -> list:
             }
             for it in fs_catalog
             if it["slug"] not in vd_slugs
-        ][:6]  # 6 nouveautés FS max en tête, le reste vient de voirdrama
+        ][:6]
         items = (fs_rail + items)[:18]
     except Exception as exc:
         logger.debug("Fusion FrenchStream dans le rail K-Dramas ignorée : %s", exc)
@@ -106,7 +97,6 @@ async def _load_popular_dramas() -> list:
 
 
 async def _load_popular_animes() -> list:
-    """Charge les Animés japonais populaires / récents."""
     try:
         html = await voiranime_get_html("/")
         items = parse_voiranime_list(html)
@@ -121,7 +111,6 @@ async def _load_popular_animes() -> list:
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request, top_filter: str = Query(default="day", pattern="^(day|week|month)$")) -> HTMLResponse:
-    """Page d'accueil multi-sources : hero + films + séries + K-Dramas + Animés + top tendances."""
     async def fetch_hero():
         try:
             return await cache.get_or_set("home:hero", HOME_TTL, _load_hero)
@@ -175,7 +164,6 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         except Exception:
             return []
 
-    # Chargement concurrent des composants de l'accueil
     hero_slides, movies_data, series_data, animation_movies_data, top, popular_dramas, popular_animes = await asyncio.gather(
         fetch_hero(),
         fetch_movies(),
@@ -190,9 +178,6 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
     series_items = series_data.get("items", [])[:24]
     animation_movies = animation_movies_data.get("items", [])[:24]
 
-    # Inférence du type (film/série) des slides du hero SANS requête supplémentaire :
-    # on croise leurs slugs canoniques avec les catalogues déjà chargés ci-dessus.
-    # Sert à enregistrer le bon type quand le titre est ajouté à "Ma Liste" depuis le hero.
     if isinstance(hero_slides, list) and hero_slides:
         movie_keys = {canonical_slug(i.get("slug", "")) for i in movies_items} - {""}
         series_keys = {canonical_slug(i.get("slug", "")) for i in series_items} - {""}
@@ -212,8 +197,6 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
         "popular_animes": popular_animes if isinstance(popular_animes, list) else [],
         "top": top[:10] if isinstance(top, list) else [],
         "top_filter": top_filter,
-        # WebSite + SearchAction : déclare le moteur de recherche interne
-        # (page d'accueil uniquement, là où Google l'attend).
         "seo": page_seo(request, path="/", extra_json_ld=[website_json_ld(request)]),
     })
 
@@ -225,7 +208,6 @@ async def movies_list(
     genre: str | None = Query(default=None),
     version: str | None = Query(default=None, pattern="^(all|vf|vostfr)$"),
 ) -> HTMLResponse:
-    """Liste paginée des films."""
     cache_key = f"list:movies:{genre}:{page}" if genre else f"list:movies:{page}"
     try:
         data = await cache.get_or_set(
@@ -259,7 +241,17 @@ async def movies_list(
     canon_path = request.url.path + (f"?{'&'.join(canon_params)}" if canon_params else "")
 
     genre_label = next((g["label"] for g in AVAILABLE_GENRES if g["slug"] == genre), None) if genre else None
-    section_label = f"Films — {genre_label}" if genre_label else "Films"
+    base_label = f"Films — {genre_label}" if genre_label else "Films"
+
+    if genre:
+        gseo = get_genre_seo(genre, section="films", version=version or "all")
+        seo_title = gseo["title"]
+        seo_desc = gseo["description"]
+        section_label = gseo["h1"]
+    else:
+        seo_title = f"{base_label} en Streaming HD — NokaTV"
+        seo_desc = f"{base_label} en streaming VF/VOSTFR HD gratuit sur NokaTV. {len(items)} titres disponibles."
+        section_label = base_label
 
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
@@ -274,9 +266,9 @@ async def movies_list(
         "current_genre": genre,
         "current_version": version or "all",
         "base_path": "/films",
-        # ItemList : la page de catalogue décrit son contenu réel (fiches)
         "seo": page_seo(request,
-                        title=f"{section_label} en Streaming HD — NokaTV",
+                        title=seo_title,
+                        description=seo_desc,
                         path=canon_path,
                         extra_json_ld=[item_list_json_ld(
                             request,
@@ -292,7 +284,6 @@ async def series_list(
     genre: str | None = Query(default=None),
     version: str | None = Query(default=None, pattern="^(all|vf|vostfr)$"),
 ) -> HTMLResponse:
-    """Liste paginée des séries."""
     cache_key = f"list:series:{genre}:{page}" if genre else f"list:series:{page}"
     try:
         data = await cache.get_or_set(
@@ -326,7 +317,17 @@ async def series_list(
     canon_path = request.url.path + (f"?{'&'.join(canon_params)}" if canon_params else "")
 
     genre_label = next((g["label"] for g in AVAILABLE_GENRES if g["slug"] == genre), None) if genre else None
-    section_label = f"Séries — {genre_label}" if genre_label else "Séries"
+    base_label = f"Séries — {genre_label}" if genre_label else "Séries"
+
+    if genre:
+        gseo = get_genre_seo(genre, section="series", version=version or "all")
+        seo_title = gseo["title"]
+        seo_desc = gseo["description"]
+        section_label = gseo["h1"]
+    else:
+        seo_title = f"{base_label} en Streaming HD — NokaTV"
+        seo_desc = f"{base_label} en streaming VF/VOSTFR HD gratuit."
+        section_label = base_label
 
     return templates.TemplateResponse(request, "list.html", {
         "request": request,
@@ -341,9 +342,9 @@ async def series_list(
         "current_genre": genre,
         "current_version": version or "all",
         "base_path": "/series",
-        # ItemList : la page de catalogue décrit son contenu réel (fiches)
         "seo": page_seo(request,
-                        title=f"{section_label} en Streaming HD — NokaTV",
+                        title=seo_title,
+                        description=seo_desc,
                         path=canon_path,
                         extra_json_ld=[item_list_json_ld(
                             request,

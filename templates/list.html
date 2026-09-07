@@ -13,6 +13,9 @@
         <h1 class="section-title section-title--page">
             {{ section_label }}
         </h1>
+        {% if current_genre and seo and seo.description %}
+        <p style="color:var(--text-muted);font-size:.9rem;margin-top:6px;max-width:800px;line-height:1.5">{{ seo.description }}</p>
+        {% endif %}
     </div>
 
     {# Variante B navigation mobile : K-Dramas n'est plus un onglet de la barre

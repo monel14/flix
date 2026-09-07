@@ -164,16 +164,85 @@ async def robots_txt(request: Request):
     bloquée dans robots.txt mais indexée ne peut pas être dé-indexée).
 
     P0 Fix: ajoute sitemap-index pour le crawl budget des 1019 Détectée.
+    V2 Fix: Allow /api/image-proxy pour que Googlebot puisse fetch les images
+    et afficher rich results (Apparence vide dans GSC car /api/ bloqué).
     """
     base_url = site_origin(request)
     return (
         "User-agent: *\n"
+        "Allow: /api/image-proxy\n"
         "Allow: /\n"
         "Disallow: /api/\n"
         "\n"
         f"Sitemap: {base_url}/sitemap.xml\n"
         f"Sitemap: {base_url}/sitemap-index.xml\n"
     )
+
+
+# ---------------------------------------------------------------------------
+# Middleware canonical domain (P0 bis - fix http/https/www chaos vu dans Pages.csv)
+# ---------------------------------------------------------------------------
+from fastapi.responses import RedirectResponse
+
+@app.middleware("http")
+async def canonical_domain_redirect(request: Request, call_next):
+    """Force https + non-www pour consolider le jus SEO.
+
+    Pages.csv montre 4 variantes indexées:
+    http://nokatv.xyz, http://www.nokatv.xyz, https://www.nokatv.xyz, https://nokatv.xyz
+    → dilution, 13 canonical mismatch, 114 canonicalisée.
+    On 301 tout vers SITE_URL si défini, sinon vers https:// + host sans www.
+    Exclut /api/image-proxy et health checks pour éviter boucles.
+    """
+    # Ne pas interférer avec image-proxy et fichiers statiques
+    path = request.url.path
+    if path.startswith("/static/") or path.startswith("/api/image-proxy") or path == "/sw.js":
+        return await call_next(request)
+
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    # Ne pas interférer avec le développement local ou les tests
+    if any(local in host for local in ("localhost", "127.0.0.1", "0.0.0.0", "testserver")):
+        return await call_next(request)
+
+    configured = (os.getenv("SITE_URL") or "").strip().rstrip("/")
+    if configured:
+        # Si SITE_URL défini, on force exactement ce domaine
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(configured)
+            canonical_host = parsed.netloc
+            canonical_scheme = parsed.scheme or "https"
+        except Exception:
+            canonical_host = None
+            canonical_scheme = "https"
+        scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
+        # Si host ou scheme différent du canonique → 301
+        if canonical_host and (host != canonical_host or scheme != canonical_scheme):
+            # Garde path + query
+            url = f"{configured}{request.url.path}"
+            if request.url.query:
+                url += f"?{request.url.query}"
+            return RedirectResponse(url, status_code=301)
+    else:
+        # Fallback sans SITE_URL: force https + non-www
+        host = request.headers.get("x-forwarded-host") or request.url.netloc
+        scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
+        should_redirect = False
+        new_host = host
+        new_scheme = scheme
+        if host.startswith("www."):
+            new_host = host[4:]
+            should_redirect = True
+        if scheme == "http":
+            new_scheme = "https"
+            should_redirect = True
+        if should_redirect:
+            url = f"{new_scheme}://{new_host}{request.url.path}"
+            if request.url.query:
+                url += f"?{request.url.query}"
+            return RedirectResponse(url, status_code=301)
+
+    return await call_next(request)
 
 
 # ---------------------------------------------------------------------------
