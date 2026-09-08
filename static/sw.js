@@ -16,7 +16,7 @@
 
 const STATIC_CACHE = 'nokatv-shell-v8';
 const SHELL_ASSETS = [
-  '/static/style.css?v=6',
+  '/static/style.css?v=8',
   '/static/pwa-install.css?v=2',
   '/static/pwa-install-manager.js?v=2',
   '/static/pwa-install-prompt.js?v=2',

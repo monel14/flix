@@ -70,7 +70,7 @@
     <button class="hero-nav hero-nav--next" id="hero-next" aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
     <div class="hero-dots" id="hero-dots">
         {% for slide in hero_slides %}
-        <button class="hero-dot {% if loop.first %}active{% endif %}" data-idx="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"></button>
+        <button class="hero-dot {% if loop.first %}active{% endif %}" data-idx="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"><span class="hero-dot-fill"></span></button>
         {% endfor %}
     </div>
     {% endif %}
@@ -261,12 +261,25 @@
         let current = 0;
         let autoTimer = null;
 
+        function restartCurrentProgress() {
+            if (!dots.length || !dots[current]) return;
+            const fill = dots[current].querySelector('.hero-dot-fill');
+            if (fill) {
+                fill.style.animation = 'none';
+                void fill.offsetWidth;
+                fill.style.animation = '';
+            }
+        }
+
         function goToSlide(idx) {
             slides[current].classList.remove('active');
             if (dots[current]) dots[current].classList.remove('active');
             current = (idx + slides.length) % slides.length;
             slides[current].classList.add('active');
-            if (dots[current]) dots[current].classList.add('active');
+            if (dots[current]) {
+                dots[current].classList.add('active');
+                restartCurrentProgress();
+            }
         }
 
         function nextSlide() { goToSlide(current + 1); }
@@ -291,18 +304,91 @@
             clearInterval(autoTimer);
             autoTimer = null;
         }
-        function resetAuto() { stopAuto(); startAuto(); }
+        function resetAuto() {
+            stopAuto();
+            restartCurrentProgress();
+            startAuto();
+        }
+
+        function handlePause() {
+            if (heroSection) heroSection.classList.add('is-paused');
+            stopAuto();
+        }
+        function handleResume() {
+            if (heroSection) heroSection.classList.remove('is-paused');
+            resetAuto();
+        }
 
         // Mise en pause de la rotation pendant la lecture du slide
         // (survol souris, navigation clavier, onglet en arrière-plan)
         if (heroSection) {
-            heroSection.addEventListener('mouseenter', stopAuto);
-            heroSection.addEventListener('mouseleave', startAuto);
-            heroSection.addEventListener('focusin', stopAuto);
-            heroSection.addEventListener('focusout', startAuto);
+            heroSection.addEventListener('mouseenter', handlePause);
+            heroSection.addEventListener('mouseleave', handleResume);
+            heroSection.addEventListener('focusin', handlePause);
+            heroSection.addEventListener('focusout', handleResume);
+
+            // Support navigation clavier gauche / droite
+            heroSection.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextSlide();
+                    resetAuto();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prevSlide();
+                    resetAuto();
+                }
+            });
+
+            // Support swipe tactile mobile (gestes horizontaux)
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchEndX = 0;
+            let touchEndY = 0;
+            let isTouching = false;
+
+            heroSection.addEventListener('touchstart', (e) => {
+                if (e.touches.length !== 1) return;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                touchEndX = touchStartX;
+                touchEndY = touchStartY;
+                isTouching = true;
+                handlePause();
+            }, { passive: true });
+
+            heroSection.addEventListener('touchmove', (e) => {
+                if (!isTouching || e.touches.length !== 1) return;
+                touchEndX = e.touches[0].clientX;
+                touchEndY = e.touches[0].clientY;
+            }, { passive: true });
+
+            heroSection.addEventListener('touchend', () => {
+                if (!isTouching) return;
+                isTouching = false;
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = touchEndY - touchStartY;
+                const absX = Math.abs(deltaX);
+                const absY = Math.abs(deltaY);
+
+                if (absX > 40 && absX > absY * 1.3) {
+                    if (deltaX < 0) {
+                        nextSlide();
+                    } else {
+                        prevSlide();
+                    }
+                }
+                handleResume();
+            });
+
+            heroSection.addEventListener('touchcancel', () => {
+                isTouching = false;
+                handleResume();
+            });
         }
+
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) { stopAuto(); } else { startAuto(); }
+            if (document.hidden) { handlePause(); } else { handleResume(); }
         });
 
         startAuto();

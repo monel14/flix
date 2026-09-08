@@ -384,6 +384,7 @@ img {
     margin-top: 8px;
     margin-bottom: 48px;
     background: #000;
+    touch-action: pan-y;
 }
 
 .hero-slides-wrapper {
@@ -391,6 +392,7 @@ img {
     width: 100%;
     height: 100%;
     min-height: 450px;
+    touch-action: pan-y;
 }
 
 .hero-slide {
@@ -400,9 +402,9 @@ img {
     align-items: flex-end;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.6s ease-in-out;
+    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
     padding: 48px 52px;
-    /* Le slide actif redevient "relative" (voir ci-dessous) : sans ce min-height
+    /* Le slide actif redevient "relative" : sans ce min-height
        il ne remplirait pas le wrapper (450px) et laisserait une bande noire
        sous le contenu quand celui-ci est court. */
     min-height: inherit;
@@ -420,20 +422,38 @@ img {
     background-size: cover;
     background-position: center;
     z-index: 1;
+    overflow: hidden;
 }
 
 /* Les sources ne fournissent que des affiches portrait (2:3) pour le hero :
-   un cover brut sur un fond paysager les agrandit démesurément et coupe les
-   visages. Comme sur coflix, l'affiche de fond est floutée et légèrement
-   agrandie — aucun étirement visible — tandis que l'affiche nette est
-   affichée en carte (voir .hero-slide-poster). Le flou est isolé sur ::before
-   pour ne pas adoucir le dégradé de lisibilité ni le contenu. */
+   l'affiche de fond est floutée et animée en zoom cinématique (Ken Burns),
+   tandis que l'affiche nette est affichée en carte (voir .hero-slide-poster).
+   Le flou est isolé sur ::before pour préserver la netteté du contenu. */
 .hero-slide-backdrop::before {
     content: '';
     position: absolute;
-    inset: -6%;
+    inset: -12%;
     background: inherit;
+    background-size: cover;
+    background-position: center;
     filter: blur(24px) brightness(0.68);
+    transform: scale(1);
+    transform-origin: center center;
+}
+
+/* Effet cinématique Ken Burns lent et immersif pendant l'affichage du slide */
+.hero-slide.active .hero-slide-backdrop::before {
+    animation: heroKenBurns 8s ease-out forwards;
+    will-change: transform;
+}
+
+@keyframes heroKenBurns {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(1.08);
+    }
 }
 
 /* Gradient subtil uniquement en bas — pas de gradient latéral */
@@ -456,9 +476,22 @@ img {
     max-width: 540px;
 }
 
-/* Affiche nette du slide : elle reste l'élément de reconnaissance visuelle
-   alors que le fond est désormais flouté. Cachée sur mobile où la hauteur
-   du hero ne laisse pas de place. */
+.hero-slide.active .hero-slide-content {
+    animation: heroContentEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes heroContentEntrance {
+    0% {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Affiche nette du slide : reconnaissance visuelle immédiate */
 .hero-slide-poster {
     position: absolute;
     right: 52px;
@@ -469,6 +502,21 @@ img {
     overflow: hidden;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
     z-index: 2;
+}
+
+.hero-slide.active .hero-slide-poster {
+    animation: heroPosterEntrance 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes heroPosterEntrance {
+    0% {
+        opacity: 0;
+        transform: translateY(16px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .hero-slide-poster img {
@@ -608,38 +656,59 @@ img {
 .hero-nav--prev { left: 18px; }
 .hero-nav--next { right: 18px; }
 
-/* Dots de navigation — visibles mais discrets */
+/* Dots de navigation — avec barre de progression temporelle cinématique */
 .hero-dots {
     position: absolute;
-    bottom: 16px;
-    right: 24px;
+    bottom: 20px;
+    right: 28px;
     z-index: 10;
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
 }
 .hero-dot {
     position: relative; /* ancre la zone tactile étendue ci-dessous */
-    width: 6px;
+    width: 8px;
     height: 6px;
     border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.28);
     border: none;
     cursor: pointer;
-    transition: width 0.25s ease, background 0.2s ease;
+    overflow: hidden;
+    transition: width 0.35s cubic-bezier(0.2, 0, 0, 1), background-color 0.25s ease;
     padding: 0;
+    display: flex;
+    align-items: center;
 }
-/* Zone tactile confortable (~22×24px) SANS changer l'apparence ni la mise
-   en page : un pseudo-élément transparent agrandit purement la surface
-   cliquable autour du dot — le rendu visible reste le dot de 6px. */
+.hero-dot:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.55);
+}
+/* Zone tactile confortable (~26×24px) */
 .hero-dot::after {
     content: '';
     position: absolute;
     inset: -9px -8px;
 }
 .hero-dot.active {
-    width: 22px;
-    background: rgba(255, 255, 255, 0.95);
+    width: 32px;
+    background: rgba(255, 255, 255, 0.22);
+}
+.hero-dot-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: #ffffff;
+    border-radius: inherit;
+}
+.hero-dot.active .hero-dot-fill {
+    animation: heroDotProgress 7s linear forwards;
+}
+.hero-slider-section.is-paused .hero-dot.active .hero-dot-fill {
+    animation-play-state: paused;
+}
+@keyframes heroDotProgress {
+    0% { width: 0%; }
+    100% { width: 100%; }
 }
 
 /* ==========================================================================
@@ -2042,16 +2111,16 @@ img {
     }
     .hero-nav { display: none; }
     .hero-dots {
-        bottom: 12px;
+        bottom: 14px;
         right: 16px;
-        gap: 5px;
+        gap: 6px;
     }
     .hero-dot {
-        width: 5px;
+        width: 6px;
         height: 5px;
     }
     .hero-dot.active {
-        width: 18px;
+        width: 24px;
     }
     .btn-cta--big {
         padding: 10px 22px;
@@ -2160,6 +2229,16 @@ img {
     }
     .stream-card:hover .card-play-btn {
         transform: scale(1);
+    }
+    .hero-slide.active .hero-slide-backdrop::before,
+    .hero-slide.active .hero-slide-content,
+    .hero-slide.active .hero-slide-poster {
+        animation: none !important;
+        transform: none !important;
+    }
+    .hero-dot.active .hero-dot-fill {
+        width: 100% !important;
+        animation: none !important;
     }
 }
 
@@ -2389,7 +2468,7 @@ button,
     background: rgba(8, 9, 12, 0.7);
 }
 .hero-dot:active {
-    transform: scale(1.5);
+    transform: scale(1.15);
     background: rgba(255, 255, 255, 0.6);
 }
 .rail-nav:active {
