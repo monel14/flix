@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="content-section" style="max-width:800px;margin:0 auto;padding:24px">
+  <h1 class="section-title section-title--page">DMCA - Retrait de contenu</h1>
+  
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:20px;margin-top:16px;line-height:1.7;color:var(--text-body)">
+    <p><strong>NokaTV</strong> est un agrégateur qui référence des contenus disponibles publiquement sur des sites tiers. Nous n'hébergeons aucune vidéo.</p>
+    
+    <h2 style="margin-top:20px;font-size:1.1rem">Procédure de retrait (DMCA)</h2>
+    <p style="margin-top:8px">Si vous êtes titulaire de droits et constatez qu'une fiche référence un contenu vous appartenant, contactez-nous à:</p>
+    <p style="margin-top:8px"><strong>Email:</strong> <a href="mailto:contact@nokatv.xyz" style="color:var(--brand-hover);text-decoration:underline">contact@nokatv.xyz</a> (ou {{ contact_email }})</p>
+    <p style="margin-top:8px">Objet: <code>DMCA - Retrait [titre]</code></p>
+    
+    <h3 style="margin-top:16px;font-size:.95rem">Informations requises:</h3>
+    <ul style="margin-top:8px;padding-left:20px;list-style:disc">
+      <li>URL exacte sur NokaTV (ex: https://nokatv.xyz/film/xxx)</li>
+      <li>Preuve de titularité des droits</li>
+      <li>Vos coordonnées</li>
+    </ul>
+    
+    <p style="margin-top:12px">Nous retirons le contenu sous 24-48h et le plaçons en blocklist (404 + exclusion sitemap).</p>
+    
+    <h2 style="margin-top:20px;font-size:1.1rem">Contenus déjà retirés</h2>
+    <p style="margin-top:8px;color:var(--text-muted);font-size:.85rem">Suite à notification du 07/09/2026 (Marketly LLC / Amazon Content Services LLC - Butterfly), les URLs suivantes retournent désormais 404:</p>
+    <ul style="margin-top:8px;padding-left:20px;list-style:disc;color:var(--text-muted);font-size:.85rem">
+      <li>/film/butterfly-saison-1-vostfr</li>
+      <li>/film/butterfly-saison-1-vf</li>
+    </ul>
+    <p style="margin-top:8px;font-size:.8rem">Réf Lumen: <a href="https://lumendatabase.org/notices/95976390" target="_blank" style="text-decoration:underline">95976390</a></p>
+    
+    <h2 style="margin-top:20px;font-size:1.1rem">Transparence</h2>
+    <p style="margin-top:8px;font-size:.9rem">Toutes les demandes légales de suppression reçues via Google sont publiées (anonymisées) sur Lumen Database conformément à la politique Google.</p>
+  </div>
+</section>
+{% endblock %}

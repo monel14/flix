@@ -27,6 +27,7 @@ from scraper.frenchstream_client import (
     frenchstream_get_html,
 )
 from scraper.frenchstream_parser import parse_frenchstream_category
+from services.blocklist import BLOCKED_SLUGS
 from services.dedup import merge_variants
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ SITEMAP_TTL = 12 * 3600  # 12 h — un sitemap n'a pas besoin d'être plus frais
 
 STATIC_PATHS = ["/", "/films", "/series", "/dramas", "/animes"]
 # Pages de confiance (E-E-A-T) : toujours disponibles, donc toujours listées.
-LEGAL_PATHS = ["/mentions-legales", "/contact"]
+LEGAL_PATHS = ["/mentions-legales", "/contact", "/dmca"]
 BASE_PATHS = STATIC_PATHS + LEGAL_PATHS
 
 
@@ -68,8 +69,12 @@ def _preferred_slugs(items: list) -> set[str]:
     canonical) : les doublons VF/VOSTFR dupliquaient le contenu et divisaient
     la confiance (cannibalisation constatée dans GSC, ex. `/film/lodyssee-vf`
     vs `/film/lodyssee-vostfr`).
+
+    DMCA: exclut les slugs bloqués.
     """
-    return _slugs_of(merge_variants(items))
+    slugs = _slugs_of(merge_variants(items))
+    # Exclut DMCA
+    return {s for s in slugs if s.lower() not in BLOCKED_SLUGS}
 
 
 async def _collect_coflix(section: str, prefix: str, list_path: str) -> set[str]:

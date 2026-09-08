@@ -10,6 +10,7 @@ from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_
 from scraper.coflix_parser import parse_coflix_detail, parse_coflix_episodes
 from scraper.voirdrama_client import VoirdramaNotFoundError, voirdrama_get_html
 from scraper.voirdrama_parser import parse_voirdrama_detail
+from services.blocklist import is_blocked
 from services.dedup import canonical_path_for, should_redirect_to_preferred, version_label
 from services.related import get_similar_items
 from services.seo import content_seo, title_qualifiers
@@ -74,6 +75,11 @@ async def load_detail(slug: str) -> dict:
 
 @router.get("/film/{slug}", response_class=HTMLResponse)
 async def film_detail(request: Request, slug: str):
+    # DMCA blocklist - retourne 404 pour contenus retirés (ex: Butterfly Amazon)
+    if is_blocked(slug):
+        logger.warning("DMCA blocked slug accessed: %s", slug)
+        raise HTTPException(status_code=404, detail="Contenu retiré suite à demande DMCA")
+
     # P0 Fix: 301 redirect si version non préférée existe (corrige 13 canonical mismatch + 404)
     known = _known_paths()
     redirect_path = should_redirect_to_preferred(slug, "/film/", known)
