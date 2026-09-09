@@ -54,7 +54,6 @@
         {% for srv in servers %}
         <button class="server-pill-btn {% if loop.first %}active{% endif %}"
                 data-link="{{ srv.server_link }}"
-                data-sandbox="{{ player_sandbox(srv) }}"
                 data-idx="{{ loop.index0 }}">
             {{ srv.server_name }}
         </button>
@@ -68,8 +67,7 @@
 
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 referrerpolicy="no-referrer-when-downgrade"
-                scrolling="no"
-                {% if player_sandbox(default_server) %}sandbox="{{ player_sandbox(default_server) }}"{% endif %}>
+                scrolling="no">
         </iframe>
         {% if not servers %}
         <div class="player-frame-status">
@@ -122,12 +120,7 @@
             if (link && !link.includes('autoplay=')) {
                 link += (link.includes('?') ? '&' : '?') + 'autoplay=1';
             }
-            const sandboxPolicy = btn.dataset.sandbox || '';
-            if (sandboxPolicy) {
-                frame.setAttribute('sandbox', sandboxPolicy);
-            } else {
-                frame.removeAttribute('sandbox');
-            }
+            frame.removeAttribute('sandbox');
             frame.src = link;
         });
     });
