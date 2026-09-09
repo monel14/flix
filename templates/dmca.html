@@ -21,12 +21,22 @@
     <p style="margin-top:12px">Nous retirons le contenu sous 24-48h et le plaçons en blocklist (404 + exclusion sitemap).</p>
     
     <h2 style="margin-top:20px;font-size:1.1rem">Contenus déjà retirés</h2>
-    <p style="margin-top:8px;color:var(--text-muted);font-size:.85rem">Suite à notification du 07/09/2026 (Marketly LLC / Amazon Content Services LLC - Butterfly), les URLs suivantes retournent désormais 404:</p>
+    <p style="margin-top:8px;color:var(--text-muted);font-size:.85rem">Suite à 2 notifications Marketly LLC / Amazon Content Services LLC, les URLs suivantes retournent désormais 404:</p>
     <ul style="margin-top:8px;padding-left:20px;list-style:disc;color:var(--text-muted);font-size:.85rem">
-      <li>/film/butterfly-saison-1-vostfr</li>
-      <li>/film/butterfly-saison-1-vf</li>
+      <li><strong>07/09/2026 - Butterfly</strong> (Lumen 95976390 Claim 49/100): /film/butterfly-saison-1-vostfr + variantes (butterfly, butterfly-vf, butterfly-vostfr, butterfly-saison-1) - 0 clic / 12 imp GSC</li>
+      <li><strong>04/09/2026 - Balls Up</strong> (Lumen 95726417 Claim 20/100): /film/balls-up-mettez-le-paquet-vf + variantes (balls-up, balls-up-vf) - 1 clic / 13 imp GSC</li>
     </ul>
-    <p style="margin-top:8px;font-size:.8rem">Réf Lumen: <a href="https://lumendatabase.org/notices/95976390" target="_blank" style="text-decoration:underline">95976390</a></p>
+    <p style="margin-top:8px;font-size:.8rem">Réf Lumen: <a href="https://lumendatabase.org/notices/95976390" target="_blank" style="text-decoration:underline">95976390 - Butterfly</a> et <a href="https://lumendatabase.org/notices/95726417" target="_blank" style="text-decoration:underline">95726417 - Balls Up</a></p>
+    <p style="margin-top:8px;font-size:.8rem;color:var(--text-muted)">Action: blocklist + 404 + exclusion sitemap. Pas de contre-notification sans droits (risque parjure).</p>
+
+    <h2 style="margin-top:20px;font-size:1.1rem">Mesures préventives - Titres Amazon (Option B)</h2>
+    <p style="margin-top:8px;color:var(--text-muted);font-size:.85rem">Suite à l'analyse des 2 notices complets (100+100 claims Amazon), NokaTV a placé en <strong>watchlist préventive</strong> les autres titres Amazon listés par Marketly LLC. <strong>Option B appliquée le 09/09/2026</strong> après sync avec origin/master 3226191:</p>
+    <ul style="margin-top:8px;padding-left:20px;list-style:disc;color:var(--text-muted);font-size:.8rem">
+      <li><strong>Top trafic gardé indexé (monitoré):</strong> The Last Sunrise (84 clics / 252 imp - page #1 du site - Amazon MGM Studios 2026) - <em>reste indexé car pas de DMCA direct nokatv.xyz dans Lumen 95726417/95976390, mais surveillance quotidienne Lumen. Si DMCA direct → passage 404 en 5 min.</em></li>
+      <li><strong>Soft noindex + hors sitemap:</strong> The Boys, Reacher, Fallout, Rings of Power, Invincible, Gen V, Citadel, Over Your Dead Body (44 imp), etc. - 120+ slugs</li>
+      <li><strong>Hard 404:</strong> Butterfly + Balls Up (2 DMCA directs nokatv.xyz)</li>
+    </ul>
+    <p style="margin-top:8px;font-size:.8rem;color:var(--text-muted)">Implé: <code>AMAZON_RISKY_EXACT</code> (120 slugs) + <code>AMAZON_MONITORED_KEEP_INDEXED</code> (The Last Sunrise) + <code>AMAZON_RISKY_PREFIXES</code>. Titres génériques (fear, eden, cross...) en exact-only.</p>
     
     <h2 style="margin-top:20px;font-size:1.1rem">Transparence</h2>
     <p style="margin-top:8px;font-size:.9rem">Toutes les demandes légales de suppression reçues via Google sont publiées (anonymisées) sur Lumen Database conformément à la politique Google.</p>

@@ -208,6 +208,7 @@ async def canonical_domain_redirect(request: Request, call_next):
     → dilution, 13 canonical mismatch, 114 canonicalisée.
     On 301 tout vers SITE_URL si défini, sinon vers https:// + host sans www.
     Exclut /api/image-proxy et health checks pour éviter boucles.
+    Merge HEAD + origin/master: garde bypass localhost/test + SITE_URL logic.
     """
     # Ne pas interférer avec image-proxy et fichiers statiques
     path = request.url.path
@@ -215,13 +216,12 @@ async def canonical_domain_redirect(request: Request, call_next):
         return await call_next(request)
 
     host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
-    # Ne pas interférer avec le développement local ou les tests
+    # Ne pas interférer avec le développement local ou les tests (origin/master)
     if any(local in host for local in ("localhost", "127.0.0.1", "0.0.0.0", "testserver")):
         return await call_next(request)
 
     configured = (os.getenv("SITE_URL") or "").strip().rstrip("/")
     if configured:
-        # Si SITE_URL défini, on force exactement ce domaine
         try:
             from urllib.parse import urlparse
             parsed = urlparse(configured)
@@ -231,16 +231,12 @@ async def canonical_domain_redirect(request: Request, call_next):
             canonical_host = None
             canonical_scheme = "https"
         scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
-        # Si host ou scheme différent du canonique → 301
         if canonical_host and (host != canonical_host or scheme != canonical_scheme):
-            # Garde path + query
             url = f"{configured}{request.url.path}"
             if request.url.query:
                 url += f"?{request.url.query}"
             return RedirectResponse(url, status_code=301)
     else:
-        # Fallback sans SITE_URL: force https + non-www
-        host = request.headers.get("x-forwarded-host") or request.url.netloc
         scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
         should_redirect = False
         new_host = host

@@ -27,7 +27,7 @@ from scraper.frenchstream_client import (
     frenchstream_get_html,
 )
 from scraper.frenchstream_parser import parse_frenchstream_category
-from services.blocklist import BLOCKED_SLUGS
+from services.blocklist import BLOCKED_SLUGS, is_excluded_from_sitemap
 from services.dedup import merge_variants
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ BASE_PATHS = STATIC_PATHS + LEGAL_PATHS
 
 def _max_pages() -> int:
     """Profondeur de collecte par catégorie (surchivable via SITEMAP_MAX_PAGES).
-
+    
     P0 Fix SEO: réduit de 5 à 2 par défaut pour éviter d'inonder GSC avec 2361 URLs
     d'un coup sur un site jeune (cause 1019 Détectée non indexée). Augmenter
     progressivement quand taux indexation >60%.
@@ -73,8 +73,8 @@ def _preferred_slugs(items: list) -> set[str]:
     DMCA: exclut les slugs bloqués.
     """
     slugs = _slugs_of(merge_variants(items))
-    # Exclut DMCA
-    return {s for s in slugs if s.lower() not in BLOCKED_SLUGS}
+    # Exclut DMCA hard + Amazon risky (anticipation Lumen 95976390 - 100 titres)
+    return {s for s in slugs if not is_excluded_from_sitemap(s)}
 
 
 async def _collect_coflix(section: str, prefix: str, list_path: str) -> set[str]:

@@ -12,3 +12,4 @@ build/
 cache.db-shm
 cache.db-wal
 indexnow_key.txt
+ss.patch

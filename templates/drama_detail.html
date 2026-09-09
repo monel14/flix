@@ -54,31 +54,12 @@
             </div>
             {% endif %}
 
-            <!-- Section À propos & FAQ intégrée dans la colonne d'en-tête (SEO Above the Fold) -->
-            <section class="content-section content-section--about" style="margin-top:20px;border:1px solid var(--border-subtle);border-radius:8px;padding:18px">
-              <h2 class="section-title" style="font-size:1.05rem;margin-bottom:10px">À propos de {{ drama.title }}</h2>
-              <div style="color:var(--text-body);font-size:.9rem;line-height:1.65">
-                <p>Regardez <strong>{{ drama.title }}</strong> {% if drama.year %}({{ drama.year }}){% endif %} en streaming VOSTFR/VF HD sur NokaTV. {% if drama.genres %}Genres: {{ drama.genres|join(', ') }}.{% endif %} {{ drama.episodes|length }} épisodes disponibles.</p>
-                {% if drama.synopsis %}
-                <p style="margin-top:8px">{{ drama.synopsis }}</p>
-                {% endif %}
-                <p style="margin-top:10px">
-                  Où regarder {{ drama.title }} ? Sur NokaTV, plateforme d'agrégation qui référence les sources
-                  sans héberger les vidéos. Si un lien est mort, signalez-le via <a href="/contact" style="color:var(--brand-hover);text-decoration:underline">contact</a>.
-                </p>
-              </div>
-
-              <!-- FAQ JSON-LD visible pour utilisateur + SEO -->
-              <div style="margin-top:16px">
-                <h3 class="section-title" style="font-size:.95rem">Questions fréquentes</h3>
-                <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:600">Où regarder {{ drama.title }} en streaming gratuit ?</summary>
-                  <p style="margin-top:6px;color:var(--text-muted)">Sur NokaTV, en cliquant sur un épisode ci-dessous. Plusieurs lecteurs HD disponibles.</p>
-                </details>
-                <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:600">{{ drama.title }} est-il en VF ou VOSTFR ?</summary>
-                  <p style="margin-top:6px;color:var(--text-muted)">{% if drama.version %}Version disponible: {{ drama.version }}.{% else %}Disponible en VOSTFR et VF selon les épisodes.{% endif %}</p>
-                </details>
-              </div>
-            </section>
+            {% if drama.synopsis %}
+            <div class="synopsis-wrapper">
+                <p class="detail-synopsis-text synopsis-collapsed" id="synopsis-text">{{ drama.synopsis }}</p>
+                <button class="synopsis-read-more" id="synopsis-toggle" aria-expanded="false">Lire plus</button>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -101,27 +82,27 @@
 </section>
 {% endif %}
 
-<!-- 3. DRAMAS SIMILAIRES -->
-{% if similar %}
-<section class="content-section" style="margin-top:28px">
-    <div class="section-header">
-        <h2 class="section-title">Dramas similaires</h2>
+<!-- SEO EXTRA -->
+<section class="content-section" style="margin-top:28px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:18px">
+  <h2 class="section-title">À propos de {{ drama.title }}</h2>
+  <div style="color:var(--text-body);font-size:.9rem;line-height:1.65">
+    <p>Regardez <strong>{{ drama.title }}</strong> {% if drama.year %}({{ drama.year }}){% endif %} en streaming VOSTFR/VF HD sur NokaTV. {% if drama.genres %}Genres: {{ drama.genres|join(', ') }}.{% endif %} {{ drama.episodes|length }} épisodes.</p>
+    {% if drama.synopsis %}<p style="margin-top:8px">{{ drama.synopsis[:400] }}</p>{% endif %}
+  </div>
+  {% if similar %}
+  <div style="margin-top:16px">
+    <h3 class="section-title" style="font-size:.95rem">Dramas similaires</h3>
+    <div class="cards-rail" style="margin-top:8px">
+      {% for item in similar %}
+      <a href="/drama/{{ item.slug }}" class="stream-card">
+        <div class="card-poster-wrap"><img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy"><div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div></div>
+        <div class="card-details"><p class="card-title">{{ item.title }}</p></div>
+      </a>
+      {% endfor %}
     </div>
-    <div class="cards-rail">
-        {% for item in similar %}
-        <a href="/drama/{{ item.slug }}" class="stream-card">
-            <div class="card-poster-wrap">
-                <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
-                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-play"></i></div></div>
-            </div>
-            <div class="card-details">
-                <p class="card-title">{{ item.title }}</p>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
+  </div>
+  {% endif %}
 </section>
-{% endif %}
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Où regarder {{ drama.title | replace('\"', '\\\"') }} ?","acceptedAnswer":{"@type":"Answer","text":"Sur NokaTV en streaming VOSTFR HD."}}]}
 </script>

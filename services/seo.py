@@ -289,6 +289,7 @@ def content_seo(
     content_type: str = "",
     qualifiers: str = "",
     breadcrumbs: list[tuple[str, str]] | None = None,
+    noindex: bool = False,
 ) -> SeoMeta:
     """SeoMeta d'une fiche de contenu (film, série).
 
@@ -332,4 +333,5 @@ def content_seo(
         year=item.get("year", ""),
         genres=item.get("genres") or [],
         extra_json_ld=extra,
+        noindex=noindex,
     )

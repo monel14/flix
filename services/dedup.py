@@ -101,7 +101,7 @@ def canonical_path_for(slug: str, prefix: str, known_paths: set[str] | None = No
 
 def should_redirect_to_preferred(slug: str, prefix: str, known_paths: set[str] | None = None) -> str | None:
     """Retourne le chemin de redirection 301 si slug non préféré et préféré existe.
-
+    
     Utilisé pour corriger les 404 et canonical mismatch de GSC:
     - /film/lodyssee-vostfr -> 301 -> /film/lodyssee-vf si VF existe
     - Évite les boucles si déjà sur préféré
