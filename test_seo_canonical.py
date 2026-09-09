@@ -63,10 +63,12 @@ def test_sitemap_ne_liste_que_la_version_preferee():
         {"slug": "lodyssee-vf", "title": "L'Odyssée", "version": "VF"},
         {"slug": "lodyssee-vostfr", "title": "L'Odyssée", "version": "VOSTFR"},
         {"slug": "dune-vostfr", "title": "Dune", "version": "VOSTFR"},
+        {"slug": "severance-saison-2", "title": "Severance", "version": ""},
         {"slug": "reacher-saison-4", "title": "Reacher", "version": ""},
     ]
     slugs = _preferred_slugs(items)
     assert "lodyssee-vf" in slugs
     assert "lodyssee-vostfr" not in slugs  # doublon éliminé
     assert "dune-vostfr" in slugs          # seule version : conservée
-    assert "reacher-saison-4" in slugs     # slug nu : conservé
+    assert "severance-saison-2" in slugs   # slug nu : conservé
+    assert "reacher-saison-4" not in slugs # exclu car Amazon risky (watchlist)
