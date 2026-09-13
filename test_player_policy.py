@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.testclient import TestClient
 
 from services.player_policy import VIDZY_SANDBOX, player_sandbox
-from services.templates import TEMPLATES_DIR
+from services.templates import TEMPLATES_DIR, static_url
 
 
 def make_server(name: str, link: str):
@@ -39,6 +39,7 @@ def test_player_templates_render_without_sandbox():
     env = Jinja2Templates(directory=str(TEMPLATES_DIR))
     env.env.globals["str"] = str
     env.env.globals["player_sandbox"] = player_sandbox
+    env.env.globals["static_url"] = static_url
 
     servers = [
         make_server("Vidzy", "https://vidzy.cc/embed-1"),
@@ -101,4 +102,12 @@ def test_player_templates_render_without_sandbox():
         assert 'data-sandbox' not in html
         assert 'sandbox="' not in html
         assert "frame.src = link;" in html
+        assert "/static/flix-autoplay.js?v=" in html
+
+
+def test_static_url_helper():
+    url = static_url("flix-autoplay.js")
+    assert url.startswith("/static/flix-autoplay.js?v=")
+    assert len(url.split("?v=")[1]) >= 8
+
 

@@ -154,10 +154,95 @@
     const slug = document.querySelector('[data-slug]')?.getAttribute('data-slug') || location.pathname;
     return KEY_PROGRESS_PREFIX + slug;
   }
-  function loadProgress() { try { const raw = localStorage.getItem(getVideoId()); return raw ? JSON.parse(raw) : null; } catch { return null; } }
+  function loadProgress() {
+    try {
+      const keySlug = getVideoId();
+      const keyPath = KEY_PROGRESS_PREFIX + location.pathname;
+      const raw = localStorage.getItem(keySlug) || localStorage.getItem(keyPath);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
   function saveProgress(time, dur) {
     if (!time || !dur || time < 1) return;
-    try { localStorage.setItem(getVideoId(), JSON.stringify({ time, duration: dur, timestamp: Date.now() })); } catch {}
+    try {
+      const payload = JSON.stringify({ time, duration: dur, timestamp: Date.now() });
+      localStorage.setItem(getVideoId(), payload);
+      localStorage.setItem(KEY_PROGRESS_PREFIX + location.pathname, payload);
+    } catch {}
+  }
+
+  // --- Watchdog Anti-Coupure (Même serveur, AUCUNE bascule) ---
+  let isPlaying = false;
+  let isEnded = false;
+  let lastProgressTime = 0;
+  let lastHeartbeat = Date.now();
+  let lastRecordedPos = 0;
+  let lastRecoveryAttempt = 0;
+  const STALL_TIMEOUT_MS = 12000;      // 12s sans progression alors que le lecteur jouait
+  const RECOVERY_COOLDOWN_MS = 25000;  // 25s entre deux reconnexions automatiques
+
+  function formatTime(sec) {
+    sec = Math.floor(sec || 0);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    if (m >= 60) {
+      const h = Math.floor(m / 60);
+      const remM = m % 60;
+      return `${h}:${remM.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function recoverCurrentServer(reason = 'stalled connection') {
+    const f = getPlayerFrame();
+    if (!f || !f.src || f.src.includes('about:blank')) return;
+
+    lastRecoveryAttempt = Date.now();
+    lastHeartbeat = Date.now();
+
+    const saved = loadProgress();
+    const pos = (lastRecordedPos && lastRecordedPos > 2) ? lastRecordedPos : (saved?.time || 0);
+    log(`Auto-recovery on SAME server [${reason}] at pos=${pos}s (${formatTime(pos)}) (NO server switch)`);
+
+    // Force une réinitialisation propre du flux sur le MÊME lecteur de façon 100% transparente (sans toast)
+    try {
+      const url = new URL(f.src, window.location.href);
+      url.searchParams.set('autoplay', '1');
+      url.searchParams.set('_t', Date.now().toString());
+      f.src = url.toString();
+    } catch {
+      const sep = f.src.includes('?') ? '&' : '?';
+      f.src = f.src.replace(/[?&]_t=\d+/, '') + sep + '_t=' + Date.now();
+    }
+
+    // Réinjection de la position et de la lecture
+    setTimeout(() => {
+      if (pos > 2) postSeek(pos);
+      postPlay();
+    }, 900);
+    setTimeout(() => {
+      if (pos > 2) postSeek(pos);
+      postPlay();
+    }, 2000);
+    setTimeout(() => {
+      postPlay();
+    }, 3800);
+  }
+
+  function startWatchdog() {
+    setInterval(() => {
+      if (!isAutoOn()) return;
+      if (!isPlaying || isEnded) return;
+      const f = getPlayerFrame();
+      if (!f || !f.src || f.src.includes('about:blank')) return;
+
+      const now = Date.now();
+      // Si la vidéo est censée jouer mais que le temps ne défile plus depuis > 12s
+      if (now - lastHeartbeat > STALL_TIMEOUT_MS) {
+        if (now - lastRecoveryAttempt < RECOVERY_COOLDOWN_MS) return;
+        recoverCurrentServer('stalled stream / reset');
+      }
+    }, 2000);
   }
 
   // --- Autoplay ---
@@ -290,7 +375,33 @@
     if (!d || typeof d !== 'object') return;
     const ct = typeof d.currentTime === 'number' ? d.currentTime : (typeof d.time === 'number' ? d.time : null);
     const dur = typeof d.duration === 'number' ? d.duration : null;
-    if (ct != null && dur) saveProgress(ct, dur);
+
+    // Mise à jour de l'état pour le Watchdog (même serveur)
+    if (d.action === 'play' || (d.action === 'updatePlayPauseButton' && d.isPlaying === true)) {
+      isPlaying = true;
+      isEnded = false;
+      lastHeartbeat = Date.now();
+    }
+    if (d.action === 'pause' || (d.action === 'updatePlayPauseButton' && d.isPlaying === false)) {
+      isPlaying = false;
+    }
+    if (ct != null) {
+      lastRecordedPos = ct;
+      if (Math.abs(ct - lastProgressTime) > 0.3) {
+        lastProgressTime = ct;
+        lastHeartbeat = Date.now();
+        isPlaying = true;
+        isEnded = false;
+      }
+      if (dur) {
+        saveProgress(ct, dur);
+        if (dur - ct < 2) {
+          isPlaying = false;
+          isEnded = true;
+        }
+      }
+    }
+
     if (!isAutoOn()) {
       if (armId === pausedForArm) return;
       if (!armTime || Date.now() - armTime > 12000) return;
@@ -303,6 +414,8 @@
       }
     }
     if (d.action === 'ended' || d.event === 'ended' || (dur && ct && dur - ct < 1.5)) {
+      isPlaying = false;
+      isEnded = true;
       if (!isAutoOn()) return;
       const nextLink = document.querySelector('a.player-ctrl-btn--next');
       if (nextLink && nextLink.href) {
@@ -341,6 +454,7 @@
     hookServerButtons();
     observeFrames();
     bindFsTrigger();
+    startWatchdog();
     if (isAutoOn()) attemptPlaySequence('boot');
     else armAutoBlock();
   }
@@ -351,6 +465,9 @@
     play: () => attemptPlaySequence('manual'),
     pause: () => postPause(),
     getFrame: getPlayerFrame,
+    getProgress: () => loadProgress(),
+    recover: () => recoverCurrentServer('manual call'),
+    formatTime,
   };
   window.__flixAutoplayForceReboot = () => { injectPillsTop(); hookServerButtons(); bindFsTrigger(); };
 
