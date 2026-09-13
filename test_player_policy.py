@@ -111,3 +111,15 @@ def test_static_url_helper():
     assert len(url.split("?v=")[1]) >= 8
 
 
+def test_service_worker_dynamic_generation():
+    from services.sw import generate_service_worker, get_sw_assets, get_sw_cache_name
+    assets = get_sw_assets()
+    assert len(assets) >= 15
+    assert all("?v=" in asset for asset in assets)
+    cache_name = get_sw_cache_name(assets)
+    assert cache_name.startswith("nokatv-shell-")
+    content = generate_service_worker()
+    assert f"const STATIC_CACHE = '{cache_name}';" in content
+    assert "/static/style.css?v=" in content
+
+

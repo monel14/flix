@@ -23,6 +23,7 @@ from services.seo import page_seo, site_origin
 from services.sitemap import LEGAL_PATHS as LEGAL_SITEMAP_PATHS
 from services.sitemap import STATIC_PATHS as STATIC_SITEMAP_PATHS
 from services.sitemap import collect_sitemap_paths
+from services.sw import generate_service_worker
 from services.templates import templates
 SITE_NAME = "NokaTV"
 from routes import anime, detail, drama, home, player, search
@@ -263,11 +264,10 @@ async def canonical_domain_redirect(request: Request, call_next):
 
 @app.get("/sw.js")
 async def service_worker():
-    """Sert static/sw.js à la racine : le scope d'un SW dépend de son chemin,
-    /static/sw.js ne pourrait contrôler que /static/*."""
-    return FileResponse(
-        BASE_DIR / "static" / "sw.js",
-        media_type="text/javascript",
+    """Sert le service worker dynamique avec hachage automatique des assets du shell."""
+    return Response(
+        content=generate_service_worker(),
+        media_type="application/javascript",
         headers={"Cache-Control": "no-cache"},
     )
 
