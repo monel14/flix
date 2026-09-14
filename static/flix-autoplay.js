@@ -193,6 +193,15 @@
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
+  function triggerResume(pos, reason = 'auto') {
+    if (!isAutoOn() || isEnded) return;
+    const p = (pos != null && pos > 2) ? pos : (lastRecordedPos || loadProgress()?.time || 0);
+    log(`Trigger resume [${reason}] at pos=${p}s`);
+    if (p > 2) postSeek(p);
+    postPlay();
+    setTimeout(() => { if (p > 2) postSeek(p); postPlay(); }, 400);
+  }
+
   function recoverCurrentServer(reason = 'stalled connection') {
     const f = getPlayerFrame();
     if (!f || !f.src || f.src.includes('about:blank')) return;
@@ -215,18 +224,18 @@
       f.src = f.src.replace(/[?&]_t=\d+/, '') + sep + '_t=' + Date.now();
     }
 
-    // Réinjection de la position et de la lecture
-    setTimeout(() => {
-      if (pos > 2) postSeek(pos);
-      postPlay();
-    }, 900);
-    setTimeout(() => {
-      if (pos > 2) postSeek(pos);
-      postPlay();
-    }, 2000);
-    setTimeout(() => {
-      postPlay();
-    }, 3800);
+    // Réinjection échelonnée de la position et de la lecture (ceinture de sécurité jusqu'à 15s)
+    const retryDelays = [800, 1800, 3200, 5500, 8500, 12000, 15000];
+    retryDelays.forEach((ms) => {
+      setTimeout(() => {
+        if (!isAutoOn() || isEnded) return;
+        const now = Date.now();
+        // Si la lecture n'a pas encore redémarré (pas de progression active récente)
+        if (!isPlaying || (now - lastHeartbeat > 2500)) {
+          triggerResume(pos, `recovery retry ${ms}ms`);
+        }
+      }, ms);
+    });
   }
 
   function startWatchdog() {
@@ -263,13 +272,21 @@
     }, 300);
   }
 
+  let lastPlaySeqTime = 0;
+  function debouncePlaySequence(reason) {
+    const now = Date.now();
+    if (now - lastPlaySeqTime < 350) return;
+    lastPlaySeqTime = now;
+    attemptPlaySequence(reason);
+  }
+
   function attemptPlaySequence(reason = 'src change') {
     if (!isAutoOn()) { log('Skip play, OFF'); return; }
     const f = getPlayerFrame();
     if (!f) { log('No frame'); return; }
     if (!f.src || f.src.includes('about:blank')) { log('Src blank, skip'); return; }
     const saved = loadProgress();
-    const pos = saved && saved.time > 5 ? saved.time : 0;
+    const pos = (lastRecordedPos && lastRecordedPos > 2) ? lastRecordedPos : (saved && saved.time > 5 ? saved.time : 0);
     log(`Attempt play [${reason}] pos=${pos} src=${f.src.slice(0,80)} sources=${document.querySelectorAll('.server-pill-btn').length}`);
 
     // Pour TOUS les lecteurs: force autoplay=1 dans l'URL si pas présent
@@ -281,10 +298,19 @@
       }
     } catch {}
 
-    setTimeout(() => { if (pos > 5) postSeek(pos); postPlay(); }, 500);
-    setTimeout(() => { postPlay(); }, 1200);
-    setTimeout(() => { postPlay(); }, 2500);
-    setTimeout(() => { postPlay(); }, 4500);
+    // Retries échelonnés jusqu'à 15s (ceinture de sécurité si le lecteur met du temps à démarrer)
+    const playDelays = [500, 1200, 2500, 4500, 7500, 11000, 15000];
+    playDelays.forEach((ms) => {
+      setTimeout(() => {
+        if (!isAutoOn() || isEnded) return;
+        const now = Date.now();
+        // N'insiste que si la vidéo ne progresse pas encore activement
+        if (!isPlaying || (now - lastHeartbeat > 2500)) {
+          if (pos > 2) postSeek(pos);
+          postPlay();
+        }
+      }, ms);
+    });
   }
 
   // Sur changement src iframe (toutes sources)
@@ -294,7 +320,7 @@
     if (f.src.includes('about:blank')) return;
     lastSrc = f.src;
     log('New src detected (ALL SOURCES):', f.src.slice(0,100));
-    if (isAutoOn()) attemptPlaySequence('new src');
+    if (isAutoOn()) debouncePlaySequence('new src');
     else armAutoBlock();
   }, 600);
 
@@ -402,6 +428,23 @@
       }
     }
 
+    // Signal de disponibilité immédiate du lecteur (Point 1 : Mode événementiel)
+    const isReadySignal = (
+      d.action === 'playerReady' ||
+      d.action === 'videoLoaded' ||
+      d.action === 'loadedmetadata' ||
+      d.action === 'canplay' ||
+      d.event === 'loadedmetadata' ||
+      d.event === 'canplay' ||
+      (dur && !isPlaying && !isEnded && (!ct || ct < 1))
+    );
+
+    if (isReadySignal && isAutoOn() && !isEnded) {
+      const targetPos = (lastRecordedPos && lastRecordedPos > 2) ? lastRecordedPos : (loadProgress()?.time || 0);
+      log(`Player ready signal detected [${d.action || d.event || 'duration'}] -> immediate resume at ${targetPos}s`);
+      triggerResume(targetPos, 'player ready event');
+    }
+
     if (!isAutoOn()) {
       if (armId === pausedForArm) return;
       if (!armTime || Date.now() - armTime > 12000) return;
@@ -433,11 +476,11 @@
       new MutationObserver((muts) => {
         for (const m of muts) {
           if (m.type === 'attributes' && m.attributeName === 'src') {
-            if (isAutoOn()) attemptPlaySequence('mutation src'); else armAutoBlock();
+            if (isAutoOn()) debouncePlaySequence('mutation src'); else armAutoBlock();
           }
           if (m.addedNodes && m.addedNodes.length) {
             hookServerButtons(); // re-hook si nouveaux boutons
-            if (isAutoOn()) attemptPlaySequence('mutation add');
+            if (isAutoOn()) debouncePlaySequence('mutation add');
           }
         }
       }).observe(cont, { attributes: true, attributeFilter: ['src'], subtree: true, childList: true });
