@@ -178,8 +178,12 @@
   let lastHeartbeat = Date.now();
   let lastRecordedPos = 0;
   let lastRecoveryAttempt = 0;
+  let totalRecoveries = 0;
+  let recoveryTimers = [];
+  let playSeqTimers = [];
   const STALL_TIMEOUT_MS = 12000;      // 12s sans progression alors que le lecteur jouait
   const RECOVERY_COOLDOWN_MS = 25000;  // 25s entre deux reconnexions automatiques
+  const MAX_TOTAL_RECOVERIES = 10;     // Limite absolue pour éviter la boucle infinie
 
   function formatTime(sec) {
     sec = Math.floor(sec || 0);
@@ -206,12 +210,24 @@
     const f = getPlayerFrame();
     if (!f || !f.src || f.src.includes('about:blank')) return;
 
+    totalRecoveries++;
+    if (totalRecoveries > MAX_TOTAL_RECOVERIES) {
+      log(`⛔ Max recovery attempts (${MAX_TOTAL_RECOVERIES}) reached, stopping auto-recovery`);
+      isPlaying = false;
+      showRecoveryToast();
+      return;
+    }
+
+    // Annuler tous les timers de la tentative précédente
+    recoveryTimers.forEach(t => clearTimeout(t));
+    recoveryTimers = [];
+
     lastRecoveryAttempt = Date.now();
     lastHeartbeat = Date.now();
 
     const saved = loadProgress();
     const pos = (lastRecordedPos && lastRecordedPos > 2) ? lastRecordedPos : (saved?.time || 0);
-    log(`Auto-recovery on SAME server [${reason}] at pos=${pos}s (${formatTime(pos)}) (NO server switch)`);
+    log(`Auto-recovery on SAME server [${reason}] at pos=${pos}s (${formatTime(pos)}) attempt ${totalRecoveries}/${MAX_TOTAL_RECOVERIES}`);
 
     // Force une réinitialisation propre du flux sur le MÊME lecteur de façon 100% transparente (sans toast)
     try {
@@ -227,7 +243,7 @@
     // Réinjection échelonnée de la position et de la lecture (ceinture de sécurité jusqu'à 15s)
     const retryDelays = [800, 1800, 3200, 5500, 8500, 12000, 15000];
     retryDelays.forEach((ms) => {
-      setTimeout(() => {
+      const tid = setTimeout(() => {
         if (!isAutoOn() || isEnded) return;
         const now = Date.now();
         // Si la lecture n'a pas encore redémarré (pas de progression active récente)
@@ -235,7 +251,38 @@
           triggerResume(pos, `recovery retry ${ms}ms`);
         }
       }, ms);
+      recoveryTimers.push(tid);
     });
+  }
+
+  function showRecoveryToast() {
+    if (document.getElementById('fss-recovery-toast')) return;
+    const toast = document.createElement('div');
+    toast.id = 'fss-recovery-toast';
+    toast.innerHTML = `
+      <span>⚠️ Lecture interrompue — le serveur ne répond plus.</span>
+      <button onclick="this.parentElement.remove(); window.FlixAutoplay.recover(); totalRecoveries=0;">Réessayer</button>
+    `;
+    toast.style.cssText = `
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;
+      background:rgba(30,30,30,.95);color:#e2e8f0;padding:12px 20px;border-radius:12px;
+      display:flex;align-items:center;gap:12px;font-size:.85rem;font-weight:500;
+      border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(8px);
+      box-shadow:0 8px 32px rgba(0,0,0,.4);animation:fss-toast-in .3s ease;
+    `;
+    toast.querySelector('button').style.cssText = `
+      background:rgba(72,124,145,.4);border:1px solid rgba(72,124,145,.6);color:#fff;
+      padding:6px 14px;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:600;
+      white-space:nowrap;
+    `;
+    if (!document.getElementById('fss-toast-anim')) {
+      const st = document.createElement('style');
+      st.id = 'fss-toast-anim';
+      st.textContent = '@keyframes fss-toast-in{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+      document.head.appendChild(st);
+    }
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast.parentElement) toast.remove(); }, 30000);
   }
 
   function startWatchdog() {
@@ -298,10 +345,14 @@
       }
     } catch {}
 
+    // Annuler les timers de la séquence précédente
+    playSeqTimers.forEach(t => clearTimeout(t));
+    playSeqTimers = [];
+
     // Retries échelonnés jusqu'à 15s (ceinture de sécurité si le lecteur met du temps à démarrer)
     const playDelays = [500, 1200, 2500, 4500, 7500, 11000, 15000];
     playDelays.forEach((ms) => {
-      setTimeout(() => {
+      const tid = setTimeout(() => {
         if (!isAutoOn() || isEnded) return;
         const now = Date.now();
         // N'insiste que si la vidéo ne progresse pas encore activement
@@ -310,6 +361,7 @@
           postPlay();
         }
       }, ms);
+      playSeqTimers.push(tid);
     });
   }
 
@@ -418,6 +470,12 @@
         lastHeartbeat = Date.now();
         isPlaying = true;
         isEnded = false;
+        // Reset des compteurs de recovery quand la lecture progresse réellement
+        if (totalRecoveries > 0) {
+          totalRecoveries = 0;
+          const toast = document.getElementById('fss-recovery-toast');
+          if (toast) toast.remove();
+        }
       }
       if (dur) {
         saveProgress(ct, dur);

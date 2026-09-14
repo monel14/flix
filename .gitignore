@@ -13,3 +13,7 @@ cache.db-shm
 cache.db-wal
 indexnow_key.txt
 ss.patch
+*credentials*.json
+service_account*.json
+nokatv.xyz-Crawl-stats-2026-09-14.xlsx
+stats.xlsx

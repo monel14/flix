@@ -2342,6 +2342,16 @@ class TelegramPublisher:
         except Exception as exc:  # noqa: BLE001 - IndexNow ne doit jamais casser la publication
             logger.warning("IndexNow en échec pour %s : %s", post.target_url, exc)
 
+    async def _notify_google_indexing(self, post: ClaimedPost) -> None:
+        """Signale la fiche nouvellement publiée à l'API Google Indexing (fire-and-forget)."""
+        if not post.target_url or "/regarder" in post.target_url:
+            return
+        try:
+            from services.google_indexing import publish_url_to_google
+            publish_url_to_google(post.target_url)
+        except Exception as exc:  # noqa: BLE001 - Google Indexing ne doit jamais casser la publication
+            logger.warning("Google Indexing en échec pour %s : %s", post.target_url, exc)
+
     def _digest_episodes(self, category: str, publications: list[Publication]) -> list[Publication]:
         """Regroupe les épisodes nouveaux d'une même série en un post unique.
 
@@ -2488,6 +2498,7 @@ class TelegramPublisher:
                     if self.store.mark_sent(post, message_id):
                         report.sent += 1
                         await self._notify_indexnow(post)
+                        await self._notify_google_indexing(post)
                     else:
                         report.errors.append(
                             f"{post.category}/{post.key} : confirmation locale du lease impossible."
