@@ -68,21 +68,41 @@
 <!-- 2. SÉLECTEUR D'ÉPISODES (Séries) -->
 {% if film.type == 'series' and film.episodes %}
 <section class="episodes-section-block">
-    <div class="section-header">
+    {% set seasons = film.episodes | groupby('season') %}
+    <div class="episodes-header-bar">
         <h2 class="section-title">Épisodes Disponibles ({{ film.episodes | length }})</h2>
+        {% if seasons | length > 1 %}
+        <div class="season-tabs-bar" id="season-tabs" role="tablist" aria-label="Saisons">
+            {% for season_num, eps in seasons %}
+            <button type="button" class="season-tab-btn {% if loop.first %}active{% endif %}" data-target-season="{{ season_num }}" role="tab" aria-selected="{{ 'true' if loop.first else 'false' }}">
+                <i class="fas fa-folder-open"></i> Saison {{ season_num }} <span class="season-ep-count">({{ eps | length }})</span>
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
-    {% set seasons = film.episodes | groupby('season') %}
     {% for season_num, eps in seasons %}
-    <div class="season-block">
-        <div class="season-heading">
-            <i class="fas fa-folder-open"></i> Saison {{ season_num }}
-        </div>
-        <div class="episodes-grid-layout">
+    <div class="season-pane {% if not loop.first and seasons | length > 1 %}is-hidden{% endif %}" data-season-pane="{{ season_num }}">
+        <div class="episodes-grid-netflix">
             {% for ep in eps %}
-            <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}" class="episode-btn-card">
-                <span>{{ ep.title }}</span>
-                <i class="fas fa-play"></i>
+            {% set ep_num = ep.number if ep.number else loop.index %}
+            <a href="/regarder/{{ slug }}/ep-{{ ep.episode_id }}" class="episode-card-grid" data-episode-id="{{ ep.episode_id }}">
+                <div class="episode-grid-thumb">
+                    {% if film.image %}
+                    <img src="{{ film.image }}" alt="{{ ep.title }}" loading="lazy" class="episode-grid-thumb-img">
+                    {% endif %}
+                    <div class="episode-grid-thumb-overlay"></div>
+                    <span class="episode-grid-num-badge">{% if ep_num|string|length == 1 %}0{{ ep_num }}{% else %}{{ ep_num }}{% endif %}</span>
+                    {% if film.version %}
+                    <span class="episode-grid-version-badge">{{ film.version }}</span>
+                    {% endif %}
+                    <div class="episode-grid-play-btn"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="episode-grid-content">
+                    <span class="episode-grid-title" title="{{ ep.title }}">{{ ep.title }}</span>
+                    <span class="episode-watched-badge hidden" title="Déjà vu"><i class="fas fa-check"></i></span>
+                </div>
             </a>
             {% endfor %}
         </div>
@@ -228,6 +248,51 @@
             }
         });
     }
+
+    // Season tabs switching
+    const seasonTabs = document.querySelectorAll('.season-tab-btn');
+    const seasonPanes = document.querySelectorAll('[data-season-pane]');
+    if (seasonTabs.length > 0) {
+        seasonTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.targetSeason;
+                seasonTabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                });
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+
+                seasonPanes.forEach(pane => {
+                    if (pane.dataset.seasonPane === target) {
+                        pane.classList.remove('is-hidden');
+                    } else {
+                        pane.classList.add('is-hidden');
+                    }
+                });
+            });
+        });
+    }
+
+    // Historique de visionnage pour marquer les épisodes déjà vus
+    try {
+        if (window.NokaTVHistory) {
+            const history = window.NokaTVHistory.get() || [];
+            const watchedIds = new Set(
+                history.filter(h => h.slug === "{{ slug }}" && h.episode_id).map(h => String(h.episode_id))
+            );
+            if (watchedIds.size > 0) {
+                document.querySelectorAll('.episode-card-grid').forEach(row => {
+                    const epId = String(row.dataset.episodeId || '');
+                    if (watchedIds.has(epId)) {
+                        row.classList.add('is-watched');
+                        const badge = row.querySelector('.episode-watched-badge');
+                        if (badge) badge.classList.remove('hidden');
+                    }
+                });
+            }
+        }
+    } catch(e) {}
 })();
 </script>
 {% endblock %}

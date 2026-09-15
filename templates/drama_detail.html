@@ -67,15 +67,29 @@
 <!-- 2. LISTE DES ÉPISODES DU DRAMA -->
 {% if drama.episodes %}
 <section class="episodes-section-block">
-    <div class="section-header">
+    <div class="episodes-header-bar">
         <h2 class="section-title">Épisodes Disponibles ({{ drama.episodes | length }})</h2>
     </div>
 
-    <div class="episodes-grid-layout">
+    <div class="episodes-grid-netflix">
         {% for ep in drama.episodes %}
-        <a href="/regarder-drama/{{ slug }}/{{ ep.episode_id }}" class="episode-btn-card">
-            <span>{{ ep.title }}</span>
-            <i class="fas fa-play"></i>
+        {% set ep_num = ep.number if ep.number else loop.index %}
+        <a href="/regarder-drama/{{ slug }}/{{ ep.episode_id }}" class="episode-card-grid" data-episode-id="{{ ep.episode_id }}">
+            <div class="episode-grid-thumb">
+                {% if drama.image %}
+                <img src="{{ drama.image }}" alt="{{ ep.title }}" loading="lazy" class="episode-grid-thumb-img">
+                {% endif %}
+                <div class="episode-grid-thumb-overlay"></div>
+                <span class="episode-grid-num-badge">{% if ep_num|string|length == 1 %}0{{ ep_num }}{% else %}{{ ep_num }}{% endif %}</span>
+                {% if ep.version or drama.version %}
+                <span class="episode-grid-version-badge">{{ ep.version or drama.version }}</span>
+                {% endif %}
+                <div class="episode-grid-play-btn"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="episode-grid-content">
+                <span class="episode-grid-title" title="{{ ep.title }}">{{ ep.title }}</span>
+                <span class="episode-watched-badge hidden" title="Déjà vu"><i class="fas fa-check"></i></span>
+            </div>
         </a>
         {% endfor %}
     </div>
@@ -169,6 +183,26 @@
             }
         });
     }
+
+    // Historique de visionnage pour marquer les épisodes déjà vus
+    try {
+        if (window.NokaTVHistory) {
+            const history = window.NokaTVHistory.get() || [];
+            const watchedIds = new Set(
+                history.filter(h => h.slug === "{{ slug }}" && h.episode_id).map(h => String(h.episode_id))
+            );
+            if (watchedIds.size > 0) {
+                document.querySelectorAll('.episode-card-grid').forEach(row => {
+                    const epId = String(row.dataset.episodeId || '');
+                    if (watchedIds.has(epId)) {
+                        row.classList.add('is-watched');
+                        const badge = row.querySelector('.episode-watched-badge');
+                        if (badge) badge.classList.remove('hidden');
+                    }
+                });
+            }
+        }
+    } catch(e) {}
 })();
 </script>
 {% endblock %}

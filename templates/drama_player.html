@@ -89,12 +89,33 @@
     <!-- 4. PLAYLIST DES ÉPISODES DU DRAMA -->
     {% if episodes %}
     <div class="player-playlist-box">
-        <h2 class="playlist-heading"><i class="fas fa-list-ol"></i> Tous les épisodes du drama</h2>
-        <div class="playlist-rail">
+        <div class="player-playlist-header">
+            <h2 class="playlist-heading"><i class="fas fa-list-ol"></i> Épisodes ({{ episodes | length }})</h2>
+            <div class="playlist-scroll-controls">
+                <button type="button" class="playlist-arrow-btn" id="playlist-scroll-prev" aria-label="Précédent"><i class="fas fa-chevron-left"></i></button>
+                <button type="button" class="playlist-arrow-btn" id="playlist-scroll-next" aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+        <div class="playlist-rail" id="playlist-rail">
             {% for ep in episodes %}
+            {% set is_active = (ep.episode_id|string == episode_slug|string) %}
+            {% set ep_num = ep.number if ep.number else loop.index %}
             <a href="/regarder-drama/{{ slug }}/{{ ep.episode_id }}"
-               class="playlist-ep-chip {% if ep.episode_id|string == episode_slug|string %}active{% endif %}">
-                {{ ep.title }}
+               class="player-ep-card {% if is_active %}active{% endif %}"
+               title="{{ ep.title }}">
+                <div class="player-ep-thumb">
+                    {% if drama.image %}
+                    <img src="{{ drama.image }}" alt="{{ ep.title }}" loading="lazy">
+                    {% endif %}
+                    <div class="player-ep-thumb-overlay"></div>
+                    <span class="player-ep-num-badge">{% if ep_num|string|length == 1 %}0{{ ep_num }}{% else %}{{ ep_num }}{% endif %}</span>
+                    {% if is_active %}
+                    <span class="player-ep-active-badge"><i class="fas fa-play"></i> En lecture</span>
+                    {% else %}
+                    <div class="player-ep-play-btn"><i class="fas fa-play"></i></div>
+                    {% endif %}
+                </div>
+                <div class="player-ep-title-bar">{{ ep.title }}</div>
             </a>
             {% endfor %}
         </div>
@@ -170,6 +191,21 @@
             url: window.location.pathname,
             type: "drama"
         });
+    }
+
+    // Auto-scroll sur l'épisode actif dans la playlist du lecteur
+    const activeEp = document.querySelector('.player-ep-card.active');
+    const playlistRail = document.getElementById('playlist-rail');
+    if (activeEp && playlistRail) {
+        setTimeout(() => {
+            activeEp.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }, 250);
+    }
+    const prevBtn = document.getElementById('playlist-scroll-prev');
+    const nextBtn = document.getElementById('playlist-scroll-next');
+    if (prevBtn && nextBtn && playlistRail) {
+        prevBtn.addEventListener('click', () => playlistRail.scrollBy({ left: -280, behavior: 'smooth' }));
+        nextBtn.addEventListener('click', () => playlistRail.scrollBy({ left: 280, behavior: 'smooth' }));
     }
 })();
 </script>
