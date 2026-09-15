@@ -31,7 +31,7 @@ def test_successful_publish(monkeypatch):
     fake_resp.__exit__.return_value = None
 
     with patch("urllib.request.urlopen", return_value=fake_resp):
-        ok, msg = publish_url_to_google("https://nokatv.xyz/film/the-last-sunrise-vf")
+        ok, msg = publish_url_to_google("https://nokatv.xyz/film/lodyssee-vf")
         assert ok is True
         assert "Google notifié avec succès" in msg
 

@@ -53,7 +53,7 @@ def test_payload_envoye_respecte_le_protocole(monkeypatch):
 
     async def scenario():
         return await submit_urls(
-            ["https://nokatv.xyz/film/the-last-sunrise-vf"],
+            ["https://nokatv.xyz/film/lodyssee-vf"],
             site_url="https://nokatv.xyz",
         )
 
@@ -64,4 +64,4 @@ def test_payload_envoye_respecte_le_protocole(monkeypatch):
     assert payload["host"] == "nokatv.xyz"
     assert payload["key"] == "cle-de-test"
     assert payload["keyLocation"] == "https://nokatv.xyz/cle-de-test.txt"
-    assert payload["urlList"] == ["https://nokatv.xyz/film/the-last-sunrise-vf"]
+    assert payload["urlList"] == ["https://nokatv.xyz/film/lodyssee-vf"]

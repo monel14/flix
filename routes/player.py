@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from cache import DETAIL_TTL, PLAYER_TTL, cache
+from services.blocklist import is_blocked
 from services.seo import page_seo
 from routes.detail import load_detail
 from scraper.coflix_client import CoflixFetchError, CoflixNotFoundError, coflix_get_json
@@ -27,6 +28,11 @@ async def _load_servers(episode_id: str) -> list:
 @router.get("/regarder/{slug}/ep-{episode_id}", response_class=HTMLResponse)
 async def player(request: Request, slug: str, episode_id: str) -> HTMLResponse:
     """Page lecteur pour un épisode/film donné."""
+    # DMCA hard block - 404 (mêmes slugs que /film/, cohérence compliance)
+    if is_blocked(slug):
+        logger.warning("DMCA blocked slug accessed on player: %s", slug)
+        raise HTTPException(status_code=404, detail="Contenu retiré suite à demande DMCA")
+
     # Charger les détails du film/série (depuis le cache si dispo)
     try:
         film = await cache.get_or_set(

@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from cache import DETAIL_TTL, HOME_TTL, PLAYER_TTL, cache
+from services.blocklist import is_blocked
 from services.dedup import canonical_path_for, should_redirect_to_preferred, version_label
 from services.genre_seo import get_genre_seo
 from services.related import get_similar_items
@@ -256,6 +257,11 @@ async def dramas_list(request: Request, page: int = Query(default=1, ge=1), genr
 
 @router.get("/drama/{slug}", response_class=HTMLResponse)
 async def drama_detail(request: Request, slug: str) -> HTMLResponse:
+    # DMCA hard block - 404 (mêmes slugs que /film/, cohérence compliance)
+    if is_blocked(slug):
+        logger.warning("DMCA blocked slug accessed: %s", slug)
+        raise HTTPException(status_code=404, detail="Contenu retiré suite à demande DMCA")
+
     known = _known_paths()
     redirect_path = should_redirect_to_preferred(slug, "/drama/", known)
     if redirect_path:
@@ -289,6 +295,11 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
 
 @router.get("/regarder-drama/{slug}/{episode_slug}", response_class=HTMLResponse)
 async def drama_player(request: Request, slug: str, episode_slug: str) -> HTMLResponse:
+    # DMCA hard block - 404 (mêmes slugs que /film/, cohérence compliance)
+    if is_blocked(slug):
+        logger.warning("DMCA blocked slug accessed on player: %s", slug)
+        raise HTTPException(status_code=404, detail="Contenu retiré suite à demande DMCA")
+
     try:
         drama = await cache.get_or_set(f"detail:drama:{slug}", DETAIL_TTL, lambda: _load_drama_detail(slug))
     except VoirdramaNotFoundError:

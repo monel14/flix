@@ -1,11 +1,17 @@
 """Blocklist DMCA + Watchlist Amazon - anticipation.
 
-- BLOCKED_SLUGS: hard 404 (DMCA déjà reçu)
+- BLOCKED_SLUGS: hard 404 (DMCA déjà reçu, URL nokatv.xyz nommée dans la notice)
   - Lumen 95976390 (07/09/2026) Claim 49 Butterfly -> nokatv.xyz 1 URL
   - Lumen 95726417 (04/09/2026) Claim 20 Balls Up -> nokatv.xyz 1 URL
+  - Lumen 96775472 (14/09/2026) Claim 11 Over Your Dead Body -> nokatv.xyz 1 URL
+  - Lumen 96775472 (14/09/2026) Claim 25 The Last Sunrise -> www.nokatv.xyz 1 URL (ex-TOP 1 trafic, règle "DMCA direct -> 404")
+  - Lumen 96775472 (14/09/2026) Claim 51 Une Famille de Bâtards -> www.nokatv.xyz 1 URL
+  - Lumen 96775526 (14/09/2026) Claim 27 Pillion (A24 Distribution LLC) -> www.nokatv.xyz 1 URL
 - AMAZON_RISKY: soft noindex + exclusion sitemap (anticipation 100+ titres)
   - Marketly LLC / Amazon Content Services LLC
   - Sources: https://lumendatabase.org/notices/95976390 + https://lumendatabase.org/notices/95726417
+             + https://lumendatabase.org/notices/96775472 (nouveaux titres Amazon 14/09/2026)
+  - Note: notice A24 (96775526) ne vise nokatv.xyz QUE sur Pillion -> pas de watchlist A24 (décision 15/09/2026)
 
 Stratégie:
 - is_blocked() -> 404 dur (compliance DMCA)
@@ -30,6 +36,26 @@ BLOCKED_SLUGS = {
     "balls-up-mettez-le-paquet",
     "balls-up-vf",
     "balls-up-vostfr",
+    # --- Lumen 96775472 (Amazon Content Services LLC, ~14/09/2026) ---
+    # Claim 11 - Over Your Dead Body - nokatv.xyz 1 URL
+    # GSC: 0 clic / 16 imp - page over-your-dead-body-vostfr (était en soft noindex, escalade -> 404)
+    "over-your-dead-body",
+    # Claim 18 - Crime 101 - www.nokatv.xyz 1 URL
+    # GSC: 0 clic / 15 imp - page crime-101-vf (était en soft noindex, escalade -> 404)
+    "crime-101",
+    # Claim 25 - The Last Sunrise - www.nokatv.xyz 1 URL
+    # Ex-TOP 1 trafic (84 clics période 18-31/08, 7 clics / 26 imp 06-13/09)
+    # Règle pré-déclarée Option B: "Si DMCA direct nokatv.xyz -> passage 404" - appliquée le 15/09/2026
+    "the-last-sunrise",
+    "last-sunrise",
+    # Claim 51 - Une Famille de Bâtards - www.nokatv.xyz 1 URL
+    # GSC: 0 clic / 32 imp - page une-famille-de-batards-french (était en soft noindex, escalade -> 404)
+    "une-famille-de-batards",
+    "famille-de-batards",
+    # --- Lumen 96775526 (A24 Distribution LLC, ~14/09/2026) ---
+    # Claim 27 - Pillion - www.nokatv.xyz 1 URL (seul titre A24 visant nokatv.xyz, pas de watchlist A24)
+    # GSC: 0 clic / 4 imp - page pillion-vostfr
+    "pillion",
 }
 
 # === SOFT WATCHLIST - Titres Amazon des 2 notices Lumen ===
@@ -67,7 +93,7 @@ AMAZON_RISKY_EXACT = {
     "spider-noir",
     "the-devils-mouth",
     "devils-mouth",
-    "crime-101",
+    # "crime-101" -> déplacé vers BLOCKED_SLUGS (Lumen 96775472 Claim 18, DMCA direct)
     "the-mehta-boys",
     "mehta-boys",
     "glitter-and-greed-the-lisa-frank-story",
@@ -148,7 +174,7 @@ AMAZON_RISKY_EXACT = {
     "the-traitors-turkiye",
     "traitors-turkiye",
     "non-e-un-paese-per-single",
-    "over-your-dead-body",
+    # "over-your-dead-body" -> déplacé vers BLOCKED_SLUGS (Lumen 96775472 Claim 11, DMCA direct)
     "der-tiger",
     "countdown",
     "newtopia",
@@ -197,27 +223,43 @@ AMAZON_RISKY_EXACT = {
     "the-second-best-hospital-in-the-galaxy",
     "second-best-hospital-galaxy",
     "snake-killer",
-    "une-famille-de-batards",
-    "famille-de-batards",
+    # "une-famille-de-batards" / "famille-de-batards" -> déplacés vers BLOCKED_SLUGS (Lumen 96775472 Claim 51, DMCA direct)
+    # --- Lumen 96775472 (nouveaux titres Amazon 14/09/2026, hors doublons) ---
+    "the-silent-service",
+    "silent-service",
+    "dish-it-out",
+    "the-office",
+    "finding-harmony",
+    "finding-harmony-a-kings-vision",
+    "unstoppable-the-anthony-robles-story",
+    "anthony-robles",
+    "sweethearts",
+    "holland",
+    "lol-last-one-laughing-uk",
+    "last-one-laughing-uk",
+    "silver-dollar-road",
+    "in-your-dreams",
+    "the-assessment",
+    "on-call",
+    "the-chosen-in-the-wild-with-bear-grylls",
+    "the-chosen-in-the-wild",
+    "the-runner",
+    "a-tale-of-two-cities",
+    "tale-of-two-cities",
 }
 
-# High-traffic Amazon titles kept indexed (Option B) - monitor Lumen daily, 404 if DMCA direct
-AMAZON_MONITORED_KEEP_INDEXED = {
-    "the-last-sunrise",
-    "last-sunrise",
-}
+# High-traffic Amazon titles kept indexed (Option B) - VIDE depuis le 15/09/2026 :
+# the-last-sunrise a reçu un DMCA direct (Lumen 96775472 Claim 25) -> passé en BLOCKED_SLUGS.
+AMAZON_MONITORED_KEEP_INDEXED: set[str] = set()
 
 # Titres ultra génériques à matcher en EXACT seulement
 AMAZON_GENERIC_EXACT_ONLY = {
     "fear", "eden", "cross", "upload", "wildcat", "octopus",
     "etoile", "suga", "hedda", "honeymoon", "bat-fam", "merv",
-    "the-50", "borderlands", "undone"
-}
-
-# High-traffic Amazon titles kept indexed (Option B) - monitor Lumen daily, 404 if DMCA direct
-AMAZON_MONITORED_KEEP_INDEXED = {
-    "the-last-sunrise",
-    "last-sunrise",
+    "the-50", "borderlands", "undone",
+    # notice 96775472 (14/09/2026) : mots trop génériques pour du prefix-matching
+    "the-office", "holland", "sweethearts", "the-runner", "on-call",
+    "in-your-dreams", "anthony-robles",
 }
 
 # Prefix matching: titres spécifiques non génériques
