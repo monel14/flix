@@ -153,14 +153,14 @@ async def contact_page(request: Request):
 
 @app.get("/dmca", response_class=HTMLResponse)
 async def dmca_page(request: Request):
-    """Page DMCA - procédure de retrait, exigée après plainte du 07/09/2026 (Butterfly)."""
+    """Page DMCA - procédure de signalement et retrait de contenu."""
     return templates.TemplateResponse(request, "dmca.html", {
         "request": request,
         "contact_email": _contact_email(),
         "seo": page_seo(
             request,
-            title="DMCA - Retrait de contenu — NokaTV",
-            description="Procédure DMCA de NokaTV : signalement et retrait de contenu protégé, transparence Lumen.",
+            title="DMCA - Droits d'auteur & Retrait — NokaTV",
+            description="Procédure DMCA de NokaTV : signalement et retrait de contenu protégé par le droit d'auteur.",
             path="/dmca",
         ),
     })

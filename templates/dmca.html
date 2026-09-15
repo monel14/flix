@@ -1,45 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="content-section" style="max-width:800px;margin:0 auto;padding:24px">
-  <h1 class="section-title section-title--page">DMCA - Retrait de contenu</h1>
+  <h1 class="section-title section-title--page">DMCA — Droits d'auteur & Retrait</h1>
   
-  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:20px;margin-top:16px;line-height:1.7;color:var(--text-body)">
-    <p><strong>NokaTV</strong> est un agrégateur qui référence des contenus disponibles publiquement sur des sites tiers. Nous n'hébergeons aucune vidéo.</p>
-    
-    <h2 style="margin-top:20px;font-size:1.1rem">Procédure de retrait (DMCA)</h2>
-    <p style="margin-top:8px">Si vous êtes titulaire de droits et constatez qu'une fiche référence un contenu vous appartenant, contactez-nous à:</p>
-    <p style="margin-top:8px"><strong>Email:</strong> <a href="mailto:contact@nokatv.xyz" style="color:var(--brand-hover);text-decoration:underline">contact@nokatv.xyz</a> (ou {{ contact_email }})</p>
-    <p style="margin-top:8px">Objet: <code>DMCA - Retrait [titre]</code></p>
-    
-    <h3 style="margin-top:16px;font-size:.95rem">Informations requises:</h3>
-    <ul style="margin-top:8px;padding-left:20px;list-style:disc">
-      <li>URL exacte sur NokaTV (ex: https://nokatv.xyz/film/xxx)</li>
-      <li>Preuve de titularité des droits</li>
-      <li>Vos coordonnées</li>
-    </ul>
-    
-    <p style="margin-top:12px">Nous retirons le contenu sous 24-48h et le plaçons en blocklist (404 + exclusion sitemap).</p>
-    
-    <h2 style="margin-top:20px;font-size:1.1rem">Contenus déjà retirés</h2>
-    <p style="margin-top:8px;color:var(--text-muted);font-size:.85rem">Suite à 2 notifications Marketly LLC / Amazon Content Services LLC, les URLs suivantes retournent désormais 404:</p>
-    <ul style="margin-top:8px;padding-left:20px;list-style:disc;color:var(--text-muted);font-size:.85rem">
-      <li><strong>07/09/2026 - Butterfly</strong> (Lumen 95976390 Claim 49/100): /film/butterfly-saison-1-vostfr + variantes (butterfly, butterfly-vf, butterfly-vostfr, butterfly-saison-1) - 0 clic / 12 imp GSC</li>
-      <li><strong>04/09/2026 - Balls Up</strong> (Lumen 95726417 Claim 20/100): /film/balls-up-mettez-le-paquet-vf + variantes (balls-up, balls-up-vf) - 1 clic / 13 imp GSC</li>
-    </ul>
-    <p style="margin-top:8px;font-size:.8rem">Réf Lumen: <a href="https://lumendatabase.org/notices/95976390" target="_blank" style="text-decoration:underline">95976390 - Butterfly</a> et <a href="https://lumendatabase.org/notices/95726417" target="_blank" style="text-decoration:underline">95726417 - Balls Up</a></p>
-    <p style="margin-top:8px;font-size:.8rem;color:var(--text-muted)">Action: blocklist + 404 + exclusion sitemap. Pas de contre-notification sans droits (risque parjure).</p>
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:24px;margin-top:16px;line-height:1.7;color:var(--text-body)">
+    <p><strong>NokaTV</strong> est un agrégateur qui référence des liens hypertextes vers des contenus hébergés sur des plateformes tierces et publiques. Aucun fichier multimédia n'est hébergé ou stocké sur nos serveurs.</p>
 
-    <h2 style="margin-top:20px;font-size:1.1rem">Mesures préventives - Titres Amazon (Option B)</h2>
-    <p style="margin-top:8px;color:var(--text-muted);font-size:.85rem">Suite à l'analyse des 2 notices complets (100+100 claims Amazon), NokaTV a placé en <strong>watchlist préventive</strong> les autres titres Amazon listés par Marketly LLC. <strong>Option B appliquée le 09/09/2026</strong> après sync avec origin/master 3226191:</p>
-    <ul style="margin-top:8px;padding-left:20px;list-style:disc;color:var(--text-muted);font-size:.8rem">
-      <li><strong>Top trafic gardé indexé (monitoré):</strong> The Last Sunrise (84 clics / 252 imp - page #1 du site - Amazon MGM Studios 2026) - <em>reste indexé car pas de DMCA direct nokatv.xyz dans Lumen 95726417/95976390, mais surveillance quotidienne Lumen. Si DMCA direct → passage 404 en 5 min.</em></li>
-      <li><strong>Soft noindex + hors sitemap:</strong> The Boys, Reacher, Fallout, Rings of Power, Invincible, Gen V, Citadel, Over Your Dead Body (44 imp), etc. - 120+ slugs</li>
-      <li><strong>Hard 404:</strong> Butterfly + Balls Up (2 DMCA directs nokatv.xyz)</li>
-    </ul>
-    <p style="margin-top:8px;font-size:.8rem;color:var(--text-muted)">Implé: <code>AMAZON_RISKY_EXACT</code> (120 slugs) + <code>AMAZON_MONITORED_KEEP_INDEXED</code> (The Last Sunrise) + <code>AMAZON_RISKY_PREFIXES</code>. Titres génériques (fear, eden, cross...) en exact-only.</p>
+    <h2 style="margin-top:24px;font-size:1.15rem;color:var(--text-heading)">Procédure de signalement (DMCA)</h2>
+    <p style="margin-top:8px">Nous respectons scrupuleusement les droits de propriété intellectuelle. Si vous êtes titulaire de droits d'auteur ou mandataire légal et que vous constatez qu'un lien renvoie vers un contenu non autorisé, vous pouvez nous transmettre une notification de retrait à l'adresse suivante :</p>
     
-    <h2 style="margin-top:20px;font-size:1.1rem">Transparence</h2>
-    <p style="margin-top:8px;font-size:.9rem">Toutes les demandes légales de suppression reçues via Google sont publiées (anonymisées) sur Lumen Database conformément à la politique Google.</p>
+    <p style="margin-top:12px">
+      <strong>Email de contact :</strong> 
+      <a href="mailto:{{ contact_email or 'contact@nokatv.xyz' }}" style="color:var(--brand-hover);text-decoration:underline">{{ contact_email or 'contact@nokatv.xyz' }}</a>
+    </p>
+
+    <h3 style="margin-top:20px;font-size:1rem;color:var(--text-heading)">Éléments à inclure dans votre demande :</h3>
+    <ul style="margin-top:8px;padding-left:20px;list-style:disc">
+      <li>L'identification claire de l'œuvre protégée par le droit d'auteur.</li>
+      <li>L'URL exacte de la page sur NokaTV contenant le lien contesté (ex : <code>https://nokatv.xyz/film/...</code>).</li>
+      <li>Une preuve attestant que vous êtes le titulaire des droits ou habilité à agir en son nom.</li>
+      <li>Vos coordonnées de contact (nom, adresse postale, numéro de téléphone et adresse email).</li>
+      <li>Une déclaration sur l'honneur indiquant que l'utilisation du contenu contesté n'est pas autorisée par le titulaire des droits, son mandataire ou la loi.</li>
+    </ul>
+
+    <h2 style="margin-top:24px;font-size:1.15rem;color:var(--text-heading)">Délai de traitement</h2>
+    <p style="margin-top:8px">Dès réception d'une notification valide et complète, nous procédons à la suppression des liens incriminés dans un délai de <strong>24 à 48 heures</strong>.</p>
   </div>
 </section>
 {% endblock %}
