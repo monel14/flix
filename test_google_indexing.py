@@ -2,6 +2,15 @@
 from __future__ import annotations
 
 from unittest.mock import patch, MagicMock
+import pytest
+
+try:
+    import jwt
+except ImportError:
+    jwt = None
+
+pytestmark = pytest.mark.skipif(jwt is None, reason="PyJWT non disponible")
+
 from services import google_indexing
 from services.google_indexing import publish_url_to_google, publish_urls_to_google
 

@@ -5,3 +5,5 @@ beautifulsoup4==4.12.3
 python-dotenv==1.0.1
 jinja2==3.1.4
 a2wsgi==1.10.10
+PyJWT[crypto]>=2.8.0
+cryptography>=41.0.0

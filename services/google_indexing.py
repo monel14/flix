@@ -18,7 +18,10 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-import jwt
+try:
+    import jwt
+except ImportError:
+    jwt = None
 
 logger = logging.getLogger("coflix.google_indexing")
 
@@ -40,6 +43,10 @@ def _get_access_token() -> str | None:
     now = time.time()
     if _token_cache["token"] and _token_cache["expires_at"] > now + 60:
         return str(_token_cache["token"])
+
+    if jwt is None:
+        logger.warning("Bibliothèque PyJWT non installée. Exécutez: pip install 'PyJWT[crypto]'")
+        return None
 
     if not os.path.exists(CREDENTIALS_PATH):
         logger.warning("Fichier de clés Google introuvable : %s", CREDENTIALS_PATH)
