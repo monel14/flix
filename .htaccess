@@ -1,0 +1,21 @@
+# ----------------------------------------------------------------------
+# Sécurité NokaTV : Protection contre l'exposition de données sensibles
+# ----------------------------------------------------------------------
+
+# 1. Désactiver le listing de répertoires
+Options -Indexes
+
+RewriteEngine On
+
+# 2. Bloquer immédiatement l'accès au dossier .git et fichiers cachés
+# (Tout en autorisant .well-known pour le renouvellement des certificats SSL)
+RewriteCond %{REQUEST_URI} !^/\.well-known/
+RewriteRule (^|/)\. - [F,L]
+
+# 3. Bloquer l'accès aux dossiers de code interne
+RewriteRule ^(routes|scraper|scripts|services|templates|__pycache__)/ - [F,L]
+
+# 4. Bloquer l'accès aux fichiers critiques par extension ou nom
+<FilesMatch "(^\..*|service_account\.json|\.(db|sqlite|sqlite3|py|pyc|env|sh|log))$">
+    Require all denied
+</FilesMatch>

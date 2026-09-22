@@ -211,8 +211,18 @@ async def canonical_domain_redirect(request: Request, call_next):
     Exclut /api/image-proxy et health checks pour éviter boucles.
     Merge HEAD + origin/master: garde bypass localhost/test + SITE_URL logic.
     """
-    # Ne pas interférer avec image-proxy et fichiers statiques
     path = request.url.path
+    # Sécurité critique : bloquer immédiatement toute tentative d'accès à .git, .env ou fichiers sensibles
+    if (
+        path.startswith("/.git")
+        or path.startswith("/.env")
+        or "/.git/" in path
+        or path.endswith((".py", ".db", ".sqlite", ".sqlite3", ".env"))
+        or path in ("/service_account.json", "/.gitignore")
+    ):
+        return Response(status_code=404)
+
+    # Ne pas interférer avec image-proxy et fichiers statiques
     if path.startswith("/static/") or path.startswith("/api/image-proxy") or path == "/sw.js":
         return await call_next(request)
 
