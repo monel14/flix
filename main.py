@@ -221,29 +221,78 @@ async def canonical_domain_redirect(request: Request, call_next):
     if any(local in host for local in ("localhost", "127.0.0.1", "0.0.0.0", "testserver")):
         return await call_next(request)
 
+    raw_host = host.split(":")[0].strip().lower()
+    scheme = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").lower()
+
     configured = (os.getenv("SITE_URL") or "").strip().rstrip("/")
     if configured:
         try:
-            from urllib.parse import urlparse
-            parsed = urlparse(configured)
-            canonical_host = parsed.netloc
+            parsed = urllib.parse.urlparse(configured)
+            canonical_host = (parsed.netloc or "").split(":")[0].strip().lower()
             canonical_scheme = parsed.scheme or "https"
         except Exception:
             canonical_host = None
             canonical_scheme = "https"
-        scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
-        if canonical_host and (host != canonical_host or scheme != canonical_scheme):
+
+        if canonical_host:
+            # Domaine racine (ex: nokatv.xyz)
+            apex_domain = canonical_host[4:] if canonical_host.startswith("www.") else canonical_host
+
+            # Domaines liés/miroirs supplémentaires déclarés via variable d'environnement (séparés par virgule)
+            extra_linked = {
+                d.strip().lower()
+                for d in os.getenv("ALLOWED_DOMAINS", os.getenv("ALLOWED_MIRRORS", "")).split(",")
+                if d.strip()
+            }
+
+            # 1. Domaine principal apex (ex: nokatv.xyz)
+            if raw_host == apex_domain:
+                if scheme != canonical_scheme:
+                    url = f"{canonical_scheme}://{apex_domain}{request.url.path}"
+                    if request.url.query:
+                        url += f"?{request.url.query}"
+                    return RedirectResponse(url, status_code=301)
+                return await call_next(request)
+
+            # 2. www du domaine principal -> redirige 301 vers le domaine principal pour préserver le SEO
+            if raw_host == f"www.{apex_domain}":
+                url = f"{canonical_scheme}://{apex_domain}{request.url.path}"
+                if request.url.query:
+                    url += f"?{request.url.query}"
+                return RedirectResponse(url, status_code=301)
+
+            # 3. Tous les sous-domaines liés (ex: ww1.nokatv.xyz, ww2.nokatv.xyz, ...)
+            #    ou domaines supplémentaires autorisés
+            is_subdomain = raw_host.endswith(f".{apex_domain}")
+            is_extra_domain = raw_host in extra_linked or any(raw_host.endswith(f".{d}") for d in extra_linked)
+
+            if is_subdomain or is_extra_domain:
+                target_host = raw_host
+                # Supprimer www. devant un sous-domaine (ex: www.ww1.nokatv.xyz -> ww1.nokatv.xyz)
+                if target_host.startswith("www."):
+                    target_host = target_host[4:]
+
+                # Forcer HTTPS sur ce sous-domaine si besoin
+                if scheme != "https" or target_host != raw_host:
+                    url = f"https://{target_host}{request.url.path}"
+                    if request.url.query:
+                        url += f"?{request.url.query}"
+                    return RedirectResponse(url, status_code=301)
+
+                # Servi directement par l'application principale !
+                return await call_next(request)
+
+            # 4. Hôte inconnu / externe -> redirection 301 vers l'URL officielle
             url = f"{configured}{request.url.path}"
             if request.url.query:
                 url += f"?{request.url.query}"
             return RedirectResponse(url, status_code=301)
     else:
-        scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
         should_redirect = False
-        new_host = host
+        new_host = raw_host
         new_scheme = scheme
-        if host.startswith("www."):
-            new_host = host[4:]
+        if raw_host.startswith("www."):
+            new_host = raw_host[4:]
             should_redirect = True
         if scheme == "http":
             new_scheme = "https"

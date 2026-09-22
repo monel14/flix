@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import re
+import urllib.parse
 from dataclasses import dataclass, field
 
 from fastapi import Request
@@ -34,7 +35,7 @@ DEFAULT_OG_DESCRIPTION = (
 )
 DEFAULT_TWITTER_TITLE = "NokaTV — Streaming Gratuit HD"
 DEFAULT_TWITTER_DESCRIPTION = "Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR."
-DEFAULT_IMAGE = "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1200"
+DEFAULT_IMAGE = "/static/og-banner.jpg"
 
 _DESCRIPTION_MAX = 160
 
@@ -42,14 +43,47 @@ _DESCRIPTION_MAX = 160
 def site_origin(request: Request) -> str:
     """Origine publique du site, sans slash final.
 
-    Priorité : SITE_URL (configuration) > en-têtes de proxy > base_url.
+    - Si la requête arrive sur un sous-domaine lié (ex. ww1.nokatv.xyz, ww2.nokatv.xyz)
+      ou un domaine supplémentaire autorisé, l'origine de ce sous-domaine est retournée
+      pour que ses sitemaps, robots.txt et balises canonical soient cohérents et autonomes.
+    - Sinon (domaine principal ou requêtes internes/tests), SITE_URL est utilisé.
     """
-    configured = (os.getenv("SITE_URL") or "").strip()
-    if configured:
-        return configured.rstrip("/")
-    scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
-    host = request.headers.get("x-forwarded-host") or request.url.netloc
-    return f"{scheme}://{host}".rstrip("/")
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc or ""
+    raw_host = host.split(":")[0].strip().lower()
+
+    configured = (os.getenv("SITE_URL") or "").strip().rstrip("/")
+    if not configured:
+        scheme = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").lower()
+        return f"{scheme}://{raw_host}".rstrip("/")
+
+    # Tests locaux ou TestClient : conserver le fallback configuré
+    if not raw_host or any(local in raw_host for local in ("localhost", "127.0.0.1", "0.0.0.0", "testserver")):
+        return configured
+
+    try:
+        parsed = urllib.parse.urlparse(configured)
+        canonical_host = (parsed.netloc or "").split(":")[0].strip().lower()
+    except Exception:
+        canonical_host = ""
+
+    apex_domain = canonical_host[4:] if canonical_host.startswith("www.") else canonical_host
+
+    extra_linked = {
+        d.strip().lower()
+        for d in os.getenv("ALLOWED_DOMAINS", os.getenv("ALLOWED_MIRRORS", "")).split(",")
+        if d.strip()
+    }
+
+    is_subdomain = bool(apex_domain and raw_host.endswith(f".{apex_domain}") and raw_host != f"www.{apex_domain}")
+    is_extra = raw_host in extra_linked or any(raw_host.endswith(f".{d}") for d in extra_linked)
+
+    if is_subdomain or is_extra:
+        clean_host = raw_host[4:] if raw_host.startswith("www.") else raw_host
+        scheme = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").lower()
+        scheme = "https" if scheme in ("http", "https") else scheme
+        return f"{scheme}://{clean_host}"
+
+    return configured
 
 
 def make_absolute(request: Request, value: str) -> str:
@@ -159,7 +193,7 @@ def page_seo(
         title=title.strip() or DEFAULT_TITLE,
         description=_clip(description) or DEFAULT_DESCRIPTION,
         canonical=canonical,
-        image=make_absolute(request, image) or DEFAULT_IMAGE,
+        image=make_absolute(request, image or DEFAULT_IMAGE),
         og_title=(og_title or title).strip() or DEFAULT_OG_TITLE,
         og_description=_clip(description) or DEFAULT_OG_DESCRIPTION,
         twitter_title=(twitter_title or og_title or title).strip() or DEFAULT_TWITTER_TITLE,

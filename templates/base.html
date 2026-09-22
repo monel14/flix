@@ -67,7 +67,7 @@
     <meta property="og:site_name" content="NokaTV">
     <meta property="og:title" content="{{ seo.og_title if seo else 'NokaTV — Films, Séries, K-Dramas & Animés en Streaming HD' }}">
     <meta property="og:description" content="{{ seo.og_description if seo else 'Regardez des milliers de films, séries, K-Dramas et animés en streaming gratuit VF et VOSTFR sans coupure.' }}">
-    <meta property="og:image" content="{{ seo.image if seo else 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1200' }}">
+    <meta property="og:image" content="{{ seo.image if seo else 'https://nokatv.xyz/static/og-banner.jpg' }}">
     {% if seo %}
     <meta property="og:url" content="{{ seo.canonical }}">
     <meta property="og:type" content="{{ seo.og_type }}">
@@ -79,9 +79,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ seo.twitter_title if seo else 'NokaTV — Streaming Gratuit HD' }}">
     <meta name="twitter:description" content="{{ seo.twitter_description if seo else 'Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR.' }}">
-    {% if seo %}
-    <meta name="twitter:image" content="{{ seo.image }}">
-    {% endif %}
+    <meta name="twitter:image" content="{{ seo.image if seo else 'https://nokatv.xyz/static/og-banner.jpg' }}">
     {% if seo and seo.all_json_ld %}
     <!-- Données structurées (œuvre éventuelle + WebSite / BreadcrumbList / ItemList) -->
     {% for ld in seo.all_json_ld %}
