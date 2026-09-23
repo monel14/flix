@@ -232,7 +232,19 @@ async def canonical_domain_redirect(request: Request, call_next):
         return await call_next(request)
 
     raw_host = host.split(":")[0].strip().lower()
-    scheme = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").lower()
+
+    # Détection des en-têtes Cloudflare et reverse proxies (évite les boucles de redirection SSL)
+    is_behind_cf = bool(request.headers.get("cf-ray") or request.headers.get("cf-connecting-ip"))
+    cf_visitor = request.headers.get("cf-visitor", "")
+    if "https" in cf_visitor:
+        scheme = "https"
+    else:
+        scheme = (
+            request.headers.get("x-forwarded-proto")
+            or request.headers.get("x-forwarded-ssl")
+            or request.url.scheme
+            or "https"
+        ).split(",")[0].strip().lower()
 
     configured = (os.getenv("SITE_URL") or "").strip().rstrip("/")
     if configured:
@@ -257,6 +269,9 @@ async def canonical_domain_redirect(request: Request, call_next):
 
             # 1. Domaine principal apex (ex: nokatv.xyz)
             if raw_host == apex_domain:
+                # Si derrière Cloudflare, Cloudflare gère déjà le HTTPS : ne pas rediriger pour éviter boucle 301
+                if is_behind_cf:
+                    return await call_next(request)
                 if scheme != canonical_scheme:
                     url = f"{canonical_scheme}://{apex_domain}{request.url.path}"
                     if request.url.query:
@@ -282,8 +297,9 @@ async def canonical_domain_redirect(request: Request, call_next):
                 if target_host.startswith("www."):
                     target_host = target_host[4:]
 
-                # Forcer HTTPS sur ce sous-domaine si besoin
-                if scheme != "https" or target_host != raw_host:
+                # Forcer HTTPS sur ce sous-domaine uniquement hors Cloudflare pour éviter boucle
+                needs_redirect = (target_host != raw_host) or (not is_behind_cf and scheme != "https")
+                if needs_redirect:
                     url = f"https://{target_host}{request.url.path}"
                     if request.url.query:
                         url += f"?{request.url.query}"
