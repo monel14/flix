@@ -40,6 +40,20 @@ DEFAULT_IMAGE = "/static/og-banner.jpg"
 _DESCRIPTION_MAX = 160
 
 
+def _forwarded_scheme(request: Request) -> str:
+    """Schéma réel du client.
+
+    Derrière plusieurs proxies (Cloudflare + Passenger n0c), l'en-tête
+    X-Forwarded-Proto peut arriver multi-valeurs (« https, https ») : sans
+    nettoyage, l'origine devient « https, https://… » et corrompt sitemaps,
+    canonicals et robots.txt. On retient la première valeur valide.
+    """
+    raw = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip().lower()
+    if raw in ("http", "https"):
+        return raw
+    return request.url.scheme or "https"
+
+
 def site_origin(request: Request) -> str:
     """Origine publique du site, sans slash final.
 
@@ -53,7 +67,7 @@ def site_origin(request: Request) -> str:
 
     configured = (os.getenv("SITE_URL") or "").strip().rstrip("/")
     if not configured:
-        scheme = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").lower()
+        scheme = _forwarded_scheme(request)
         return f"{scheme}://{raw_host}".rstrip("/")
 
     # Tests locaux ou TestClient : conserver le fallback configuré
@@ -79,8 +93,7 @@ def site_origin(request: Request) -> str:
 
     if is_subdomain or is_extra:
         clean_host = raw_host[4:] if raw_host.startswith("www.") else raw_host
-        scheme = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").lower()
-        scheme = "https" if scheme in ("http", "https") else scheme
+        scheme = _forwarded_scheme(request)
         return f"{scheme}://{clean_host}"
 
     return configured
