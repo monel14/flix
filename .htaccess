@@ -1,11 +1,14 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/wtzjscfs/nokatv"
+PassengerBaseURI "/"
+PassengerPython "/home/wtzjscfs/virtualenv/nokatv/3.10/bin/python"
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
 # ----------------------------------------------------------------------
 # Sécurité NokaTV : Bloquer l'accès aux fichiers sensibles
 # ----------------------------------------------------------------------
-
-# Désactiver le listage des dossiers
 Options -Indexes
 
-# Bloquer strictement le dossier .git et les fichiers sensibles (renvoie 404)
 RedirectMatch 404 /\.git(/.*)?$
 RedirectMatch 404 /\.env$
 RedirectMatch 404 /service_account\.json$
