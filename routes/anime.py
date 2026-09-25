@@ -95,8 +95,9 @@ async def animes_list(request: Request, page: int = Query(default=1, ge=1), genr
     canon_params = []
     if genre:
         canon_params.append(f"genre={genre}")
-    if page > 1:
-        canon_params.append(f"page={page}")
+    # La pagination ne doit JAMAIS s'auto-canoniser : chaque ?page=N devenait
+    # une « nouvelle URL » pour Google (7 250 explorées-non-indexées en GSC).
+    # page >= 2 pointe vers la page 1 (avec genre le cas échéant).
     canon_path = request.url.path + (f"?{'&'.join(canon_params)}" if canon_params else "")
 
     return templates.TemplateResponse(request, "list.html", {
