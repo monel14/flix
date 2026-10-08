@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="content-section" style="max-width:980px;margin:0 auto;padding:24px 16px">
+
+  <div style="text-align:center;margin-bottom:28px">
+    <h1 class="section-title section-title--page" style="margin-bottom:8px">
+      Observatoire des Sites de Streaming en France (2026)
+    </h1>
+    <p style="color:var(--text-muted);max-width:680px;margin:0 auto;font-size:0.98rem;line-height:1.6">
+      État des lieux complet des adresses, blocages DNS de l'ARCOM et alternatives fonctionnelles suite aux ordonnances judiciaires de 2026.
+    </p>
+  </div>
+
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:24px;line-height:1.7;color:var(--text-body)">
+
+    <!-- Contexte ARCOM 2026 -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:8px;padding:18px;margin-bottom:24px">
+      <h2 style="margin:0 0 8px;font-size:1.15rem;color:var(--text-heading)">
+        <i class="fas fa-gavel" style="color:var(--brand-hover);margin-right:8px"></i> Pourquoi tant de sites ne marchent plus en 2026 ?
+      </h2>
+      <p style="margin:0 0 10px;font-size:0.95rem">
+        Depuis la mise en place du <strong>blocage automatisé en temps réel par l'ARCOM en mars 2026</strong> et les ordonnances du tribunal judiciaire de Paris (septembre 2026), plus de <strong>1 100 noms de domaine et miroirs</strong> ont été neutralisés directement chez Orange, SFR, Free et Bouygues Télécom.
+      </p>
+      <p style="margin:0;font-size:0.95rem">
+        Le dispositif de <em>blocage dynamique</em> permet désormais aux ayants droit d'ajouter de nouvelles adresses à la liste noire des FAI en quelques heures, sans repasser devant un juge. Les sites qui changent de domaine (v2, v3, .cam, .one) ont une durée de vie moyenne de quelques jours seulement.
+      </p>
+    </div>
+
+    <!-- Moteur de recherche et filtre des 90+ sites -->
+    <div style="margin:28px 0 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+        <h2 style="font-size:1.2rem;color:var(--text-heading);margin:0">
+          Annuaire des {{ sites|length }} sites répertoriés
+        </h2>
+        <div style="position:relative;min-width:240px;flex:1;max-width:320px">
+          <input type="text" id="site-search" placeholder="Rechercher un site (ex: Wiflix, Anime Sama…)"
+                 style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px 8px 34px;color:var(--text-heading);font-size:0.9rem;outline:none">
+          <i class="fas fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem"></i>
+        </div>
+      </div>
+
+      <!-- Filtres par catégorie -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="category-filters">
+        <button type="button" class="cat-filter-btn active" data-cat="all"
+                style="background:var(--brand-primary, #6366f1);color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:0.85rem;cursor:pointer;font-weight:500">
+          Tous ({{ sites|length }})
+        </button>
+        <button type="button" class="cat-filter-btn" data-cat="films-series"
+                style="background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 14px;font-size:0.85rem;cursor:pointer">
+          Films & Séries
+        </button>
+        <button type="button" class="cat-filter-btn" data-cat="animes"
+                style="background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 14px;font-size:0.85rem;cursor:pointer">
+          Animés & Manga
+        </button>
+        <button type="button" class="cat-filter-btn" data-cat="ddl-torrent"
+                style="background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 14px;font-size:0.85rem;cursor:pointer">
+          Téléchargement / Torrent
+        </button>
+        <button type="button" class="cat-filter-btn" data-cat="sport"
+                style="background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 14px;font-size:0.85rem;cursor:pointer">
+          Sport & Live
+        </button>
+      </div>
+
+      <!-- Grille des sites -->
+      <div id="sites-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px;margin-top:16px">
+        {% for s in sites %}
+        <a href="/alternative/{{ s.slug }}" class="site-card" data-name="{{ s.name|lower }}" data-cat="{{ s.category }}"
+           style="display:block;background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:8px;padding:14px;text-decoration:none;transition:border-color 0.15s, background 0.15s">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-weight:600;color:var(--text-heading);font-size:0.98rem">{{ s.name }}</span>
+            <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;{% if s.status_type == 'blocked' %}background:rgba(239,68,68,0.12);color:#f87171{% else %}background:rgba(245,158,11,0.12);color:#fbbf24{% endif %}">
+              {% if s.status_type == 'blocked' %}Bloqué FAI{% else %}Rotation DNS{% endif %}
+            </span>
+          </div>
+          <p style="margin:0;font-size:0.85rem;color:var(--text-muted);line-height:1.4">
+            {{ s.status }}
+          </p>
+        </a>
+        {% endfor %}
+      </div>
+      <p id="no-result" style="display:none;text-align:center;padding:32px;color:var(--text-muted)">
+        Aucun site trouvé pour cette recherche.
+      </p>
+    </div>
+
+    <!-- Alerte Sécurité -->
+    <div style="background:rgba(255,206,107,0.08);border:1px solid rgba(255,206,107,0.35);border-radius:8px;padding:16px;margin:28px 0 20px">
+      <p style="margin:0;color:var(--text-heading);font-weight:600">
+        <i class="fas fa-triangle-exclamation" style="color:#f59e0b;margin-right:6px"></i> Attention aux arnaques et faux miroirs
+      </p>
+      <p style="margin:6px 0 0;font-size:0.92rem">
+        Des dizaines de sites frauduleux imitent le nom de ces plateformes fermées pour piéger les internautes (abonnements cachés, rançongiciels, phishing). Ne saisissez <strong>jamais vos coordonnées bancaires</strong> sur un prétendu site de streaming gratuit.
+      </p>
+    </div>
+
+    <!-- Présentation NokaTV -->
+    <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">L'alternative streaming qui marche en 2026 : NokaTV</h2>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:8px;padding:20px;margin-top:14px">
+      <h3 style="margin:0 0 8px;font-size:1.05rem;color:var(--text-heading)">Accédez directement aux fiches et lecteurs</h3>
+      <p style="margin:0 0 16px;font-size:0.95rem">Catalogue complet en VF et VOSTFR, sans inscription obligatoire, lecteurs multi-sources mis à jour :</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px">
+        <a href="/films" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:10px 14px;color:var(--text-heading);text-decoration:none;font-weight:500">
+          <i class="fas fa-film" style="color:var(--brand-hover)"></i> Films
+        </a>
+        <a href="/series" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:10px 14px;color:var(--text-heading);text-decoration:none;font-weight:500">
+          <i class="fas fa-tv" style="color:var(--brand-hover)"></i> Séries
+        </a>
+        <a href="/animes" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:10px 14px;color:var(--text-heading);text-decoration:none;font-weight:500">
+          <i class="fas fa-dragon" style="color:var(--brand-hover)"></i> Animés
+        </a>
+        <a href="/dramas" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:10px 14px;color:var(--text-heading);text-decoration:none;font-weight:500">
+          <i class="fas fa-masks-theater" style="color:var(--brand-hover)"></i> K-Dramas
+        </a>
+      </div>
+    </div>
+
+    <!-- Alternatives Légales Gratuites -->
+    <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Les options 100 % légales et gratuites</h2>
+    <p style="margin-top:8px">Pour un visionnage sans aucun risque : <strong>France.tv</strong> (service public), <strong>Arte.tv</strong> (cinéma et documentaires), <strong>Pluto TV</strong> (chaînes thématiques gratuites), <strong>TF1+</strong>, <strong>M6+</strong>, <strong>Rakuten TV</strong> et <strong>Crunchyroll</strong> (animes en gratuit avec publicité).</p>
+
+    <!-- FAQ -->
+    <h2 style="margin-top:28px;font-size:1.15rem;color:var(--text-heading)">Questions fréquentes</h2>
+
+    <h3 style="margin-top:16px;font-size:1rem;color:var(--text-heading)">Ces sites vont-ils revenir ?</h3>
+    <p style="margin-top:8px">Les noms continuent d'exister sous de nouvelles adresses, mais avec le blocage automatisé de l'ARCOM, chaque adresse vit de quelques jours à quelques semaines. Attendre le retour d'un site bloqué n'est plus une stratégie viable en 2026.</p>
+
+    <h3 style="margin-top:16px;font-size:1rem;color:var(--text-heading)">Un VPN suffit-il ?</h3>
+    <p style="margin-top:8px">Un VPN contourne le blocage DNS, mais l'adresse utilisée reste instable et les faux sites pullulent. Pour un usage régulier, une alternative stable est plus confortable.</p>
+
+    <h3 style="margin-top:16px;font-size:1rem;color:var(--text-heading)">Est-ce risqué de regarder sur un site de streaming gratuit ?</h3>
+    <p style="margin-top:8px">En pratique, en France, les blocages visent les sites et non les spectateurs. Les vrais risques sont techniques : publicités malveillantes et faux sites. Utilisez un bloqueur de publicités et ne renseignez jamais de coordonnées bancaires.</p>
+
+    <p style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border-subtle);font-size:0.85rem;color:var(--text-body);opacity:0.75">
+      Page d'information indépendante sur l'état des sites de streaming — dernière vérification : octobre 2026. Les marques citées appartiennent à leurs propriétaires respectifs.
+    </p>
+  </div>
+</section>
+
+<!-- Script de filtrage instantané -->
+<script>
+(function() {
+  const input = document.getElementById('site-search');
+  const cards = document.querySelectorAll('.site-card');
+  const filterBtns = document.querySelectorAll('.cat-filter-btn');
+  const noResult = document.getElementById('no-result');
+  let currentCat = 'all';
+
+  function filterSites() {
+    const q = (input.value || '').trim().toLowerCase();
+    let visible = 0;
+    cards.forEach(card => {
+      const name = card.getAttribute('data-name') || '';
+      const cat = card.getAttribute('data-cat') || '';
+      const matchCat = (currentCat === 'all' || cat === currentCat);
+      const matchText = (!q || name.includes(q));
+      if (matchCat && matchText) {
+        card.style.display = 'block';
+        visible++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    if (noResult) {
+      noResult.style.display = visible === 0 ? 'block' : 'none';
+    }
+  }
+
+  if (input) {
+    input.addEventListener('input', filterSites);
+  }
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => {
+        b.style.background = 'rgba(255,255,255,0.04)';
+        b.style.color = 'var(--text-muted)';
+        b.style.border = '1px solid var(--border-subtle)';
+      });
+      btn.style.background = 'var(--brand-primary, #6366f1)';
+      btn.style.color = '#fff';
+      btn.style.border = 'none';
+      currentCat = btn.getAttribute('data-cat');
+      filterSites();
+    });
+  });
+})();
+</script>
+{% endblock %}

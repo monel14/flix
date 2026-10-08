@@ -128,7 +128,7 @@ async def film_detail(request: Request, slug: str):
                         ("Séries" if data.get("type") == "series" else "Films",
                          "/series" if data.get("type") == "series" else "/films")
                     ],
-                    noindex=risky,
+                    noindex=True,  # Stratégie 2026-10 « coque propre » : Google ne voit plus les fiches
                 ),
             })
     except (CoflixNotFoundError, CoflixFetchError):

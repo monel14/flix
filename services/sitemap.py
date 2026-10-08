@@ -1,13 +1,17 @@
-"""Inventaire d'URLs indexables pour le sitemap dynamique.
+"""Inventaire d'URLs indexables pour le sitemap dynamique (Stratégie 2026-10 « Coque propre »).
 
-Le SEO du site repose sur les fiches de contenu (long tail « regarder X en
-streaming ») : sans elles, le sitemap ne référençait que 6 pages statiques.
-
-Ce module collecte les slugs réels depuis les mêmes sources que les pages
-publiques (listes coflix / voirdrama / voiranime), en réutilisant le cache
-SQLite (TTL long : 12 h) pour ne jamais re-scaper sous la charge d'un crawler.
-Chaque source est indépendante : si l'une tombe, les autres alimentent quand
-même le sitemap (Stale-on-Error du cache en dernier recours).
+Objectif SEO :
+1. Protéger le nom de domaine contre les désindexations massives et les plaintes
+   DMCA Lumen sur les titres sous droit d'auteur.
+2. Concentrer 100% de la puissance SEO sur des pages d'information et d'actualité
+   saines et très recherchées :
+   - Le Hub observatoire `/alternative`
+   - Les 96 fiches ciblées `/alternative/{slug}` (réponse aux requêtes 'X ne marche plus')
+   - Les pages institutionnelles et de confiance E-E-A-T (/, mentions légales, DMCA).
+3. Toutes les fiches directes de films/séries/animes/dramas sont en `noindex` et
+   exclues du sitemap pour ne plus être associées aux signalements Google.
+4. L'ancien scraper de fiches (`_collect_all`) est conservé en sommeil dans ce fichier
+   pour permettre un éventuel retour arrière si la stratégie évolue.
 """
 from __future__ import annotations
 
@@ -37,7 +41,12 @@ SITEMAP_CACHE_KEY = "sitemap:paths"
 SITEMAP_VOIDRAMA_DRAMA_KEY = "sitemap:voirdrama_drama"
 SITEMAP_TTL = 12 * 3600  # 12 h — un sitemap n'a pas besoin d'être plus frais
 
-STATIC_PATHS = ["/", "/films", "/series", "/dramas", "/animes"]
+from services.alternatives_data import STREAMING_SITES
+
+# Stratégie 2026-10 « coque propre » : seul l'écosystème indexable sans risque
+# est exposé à Google — le Hub /alternative + toutes les fiches d'information
+# /alternative/{slug} (veille ARCOM 2026) + home + pages légales.
+STATIC_PATHS = ["/", "/alternative"] + [f"/alternative/{slug}" for slug in sorted(STREAMING_SITES.keys())]
 # Pages de confiance (E-E-A-T) : toujours disponibles, donc toujours listées.
 LEGAL_PATHS = ["/mentions-legales", "/contact", "/dmca"]
 BASE_PATHS = STATIC_PATHS + LEGAL_PATHS
@@ -218,5 +227,15 @@ async def _collect_all() -> list[str]:
 
 
 async def collect_sitemap_paths() -> list[str]:
-    """Chemins indexables (statiques + fiches), cachés 12 h via SQLite."""
-    return await cache.get_or_set(SITEMAP_CACHE_KEY, SITEMAP_TTL, _collect_all)
+    """Chemins indexables.
+
+    Stratégie 2026-10 « coque propre » : le sitemap ne déclare plus les fiches
+    de contenu (elles portent toutes un meta noindex et ne doivent plus être
+    associées au domaine dans l'index Google — plaintes DMCA Lumen
+    96775472/96775526). Seules la page /alternative, la home et les pages
+    légales restent déclarées.
+
+    La collecte scraper (`_collect_all`) est conservée mais dormante : elle
+    pourra être réactivée quand la confiance du domaine sera rétablie.
+    """
+    return sorted(BASE_PATHS)

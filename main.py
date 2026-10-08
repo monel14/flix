@@ -19,7 +19,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
 from services.indexnow import ensure_indexnow_key, indexnow_key
-from services.seo import page_seo, site_origin
+from services.alternatives_data import get_all_sites, get_site, get_sites_by_category
+from services.seo import breadcrumb_json_ld, faq_page_json_ld, page_seo, site_origin
 from services.sitemap import LEGAL_PATHS as LEGAL_SITEMAP_PATHS
 from services.sitemap import STATIC_PATHS as STATIC_SITEMAP_PATHS
 from services.sitemap import collect_sitemap_paths
@@ -162,6 +163,90 @@ async def dmca_page(request: Request):
             title="DMCA - Droits d'auteur & Retrait — NokaTV",
             description="Procédure DMCA de NokaTV : signalement et retrait de contenu protégé par le droit d'auteur.",
             path="/dmca",
+        ),
+    })
+
+
+@app.get("/alternative", response_class=HTMLResponse)
+async def alternative_page(request: Request):
+    """Observatoire des alternatives — Hub de veille ARCOM 2026.
+
+    Stratégie 2026-10 « coque propre » : page d'information institutionnelle
+    indexable répertoriant l'ensemble des sites bloqués et orientant vers
+    NokaTV et les services légaux.
+    """
+    faq_items = [
+        (
+            "Ces sites de streaming vont-ils revenir ?",
+            "Les noms continuent d'exister sous de nouvelles adresses, mais avec le blocage automatisé de l'ARCOM, chaque adresse vit de quelques jours à quelques semaines. Attendre le retour d'un site bloqué n'est plus une stratégie viable en 2026.",
+        ),
+        (
+            "Un VPN suffit-il pour accéder aux sites bloqués ?",
+            "Un VPN contourne le blocage DNS, mais l'adresse utilisée reste instable et les faux sites pullulent. Pour un usage régulier, une alternative stable est plus confortable.",
+        ),
+        (
+            "Est-ce risqué de regarder sur un site de streaming gratuit ?",
+            "En pratique, en France, les blocages visent les sites et non les spectateurs. Les vrais risques sont techniques : publicités malveillantes et faux sites. Utilisez un bloqueur de publicités et ne renseignez jamais de coordonnées bancaires.",
+        ),
+    ]
+    all_sites = get_all_sites()
+    return templates.TemplateResponse(request, "alternative.html", {
+        "request": request,
+        "sites": all_sites,
+        "seo": page_seo(
+            request,
+            title="Sites de streaming bloqués par l'ARCOM : état des lieux & alternatives (2026)",
+            description=f"Observatoire indépendant des {len(all_sites)} sites de streaming bloqués en France (Wiflix, French Stream, Anime Sama, Papadustream...). Solutions stables et alternatives gratuites 2026.",
+            path="/alternative",
+            extra_json_ld=[
+                faq_page_json_ld(faq_items),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative")]),
+            ],
+        ),
+    })
+
+
+@app.get("/alternative/{slug}", response_class=HTMLResponse)
+async def alternative_detail_page(request: Request, slug: str):
+    """Page dédiée à un site spécifique (SEO chirurgical sur 'X ne marche plus').
+
+    Générée dynamiquement pour chacun des 90+ sites répertoriés sans risque
+    de plainte DMCA (zéro player/flux sur ces pages).
+    """
+    site = get_site(slug)
+    if not site:
+        raise HTTPException(status_code=404, detail="Site non répertorié dans l'observatoire")
+
+    related_sites = [s for s in get_sites_by_category(site["category"]) if s["slug"] != slug][:8]
+
+    site_faq = [
+        (
+            f"Pourquoi {site['name']} est-il inaccessible ou bloqué ?",
+            f"{site['why_down']} Depuis mars 2026, l'ARCOM et le tribunal judiciaire de Paris imposent un blocage DNS dynamique auprès des quatre grands FAI (Orange, SFR, Free, Bouygues).",
+        ),
+        (
+            f"Quelle est la nouvelle adresse officielle de {site['name']} en 2026 ?",
+            f"Toute nouvelle adresse ou clone de {site['name']} est neutralisé en quelques jours par les opérateurs. La grande majorité des résultats Google actuels sont des faux sites miroirs piégés.",
+        ),
+        (
+            f"Existe-t-il une alternative stable à {site['name']} ?",
+            f"Oui. NokaTV propose un accès direct et gratuit au catalogue {site['target_label']} sans inscription obligatoire et sans publicité intrusive.",
+        ),
+    ]
+
+    return templates.TemplateResponse(request, "alternative_detail.html", {
+        "request": request,
+        "site": site,
+        "related_sites": related_sites,
+        "seo": page_seo(
+            request,
+            title=f"{site['name']} ne marche plus ? État du site & Alternatives (2026)",
+            description=f"{site['name']} est bloqué par l'ARCOM : état des lieux des adresses en octobre 2026, risques des faux miroirs et meilleures alternatives gratuites qui fonctionnent.",
+            path=f"/alternative/{slug}",
+            extra_json_ld=[
+                faq_page_json_ld(site_faq),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative"), (site["name"], f"/alternative/{slug}")]),
+            ],
         ),
     })
 
@@ -382,9 +467,16 @@ async def sitemap_xml(request: Request):
     ]
 
     for path in paths:
-        is_hub = path in STATIC_SITEMAP_PATHS
-        is_legal = path in LEGAL_SITEMAP_PATHS
-        priority = "0.9" if is_hub else ("0.3" if is_legal else ("0.8" if "?" in path else "0.7"))
+        if path == "/":
+            priority = "1.0"
+        elif path == "/alternative":
+            priority = "0.9"
+        elif path in LEGAL_SITEMAP_PATHS:
+            priority = "0.3"
+        elif path.startswith("/alternative/"):
+            priority = "0.8"
+        else:
+            priority = "0.7"
         loc = escape(base_url + path)
         if "?" in path:
             xml_lines.append(f"  <url><loc>{loc}</loc><priority>{priority}</priority></url>")

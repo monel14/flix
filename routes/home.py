@@ -271,6 +271,7 @@ async def movies_list(
                         title=seo_title,
                         description=seo_desc,
                         path=canon_path,
+                        noindex=True,  # Stratégie « coque propre » : listes hors index
                         extra_json_ld=[item_list_json_ld(
                             request,
                             [(it.get("title", ""), f"/film/{it.get('slug', '')}") for it in items if it.get("slug")],
@@ -348,6 +349,7 @@ async def series_list(
                         title=seo_title,
                         description=seo_desc,
                         path=canon_path,
+                        noindex=True,  # Stratégie « coque propre » : listes hors index
                         extra_json_ld=[item_list_json_ld(
                             request,
                             [(it.get("title", ""), f"/film/{it.get('slug', '')}") for it in items if it.get("slug")],

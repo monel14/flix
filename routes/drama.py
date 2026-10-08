@@ -253,7 +253,7 @@ async def dramas_list(request: Request, page: int = Query(default=1, ge=1), genr
         "current_sort": sort,
         "current_version": version or "all",
         "base_path": "/dramas",
-        "seo": page_seo(request, title=seo_title, description=seo_desc, path=canon_path, extra_json_ld=[item_list_json_ld(request, [(it.get("title", ""), f"/drama/{it.get('slug', '')}") for it in items if it.get("slug")])]),
+        "seo": page_seo(request, title=seo_title, description=seo_desc, path=canon_path, noindex=True, extra_json_ld=[item_list_json_ld(request, [(it.get("title", ""), f"/drama/{it.get('slug', '')}") for it in items if it.get("slug")])]),
     })
 
 @router.get("/drama/{slug}", response_class=HTMLResponse)
@@ -291,7 +291,16 @@ async def drama_detail(request: Request, slug: str) -> HTMLResponse:
         "drama": data,
         "slug": slug,
         "similar": similar,
-        "seo": content_seo(request, item=data, path=canonical_path, title_suffix="K-Drama en Streaming HD", kind_label="Drama en Streaming VOSTFR & VF", qualifiers=qualifiers, breadcrumbs=[("K-Dramas", "/dramas")]),
+        "seo": content_seo(
+            request,
+            item=data,
+            path=canonical_path,
+            title_suffix="K-Drama en Streaming HD",
+            kind_label="Drama en Streaming VOSTFR & VF",
+            qualifiers=qualifiers,
+            breadcrumbs=[("K-Dramas", "/dramas")],
+            noindex=True,  # Stratégie 2026-10 « coque propre » : fiches dramas hors index
+        ),
     })
 
 @router.get("/regarder-drama/{slug}/{episode_slug}", response_class=HTMLResponse)

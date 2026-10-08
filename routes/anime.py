@@ -114,7 +114,7 @@ async def animes_list(request: Request, page: int = Query(default=1, ge=1), genr
         "current_sort": sort,
         "current_version": version or "all",
         "base_path": "/animes",
-        "seo": page_seo(request, title=seo_title, description=seo_desc, path=canon_path, extra_json_ld=[item_list_json_ld(request, [(it.get("title", ""), f"/anime/{it.get('slug', '')}") for it in items if it.get("slug")])]),
+        "seo": page_seo(request, title=seo_title, description=seo_desc, path=canon_path, noindex=True, extra_json_ld=[item_list_json_ld(request, [(it.get("title", ""), f"/anime/{it.get('slug', '')}") for it in items if it.get("slug")])]),
     })
 
 @router.get("/anime/{slug}", response_class=HTMLResponse)
@@ -149,7 +149,16 @@ async def anime_detail(request: Request, slug: str) -> HTMLResponse:
         "anime": data,
         "slug": slug,
         "similar": similar,
-        "seo": content_seo(request, item=data, path=canonical_path, title_suffix="Animé en Streaming HD", kind_label="Animé en Streaming VF & VOSTFR", qualifiers=qualifiers, breadcrumbs=[("Animés", "/animes")]),
+        "seo": content_seo(
+            request,
+            item=data,
+            path=canonical_path,
+            title_suffix="Animé en Streaming HD",
+            kind_label="Animé en Streaming VF & VOSTFR",
+            qualifiers=qualifiers,
+            breadcrumbs=[("Animés", "/animes")],
+            noindex=True,  # Stratégie 2026-10 « coque propre » : fiches animes hors index
+        ),
     })
 
 @router.get("/regarder-anime/{slug}/{episode_slug}", response_class=HTMLResponse)

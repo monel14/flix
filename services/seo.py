@@ -382,3 +382,22 @@ def content_seo(
         extra_json_ld=extra,
         noindex=noindex,
     )
+
+
+def faq_page_json_ld(items: list[tuple[str, str]]) -> dict:
+    """JSON-LD FAQPage Schema.org depuis une liste de couples (question, réponse)."""
+    return {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": q,
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": a,
+                },
+            }
+            for q, a in items
+        ],
+    }
