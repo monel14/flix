@@ -219,29 +219,82 @@ async def alternative_detail_page(request: Request, slug: str):
 
     related_sites = [s for s in get_sites_by_category(site["category"]) if s["slug"] != slug][:8]
 
-    site_faq = [
-        (
-            f"Pourquoi {site['name']} est-il inaccessible ou bloqué ?",
-            f"{site['why_down']} Depuis mars 2026, l'ARCOM et le tribunal judiciaire de Paris imposent un blocage DNS dynamique auprès des quatre grands FAI (Orange, SFR, Free, Bouygues).",
-        ),
-        (
-            f"Quelle est la nouvelle adresse officielle de {site['name']} en 2026 ?",
-            f"Toute nouvelle adresse ou clone de {site['name']} est neutralisé en quelques jours par les opérateurs. La grande majorité des résultats Google actuels sont des faux sites miroirs piégés.",
-        ),
-        (
-            f"Existe-t-il une alternative stable à {site['name']} ?",
-            f"Oui. NokaTV propose un accès direct et gratuit au catalogue {site['target_label']} sans inscription obligatoire et sans publicité intrusive.",
-        ),
-    ]
+    # Variante stable par slug : casse la duplication mot-à-mot entre les pages
+    # (paragraphe ARCOM + FAQ) sans aléatoire entre requêtes.
+    variant = sum(ord(c) for c in slug) % 3
+
+    name = site["name"]
+    why_down = site["why_down"]
+    label = site["target_label"]
+    if variant == 1:
+        site_faq = [
+            (
+                f"Pourquoi {name} ne fonctionne plus ?",
+                f"{why_down} Les quatre grands FAI français (Orange, SFR, Bouygues Télécom, Free) appliquent depuis mars 2026 un filtrage DNS automatique demandé par l'ARCOM et le tribunal judiciaire de Paris.",
+            ),
+            (
+                f"Quelle est la nouvelle adresse de {name} en 2026 ?",
+                f"Il n'existe plus d'adresse officielle stable : chaque nouveau domaine de {name} est bloqué chez les opérateurs en quelques jours, et la plupart des adresses qui circulent sont des arnaques.",
+            ),
+            (
+                f"Par quoi remplacer {name} ?",
+                f"NokaTV permet de regarder {label} gratuitement, sans compte obligatoire ni publicités intrusives.",
+            ),
+        ]
+    elif variant == 2:
+        site_faq = [
+            (
+                f"{name} est-il définitivement fermé ?",
+                f"{why_down} Le nom continue d'exister sous de nouvelles adresses, mais le blocage DNS automatique piloté par l'ARCOM et le tribunal judiciaire de Paris les neutralise désormais en quelques heures.",
+            ),
+            (
+                f"Où trouver la vraie nouvelle adresse de {name} ?",
+                f"Prudence : les adresses qui circulent pour {name} sont soit déjà bloquées par les FAI, soit des clones malveillants qui cherchent à récupérer vos coordonnées bancaires.",
+            ),
+            (
+                f"Quelle alternative gratuite à {name} ?",
+                f"NokaTV offre un accès gratuit et direct à {label}, avec plusieurs lecteurs au choix et sans inscription obligatoire.",
+            ),
+        ]
+    else:
+        site_faq = [
+            (
+                f"Pourquoi {name} est-il inaccessible ou bloqué ?",
+                f"{why_down} Depuis mars 2026, l'ARCOM et le tribunal judiciaire de Paris imposent un blocage DNS dynamique auprès des quatre grands FAI (Orange, SFR, Free, Bouygues).",
+            ),
+            (
+                f"Quelle est la nouvelle adresse officielle de {name} en 2026 ?",
+                f"Toute nouvelle adresse ou clone de {name} est neutralisé en quelques jours par les opérateurs. La grande majorité des résultats Google actuels sont des faux sites miroirs piégés.",
+            ),
+            (
+                f"Existe-t-il une alternative stable à {name} ?",
+                f"Oui. NokaTV propose un accès direct et gratuit au catalogue {label} sans inscription obligatoire et sans publicité intrusive.",
+            ),
+        ]
+
+    # Meta description en langage de recherche utilisateur (« ne marche plus »,
+    # « nouvelle adresse », « bloqué ») alignée sur le statut réel du site.
+    if site.get("status_type") == "rotation":
+        description = (
+            f"{name} change d'adresse en permanence en 2026 : dernière adresse connue, "
+            "risques des faux miroirs et alternatives stables qui fonctionnent."
+        )
+    else:
+        description = (
+            f"{name} ne marche plus en 2026 : il est bloqué en France. "
+            "Nouvelle adresse, risques des faux miroirs et alternatives gratuites qui fonctionnent."
+        )
 
     return templates.TemplateResponse(request, "alternative_detail.html", {
         "request": request,
         "site": site,
         "related_sites": related_sites,
+        "variant": variant,
+        "faq_items": site_faq,
         "seo": page_seo(
             request,
             title=f"{site['name']} ne marche plus ? État du site & Alternatives (2026)",
-            description=f"{site['name']} est bloqué par l'ARCOM : état des lieux des adresses en octobre 2026, risques des faux miroirs et meilleures alternatives gratuites qui fonctionnent.",
+            description=description,
             path=f"/alternative/{slug}",
             extra_json_ld=[
                 faq_page_json_ld(site_faq),
@@ -338,6 +391,9 @@ async def canonical_domain_redirect(request: Request, call_next):
         )
         if not alt_allowed:
             return Response(status_code=404)
+        # Marque la requête : les templates masquent la navigation média et
+        # font pointer leurs liens catalogue vers le domaine principal.
+        request.state.is_alternatives_domain = True
         return await call_next(request)
 
     # Détection des en-têtes Cloudflare et reverse proxies (évite les boucles de redirection SSL)
@@ -470,6 +526,12 @@ async def sitemap_xml(request: Request):
     import datetime
     base_url = site_origin(request)
 
+    # Coque observatoire (2026-10) : sur le domaine dédié, la racine est une
+    # redirection 301 vers /alternative — on ne soumet pas d'URL qui redirige.
+    alt_domain = (os.getenv("ALTERNATIVES_DOMAIN") or "noka-tv.xyz").strip().lower()
+    base_host = base_url.split("//", 1)[-1].split("/", 1)[0].split(":")[0].strip().lower()
+    on_alt_domain = base_host in (alt_domain, f"www.{alt_domain}")
+
     try:
         paths = await collect_sitemap_paths()
         stale = cache.get_stale("sitemap:paths")
@@ -489,6 +551,8 @@ async def sitemap_xml(request: Request):
     ]
 
     for path in paths:
+        if on_alt_domain and path == "/":
+            continue
         if path == "/":
             priority = "1.0"
         elif path == "/alternative":

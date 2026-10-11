@@ -98,37 +98,44 @@
 </head>
 <body>
 
+{# Domaine observatoire (ALTERNATIVES_DOMAIN) : la navigation média pointe vers
+   le domaine principal du catalogue, la recherche n'existe pas sur ce domaine. #}
+{% set is_alt = request.state.is_alternatives_domain | default(false) %}
+{% set media_base = MEDIA_SITE_URL if is_alt else "" %}
+{% set home_href = "/alternative" if is_alt else "/" %}
+
 <!-- Header / Navigation Bar -->
 <header class="site-header" id="site-header">
     <div class="header-inner">
         <!-- Logo NokaTV -->
-        <a class="brand" href="/">
+        <a class="brand" href="{{ home_href }}">
             <div class="brand-icon"><i class="fas fa-play"></i></div>
             <span>Noka<b>TV</b></span>
         </a>
 
         <!-- Desktop Navigation -->
         <nav class="main-nav">
-            <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+            <a href="{{ home_href }}" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
                 Accueil
             </a>
-            <a href="/films" class="nav-link {% if request.url.path.startswith('/films') %}active{% endif %}">
+            <a href="{{ media_base }}/films" class="nav-link {% if request.url.path.startswith('/films') %}active{% endif %}">
                 Films
             </a>
-            <a href="/series" class="nav-link {% if request.url.path.startswith('/series') %}active{% endif %}">
+            <a href="{{ media_base }}/series" class="nav-link {% if request.url.path.startswith('/series') %}active{% endif %}">
                 Séries
             </a>
-            <a href="/dramas" class="nav-link {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
+            <a href="{{ media_base }}/dramas" class="nav-link {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
                 K-Dramas
             </a>
-            <a href="/animes" class="nav-link {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
+            <a href="{{ media_base }}/animes" class="nav-link {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
                 Animés
             </a>
-            <a href="/ma-liste" class="nav-link {% if request.url.path == '/ma-liste' %}active{% endif %}">
+            <a href="{{ media_base }}/ma-liste" class="nav-link {% if request.url.path == '/ma-liste' %}active{% endif %}">
                 <i class="fas fa-bookmark" style="font-size: 0.8rem;"></i> Ma Liste
             </a>
         </nav>
 
+        {% if not is_alt %}
         <!-- Search Bar with Live Dropdown -->
         <form class="search-bar" action="/recherche" method="get" id="search-form" autocomplete="off">
             <div class="search-input-wrapper">
@@ -138,6 +145,7 @@
             </div>
             <div id="search-dropdown" class="search-dropdown" hidden></div>
         </form>
+        {% endif %}
     </div>
 </header>
 
@@ -148,23 +156,23 @@
 
 <!-- Mobile Bottom Navigation (Native App feel) -->
 <nav class="mobile-bottom-bar" aria-label="Navigation mobile">
-    <a href="/" class="mobile-tab {% if request.url.path == '/' %}active{% endif %}">
+    <a href="{{ home_href }}" class="mobile-tab {% if request.url.path == '/' %}active{% endif %}">
         <i class="fas fa-house"></i>
         <span>Accueil</span>
     </a>
-    <a href="/films" class="mobile-tab {% if request.url.path.startswith('/films') %}active{% endif %}">
+    <a href="{{ media_base }}/films" class="mobile-tab {% if request.url.path.startswith('/films') %}active{% endif %}">
         <i class="fas fa-film"></i>
         <span>Films</span>
     </a>
-    <a href="/series" class="mobile-tab {% if request.url.path.startswith('/series') %}active{% endif %}">
+    <a href="{{ media_base }}/series" class="mobile-tab {% if request.url.path.startswith('/series') %}active{% endif %}">
         <i class="fas fa-tv"></i>
         <span>Séries</span>
     </a>
-    <a href="/animes" class="mobile-tab {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
+    <a href="{{ media_base }}/animes" class="mobile-tab {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
         <i class="fas fa-dragon"></i>
         <span>Animés</span>
     </a>
-    <a href="/ma-liste" class="mobile-tab {% if request.url.path == '/ma-liste' %}active{% endif %}">
+    <a href="{{ media_base }}/ma-liste" class="mobile-tab {% if request.url.path == '/ma-liste' %}active{% endif %}">
         <i class="fas fa-bookmark"></i>
         <span>Ma Liste</span>
     </a>

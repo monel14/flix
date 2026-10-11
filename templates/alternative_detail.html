@@ -4,7 +4,7 @@
 
   <!-- Breadcrumbs -->
   <nav aria-label="Fil d'Ariane" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">
-    <a href="/" style="color:var(--text-muted);text-decoration:none">Accueil</a>
+    <a href="{{ home_href }}" style="color:var(--text-muted);text-decoration:none">Accueil</a>
     <span style="margin:0 8px;opacity:0.5">/</span>
     <a href="/alternative" style="color:var(--text-muted);text-decoration:none">Alternatives</a>
     <span style="margin:0 8px;opacity:0.5">/</span>
@@ -44,9 +44,19 @@
     <p style="margin-top:8px">
       {{ site.why_down }}
     </p>
+    {% if variant == 1 %}
+    <p style="margin-top:10px">
+      Le blocage est appliqué directement par <strong>Orange, SFR, Bouygues Télécom et Free</strong> depuis les ordonnances du tribunal judiciaire de Paris et l'automatisation lancée par l'<strong>ARCOM en mars 2026</strong>. Concrètement, chaque nouvelle adresse ou miroir de <strong>{{ site.name }}</strong> est inscrit sur liste noire puis neutralisé en quelques heures, sans nouvelle décision de justice.
+    </p>
+    {% elif variant == 2 %}
+    <p style="margin-top:10px">
+      Depuis mars 2026, l'<strong>ARCOM</strong> pilote un dispositif de blocage dynamique validé par le tribunal judiciaire de Paris : les FAI français (<strong>Orange, SFR, Free, Bouygues Télécom</strong>) ajoutent les adresses visées à leur liste noire en quelques heures. C'est pour cela qu'aucun miroir de <strong>{{ site.name }}</strong> ne reste accessible bien longtemps.
+    </p>
+    {% else %}
     <p style="margin-top:10px">
       Depuis l'automatisation des procédures par l'<strong>ARCOM en mars 2026</strong> et les ordonnances rendues par le tribunal judiciaire de Paris, les quatre principaux fournisseurs d'accès à Internet français (<strong>Orange, SFR, Bouygues Télécom et Free</strong>) appliquent un blocage DNS dynamique. Dès qu'un miroir ou une nouvelle adresse pour <strong>{{ site.name }}</strong> apparaît, elle est neutralisée en quelques heures sans nécessiter de nouveau jugement.
     </p>
+    {% endif %}
 
     <!-- Alerte clones piégés -->
     <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:16px;margin:20px 0">
@@ -74,23 +84,23 @@
             Lecteurs multi-sources, versions VF et VOSTFR intégrales, sans publicité intrusive.
           </p>
         </div>
-        <a href="{{ site.target_path }}" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem">
+        <a href="{{ media_base }}{{ site.target_path }}" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem">
           <span>Accéder au catalogue</span>
           <i class="fas fa-arrow-right"></i>
         </a>
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle)">
-        <a href="/films" style="display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px;color:var(--text-heading);text-decoration:none;font-size:0.88rem">
+        <a href="{{ media_base }}/films" style="display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px;color:var(--text-heading);text-decoration:none;font-size:0.88rem">
           <i class="fas fa-film" style="color:var(--brand-hover)"></i> Films
         </a>
-        <a href="/series" style="display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px;color:var(--text-heading);text-decoration:none;font-size:0.88rem">
+        <a href="{{ media_base }}/series" style="display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px;color:var(--text-heading);text-decoration:none;font-size:0.88rem">
           <i class="fas fa-tv" style="color:var(--brand-hover)"></i> Séries
         </a>
-        <a href="/animes" style="display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px;color:var(--text-heading);text-decoration:none;font-size:0.88rem">
+        <a href="{{ media_base }}/animes" style="display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px;color:var(--text-heading);text-decoration:none;font-size:0.88rem">
           <i class="fas fa-dragon" style="color:var(--brand-hover)"></i> Animés
         </a>
-        <a href="/dramas" style="display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px;color:var(--text-heading);text-decoration:none;font-size:0.88rem">
+        <a href="{{ media_base }}/dramas" style="display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:8px 12px;color:var(--text-heading);text-decoration:none;font-size:0.88rem">
           <i class="fas fa-masks-theater" style="color:var(--brand-hover)"></i> Dramas
         </a>
       </div>
@@ -107,23 +117,15 @@
       {% endfor %}
     </ul>
 
-    <!-- Foire Aux Questions (FAQ) -->
+    <!-- Foire Aux Questions (FAQ) — rendue depuis la route, identique au JSON-LD -->
     <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Questions fréquentes sur {{ site.name }}</h2>
 
-    <h3 style="margin-top:16px;font-size:1rem;color:var(--text-heading)">Quelle est la nouvelle adresse de {{ site.name }} ?</h3>
+    {% for question, answer in faq_items %}
+    <h3 style="margin-top:16px;font-size:1rem;color:var(--text-heading)">{{ question }}</h3>
     <p style="margin-top:6px">
-      Avec le système de blocage dynamique de l'ARCOM en 2026, toute nouvelle adresse de {{ site.name }} est bloquée en quelques jours par les FAI. Les adresses qui circulent publiquement sont soit déjà bloquées, soit des faux sites.
+      {{ answer }}
     </p>
-
-    <h3 style="margin-top:16px;font-size:1rem;color:var(--text-heading)">Est-ce qu'un VPN permet d'accéder à {{ site.name }} ?</h3>
-    <p style="margin-top:6px">
-      Un VPN ou un changement de DNS (vers Cloudflare 1.1.1.1 ou Google 8.8.8.8) permet de contourner le filtrage DNS français, mais cela ne résout pas la fermeture des serveurs d'hébergement ni les risques liés aux faux clones.
-    </p>
-
-    <h3 style="margin-top:16px;font-size:1rem;color:var(--text-heading)">Que risque-t-on sur les sites de streaming ?</h3>
-    <p style="margin-top:6px">
-      La législation vise principalement les gestionnaires de sites et les intermédiaires techniques. Pour les visiteurs, le principal danger réside dans les malwares et les fraudes bancaires des sites miroirs pirates.
-    </p>
+    {% endfor %}
 
     <!-- Navigation transversale vers d'autres alternatives -->
     {% if related_sites %}
