@@ -318,6 +318,28 @@ async def canonical_domain_redirect(request: Request, call_next):
 
     raw_host = host.split(":")[0].strip().lower()
 
+    # Porte « observatoire » (stratégie 2026-10) : le domaine ALTERNATIVES_DOMAIN
+    # ne sert QUE l'observatoire des alternatives — aucun média ne doit y être
+    # exposé (coquille propre : la porte coupe l'accès aux fiches/listes/players
+    # même si quelqu'un devine leurs URLs sur ce domaine).
+    alt_domain = (os.getenv("ALTERNATIVES_DOMAIN") or "noka-tv.xyz").strip().lower()
+    if raw_host in (alt_domain, f"www.{alt_domain}"):
+        if raw_host.startswith("www."):
+            return RedirectResponse(f"https://{alt_domain}{path}", status_code=301)
+        if path == "/":
+            return RedirectResponse(f"https://{alt_domain}/alternative", status_code=301)
+        alt_allowed = (
+            path == "/alternative"
+            or path.startswith("/alternative/")
+            or path in ("/mentions-legales", "/contact", "/dmca",
+                        "/robots.txt", "/sitemap.xml", "/sitemap-index.xml",
+                        "/favicon.ico", "/apple-touch-icon.png")
+            or path.startswith("/static/")
+        )
+        if not alt_allowed:
+            return Response(status_code=404)
+        return await call_next(request)
+
     # Détection des en-têtes Cloudflare et reverse proxies (évite les boucles de redirection SSL)
     is_behind_cf = bool(request.headers.get("cf-ray") or request.headers.get("cf-connecting-ip"))
     cf_visitor = request.headers.get("cf-visitor", "")
