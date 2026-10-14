@@ -118,9 +118,14 @@
     <p style="margin:0 0 12px;font-size:0.9rem;color:var(--text-muted)">
       NokaTV : films, séries, animés et dramas en streaming gratuit, sans compte obligatoire ni publicités intrusives.
     </p>
-    <a href="{{ media_base }}/films" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem">
-      Voir le catalogue <i class="fas fa-arrow-right"></i>
-    </a>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <a href="{{ media_base }}/films" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem">
+        Voir le catalogue <i class="fas fa-arrow-right"></i>
+      </a>
+      <a href="/alternative/f1-ufc" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-flag-checkered" style="color:var(--brand-hover);margin-right:6px"></i>F1, UFC &amp; Boxe</a>
+      <a href="/alternative/manga" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-book-open" style="color:var(--brand-hover);margin-right:6px"></i>Scans Manga &amp; Animés</a>
+      <a href="/alternative/dramas" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-masks-theater" style="color:var(--brand-hover);margin-right:6px"></i>K-Dramas</a>
+    </div>
   </div>
 </section>
 {% endblock %}

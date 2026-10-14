@@ -11,14 +11,37 @@
     </p>
   </div>
 
-  <!-- Raccourci pilier football : réponse directe « match ce soir » + maillage -->
-  <a href="/alternative/football" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;text-decoration:none;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:14px 18px;margin-bottom:18px">
-    <span style="display:flex;align-items:center;gap:10px;color:var(--text-heading);font-weight:600;font-size:0.98rem">
-      <i class="fas fa-futbol" style="color:var(--brand-hover)"></i>
-      Football &amp; sport en direct : programme des matchs, sites bloqués &amp; solutions
-    </span>
-    <span style="color:var(--brand-hover, #818cf8);font-size:0.88rem;font-weight:600">Consulter <i class="fas fa-arrow-right"></i></span>
-  </a>
+  <!-- Grille des 4 dossiers piliers : réponse directe aux intentions majeures + maillage interne -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:18px">
+    <a href="/alternative/football" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 14px">
+      <span style="display:flex;align-items:center;gap:10px;color:var(--text-heading);font-weight:600;font-size:0.9rem">
+        <i class="fas fa-futbol" style="color:var(--brand-hover)"></i>
+        <span>Football en direct<br><small style="color:var(--text-muted);font-weight:400;font-size:0.78rem">Matchs, chaînes &amp; sites</small></span>
+      </span>
+      <i class="fas fa-arrow-right" style="color:var(--brand-hover, #818cf8);font-size:0.82rem"></i>
+    </a>
+    <a href="/alternative/f1-ufc" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 14px">
+      <span style="display:flex;align-items:center;gap:10px;color:var(--text-heading);font-weight:600;font-size:0.9rem">
+        <i class="fas fa-flag-checkered" style="color:var(--brand-hover)"></i>
+        <span>F1, UFC, Boxe &amp; MotoGP<br><small style="color:var(--text-muted);font-weight:400;font-size:0.78rem">Horaires GP, galas &amp; TV</small></span>
+      </span>
+      <i class="fas fa-arrow-right" style="color:var(--brand-hover, #818cf8);font-size:0.82rem"></i>
+    </a>
+    <a href="/alternative/manga" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 14px">
+      <span style="display:flex;align-items:center;gap:10px;color:var(--text-heading);font-weight:600;font-size:0.9rem">
+        <i class="fas fa-book-open" style="color:var(--brand-hover)"></i>
+        <span>Scans Manga &amp; Animés<br><small style="color:var(--text-muted);font-weight:400;font-size:0.78rem">JapScan, Anime Sama…</small></span>
+      </span>
+      <i class="fas fa-arrow-right" style="color:var(--brand-hover, #818cf8);font-size:0.82rem"></i>
+    </a>
+    <a href="/alternative/dramas" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:12px 14px">
+      <span style="display:flex;align-items:center;gap:10px;color:var(--text-heading);font-weight:600;font-size:0.9rem">
+        <i class="fas fa-masks-theater" style="color:var(--brand-hover)"></i>
+        <span>K-Dramas &amp; Asie<br><small style="color:var(--text-muted);font-weight:400;font-size:0.78rem">VoirDrama, DramaCool…</small></span>
+      </span>
+      <i class="fas fa-arrow-right" style="color:var(--brand-hover, #818cf8);font-size:0.82rem"></i>
+    </a>
+  </div>
 
   <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:24px;line-height:1.7;color:var(--text-body)">
 
@@ -60,7 +83,11 @@
         </button>
         <button type="button" class="cat-filter-btn" data-cat="animes"
                 style="background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 14px;font-size:0.85rem;cursor:pointer">
-          Animés & Manga
+          Animés &amp; Manga
+        </button>
+        <button type="button" class="cat-filter-btn" data-cat="dramas"
+                style="background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 14px;font-size:0.85rem;cursor:pointer">
+          Dramas &amp; Asie
         </button>
         <button type="button" class="cat-filter-btn" data-cat="ddl-torrent"
                 style="background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 14px;font-size:0.85rem;cursor:pointer">

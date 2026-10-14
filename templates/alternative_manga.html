@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="content-section" style="max-width:840px;margin:0 auto;padding:24px 16px">
+  <nav aria-label="Fil d'Ariane" style="font-size:0.85rem;margin-bottom:14px">
+    <a href="{{ home_href }}" style="color:var(--text-muted);text-decoration:none">Accueil</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <a href="/alternative" style="color:var(--text-muted);text-decoration:none">Alternatives</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <span style="color:var(--text-heading)">Scans Manga, Webtoons &amp; Animés</span>
+  </nav>
+
+  <h1 class="section-title section-title--page" style="line-height:1.3;margin-bottom:12px">
+    Scans Manga VF &amp; Animés 2026 : JapScan, Lelscan, Anime Sama &amp; solutions
+  </h1>
+  <p style="color:var(--text-muted);line-height:1.65;margin:0 0 8px">
+    Entre <strong>JapScan</strong> qui change d'adresse chaque mois, <strong>Scantrad</strong> et <strong>Reaper Scans</strong> fermés,
+    et <strong>Anime Sama</strong> ou <strong>Voiranime</strong> filtrés par les FAI français, lire un chapitre ou lancer un épisode
+    sans pop-up malveillante est devenu compliqué. Voici le <strong>calendrier de sortie officiel des chapitres en VF</strong>,
+    l'état des sites de scans et d'animés, et où suivre vos séries gratuitement.
+  </p>
+
+  <!-- ============ PASSERELLE DIRECTE VERS /animes (CONVERSION) ============ -->
+  <div style="background:linear-gradient(135deg, rgba(99,102,241,0.14), rgba(236,72,153,0.10));border:1px solid rgba(99,102,241,0.35);border-radius:10px;padding:18px 20px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+    <div style="flex:1;min-width:240px">
+      <div style="font-weight:700;color:var(--text-heading);font-size:1.05rem;margin-bottom:4px">
+        <i class="fas fa-dragon" style="color:var(--brand-hover);margin-right:8px"></i>Passer du scan à l'animé en HD (VF &amp; VOSTFR)
+      </div>
+      <p style="margin:0;font-size:0.9rem;color:var(--text-muted);line-height:1.5">
+        One Piece, Solo Leveling, Dandadan, Kaiju No. 8, Demon Slayer, Bleach TYBW : tous les épisodes en streaming gratuit sur NokaTV.
+      </p>
+    </div>
+    <a href="{{ media_base }}/animes" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem;white-space:nowrap">
+      Voir les Animés <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <!-- ============ CALENDRIER DES SORTIES DE CHAPITRES (VALEUR IMMÉDIATE) ============ -->
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px;margin-top:20px">
+    <h2 style="margin:0 0 6px;font-size:1.15rem;color:var(--text-heading)">
+      <i class="fas fa-clock" style="color:var(--brand-hover);margin-right:8px"></i>Jour &amp; heure de sortie des chapitres en France (légal &amp; gratuit)
+    </h2>
+    <p style="margin:0 0 12px;font-size:0.88rem;color:var(--text-muted)">
+      Inutile de chercher un site de scan rempli de publicités pour les derniers chapitres du <em>Weekly Shōnen Jump</em> :
+      l'éditeur japonais Shueisha les publie gratuitement en VF à heure fixe.
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.92rem">Dimanche à 17h00 (Paris)</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">
+          <strong>One Piece, Sakamoto Days, Kagurabachi, Blue Box</strong> — sortie mondiale simultanée en VF sur <strong>MANGA Plus</strong> (3 premiers + 3 derniers chapitres 100 % gratuits).
+        </div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.92rem">Mardi à 17h00 (Jump+)</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">
+          <strong>Chainsaw Man, Dandadan, Spy × Family, Kaiju No. 8</strong> — chapitres officiels traduits en français sans pop-up.
+        </div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.92rem">Mercredi &amp; Jeudi (Webtoons)</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">
+          Manhwas coréens (<strong>Tower of God, Solo Leveling Ragnarok, Omniscient Reader</strong>) sur <strong>WEBTOON FR</strong> et Piccoma.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ POURQUOI LES SITES DE SCANS TOMBENT EN 2026 ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Pourquoi JapScan, Lelscan et les sites de Manhwa sont-ils bloqués ?</h2>
+  <p style="margin:8px 0;font-size:0.94rem;line-height:1.7">
+    Deux offensives juridiques simultanées ont transformé le paysage du scan et de l'animé en France :
+  </p>
+  <ul style="font-size:0.92rem;line-height:1.8;padding-left:20px">
+    <li><strong>Blocage DNS ARCOM sur les portails francophones</strong> : <a href="/alternative/japscan">JapScan</a>, <a href="/alternative/lelscan">Lelscan</a>, <a href="/alternative/scan-manga">Scan-Manga</a>, <a href="/alternative/anime-sama">Anime Sama</a> et <a href="/alternative/voiranime">Voiranime</a> sont inscrits sur les listes de filtrage d'Orange, SFR, Free et Bouygues Télécom.</li>
+    <li><strong>Traque internationale des éditeurs coréens et japonais (Kakao, Naver, Shueisha)</strong> : les teams de scantrad comme <a href="/alternative/scantrad">Scantrad</a> ou <a href="/alternative/reaperscans">Reaper Scans FR</a> ont fermé, tandis que <a href="/alternative/asurascans">Asura Scans</a> et <a href="/alternative/sushi-scan">Sushi-Scan</a> changent de nom de domaine en boucle.</li>
+    <li><strong>Piège des faux domaines (.vip, .lol, .ws)</strong> : la majorité des sites qui imitent JapScan ou Anime Sama en tête de Google injectent de fausses alertes de virus ou des redirections publicitaires sur mobile.</li>
+  </ul>
+
+  <!-- ============ ÉTAT DES LIEUX DES SITES SCANS & ANIMÉS ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Sites de Scans Manga &amp; Animés : l'état des lieux ({{ anime_sites|length }} sites)</h2>
+  <p style="margin:8px 0 14px;font-size:0.93rem;color:var(--text-muted)">
+    Cliquez sur un site pour vérifier s'il est bloqué par les FAI, en rotation d'adresse ou définitivement fermé.
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
+    {% for s in anime_sites %}
+    <a href="/alternative/{{ s.slug }}" style="display:block;padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px;text-decoration:none;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ s.name }}</div>
+      <div style="margin-top:5px;font-size:0.78rem;{% if s.status_type == 'blocked' %}color:#f87171{% else %}color:#fbbf24{% endif %}">
+        {% if s.status_type == 'blocked' %}<i class="fas fa-circle-xmark"></i>{% else %}<i class="fas fa-triangle-exclamation"></i>{% endif %}
+        {{ s.status }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Questions fréquentes sur les Scans Manga &amp; Animés</h2>
+  <div style="margin-top:10px">
+    {% for question, answer in faq_items %}
+    <details style="border:1px solid var(--border-subtle);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg-surface)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ question }}</summary>
+      <p style="margin:8px 0 0;font-size:0.92rem;line-height:1.65;color:var(--text-muted)">{{ answer }}</p>
+    </details>
+    {% endfor %}
+  </div>
+
+  <!-- ============ MAILLAGE AUTRES GUIDES ============ -->
+  <div style="margin-top:26px;padding:16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-surface)">
+    <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem;margin-bottom:10px">Consulter nos autres dossiers thématiques 2026 :</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <a href="/alternative/dramas" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-masks-theater" style="color:var(--brand-hover);margin-right:6px"></i>K-Dramas &amp; Séries Asiatiques</a>
+      <a href="/alternative/football" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:6px"></i>Football en direct</a>
+      <a href="/alternative/f1-ufc" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-flag-checkered" style="color:var(--brand-hover);margin-right:6px"></i>Formule 1, UFC &amp; Boxe</a>
+      <a href="/alternative" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-list" style="color:var(--brand-hover);margin-right:6px"></i>Tous les {{ total_sites }} sites</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

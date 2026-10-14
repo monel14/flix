@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="content-section" style="max-width:840px;margin:0 auto;padding:24px 16px">
+  <nav aria-label="Fil d'Ariane" style="font-size:0.85rem;margin-bottom:14px">
+    <a href="{{ home_href }}" style="color:var(--text-muted);text-decoration:none">Accueil</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <a href="/alternative" style="color:var(--text-muted);text-decoration:none">Alternatives</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <span style="color:var(--text-heading)">Formule 1, UFC, Boxe &amp; MotoGP</span>
+  </nav>
+
+  <h1 class="section-title section-title--page" style="line-height:1.3;margin-bottom:12px">
+    Streaming F1, UFC &amp; Boxe 2026 : horaires, chaînes gratuites &amp; sites bloqués
+  </h1>
+  <p style="color:var(--text-muted);line-height:1.65;margin:0 0 8px">
+    Grand Prix de Formule 1 le dimanche, gala UFC ou combat de boxe dans la nuit du samedi : ce sont les événements où
+    le blocage DNS en temps réel est le plus agressif. Voici le <strong>programme automatique des prochains rendez-vous</strong>
+    (heure de Paris), les <strong>chaînes officielles et gratuites francophones</strong>, et l'état réel des sites comme
+    F1 Live Stream, MethStreams ou SportSurge.
+  </p>
+
+  <!-- ============================== PROGRAMME AUTO F1 / UFC / BOXE ============================== -->
+  {% if events %}
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px 18px 10px;margin-top:22px">
+    <h2 style="margin:0 0 4px;font-size:1.15rem;color:var(--text-heading)">
+      <i class="fas fa-flag-checkered" style="color:var(--brand-hover);margin-right:8px"></i>Prochains Grands Prix F1, galas UFC, Boxe &amp; MotoGP
+    </h2>
+    <p style="margin:0 0 12px;font-size:0.85rem;color:var(--text-muted)">
+      Horaires convertis en heure de Paris — diffuseurs officiels France &amp; francophonie. Mis à jour automatiquement.
+    </p>
+    {% for ev in events %}
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:9px 0;border-top:1px solid var(--border-subtle)">
+      <span style="min-width:155px;font-size:0.85rem;color:var(--text-muted)">{{ ev.label }}</span>
+      <span style="flex:1;min-width:190px;font-weight:600;color:var(--text-heading);font-size:0.92rem">{{ ev.title }}</span>
+      <span style="font-size:0.78rem;color:var(--text-muted)">{{ ev.league }}</span>
+      <span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:0.82rem;background:rgba(99,102,241,0.12);color:var(--brand-hover, #818cf8);font-weight:600">{{ ev.broadcaster }}</span>
+    </div>
+    {% endfor %}
+    <p style="margin:8px 0 4px;font-size:0.78rem;color:var(--text-muted)">
+      Calendrier indicatif des diffuseurs officiels — aucun flux vidéo n'est hébergé ni relayé sur cette page.
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- ========================= ASTUCE LÉGALE F1 / UFC ========================= -->
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px;margin-top:20px">
+    <h2 style="margin:0 0 10px;font-size:1.15rem;color:var(--text-heading)">
+      <i class="fas fa-tv" style="color:#10b981;margin-right:8px"></i>Comment regarder la F1, le MotoGP et l'UFC légalement (et parfois gratuitement) ?
+    </h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:10px">
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.92rem">Formule 1 &amp; MotoGP</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">
+          En France : <strong>Canal+</strong> et <strong>F1 TV Pro</strong>. En Belgique et en Suisse, le service public diffuse
+          les Grands Prix <strong>gratuitement en français</strong> sur <strong>RTBF Auvio (Tipik)</strong> et <strong>RTS Sport</strong>.
+        </div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.92rem">UFC &amp; MMA</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">
+          En France : la carte principale (Main Card, souvent à partir de 4h00 du matin) est sur <strong>RMC Sport</strong>,
+          et les cartes préliminaires sur <strong>UFC Fight Pass</strong>.
+        </div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.92rem">Boxe &amp; NBA</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">
+          Les grands combats internationaux de boxe sont diffusés sur <strong>DAZN</strong> ou RMC Sport ; la NBA est sur <strong>beIN Sports</strong> et NBA League Pass.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================== POURQUOI ÇA COUPE AU DÉPART ====================== -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Pourquoi les streams F1 et UFC coupent au départ de la course ou avant le Main Event ?</h2>
+  <ul style="font-size:0.93rem;line-height:1.8;padding-left:20px">
+    <li><strong>Blocage synchronisé sur le tour de chauffe / Main Card</strong> : Canal+ et les ayants droit sportifs activent les listes noires DNS auprès d'Orange, SFR, Free et Bouygues Télécom pile à l'heure du départ du Grand Prix.</li>
+    <li><strong>Goulet d'étranglement mondial sur le combat principal</strong> : sur des sites comme <a href="/alternative/methstreams">MethStreams</a>, <a href="/alternative/sportsurge">SportSurge</a> ou <a href="/alternative/f1livestream">F1 Live Stream</a>, 80 % des spectateurs se connectent dans les 10 minutes précédant le Main Event, faisant tomber les relais vidéo.</li>
+    <li><strong>Faux lecteurs « HD Inscription »</strong> : pendant les coupures, de nombreux clones affichent un faux bouton lecture qui renvoie vers une page demandant une carte bancaire. Ne renseignez jamais d'informations de paiement.</li>
+  </ul>
+
+  <!-- ====================== ÉTAT DES LIEUX DES SITES SPORT ====================== -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Sites de streaming F1, UFC &amp; Sport : l'état des lieux ({{ sport_sites|length }} sites)</h2>
+  <p style="margin:8px 0 14px;font-size:0.93rem;color:var(--text-muted)">
+    Statut en France des sites de streaming sportif — cliquez pour consulter la fiche détaillée de chaque domaine.
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
+    {% for s in sport_sites %}
+    <a href="/alternative/{{ s.slug }}" style="display:block;padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px;text-decoration:none;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ s.name }}</div>
+      <div style="margin-top:5px;font-size:0.78rem;{% if s.status_type == 'blocked' %}color:#f87171{% else %}color:#fbbf24{% endif %}">
+        {% if s.status_type == 'blocked' %}<i class="fas fa-circle-xmark"></i>{% else %}<i class="fas fa-triangle-exclamation"></i>{% endif %}
+        {{ s.status }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ================================= FAQ ================================= -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Questions fréquentes sur la F1 et l'UFC en streaming</h2>
+  <div style="margin-top:10px">
+    {% for question, answer in faq_items %}
+    <details style="border:1px solid var(--border-subtle);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg-surface)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ question }}</summary>
+      <p style="margin:8px 0 0;font-size:0.92rem;line-height:1.65;color:var(--text-muted)">{{ answer }}</p>
+    </details>
+    {% endfor %}
+  </div>
+
+  <!-- ============ PASSERELLE CATALOGUE + AUTRES GUIDES ============ -->
+  <div style="margin-top:26px;padding:16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-surface)">
+    <p style="margin:0 0 8px;font-size:0.92rem;color:var(--text-heading);font-weight:600">En attendant le départ ou entre deux combats ?</p>
+    <p style="margin:0 0 12px;font-size:0.9rem;color:var(--text-muted)">
+      Retrouvez les meilleurs films d'action, séries, animés et dramas en accès direct et gratuit sur NokaTV.
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <a href="{{ media_base }}/films" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:9px 18px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.9rem">
+        Catalogue NokaTV <i class="fas fa-arrow-right"></i>
+      </a>
+      <a href="/alternative/football" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:6px"></i>Programme Football</a>
+      <a href="/alternative/manga" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-book-open" style="color:var(--brand-hover);margin-right:6px"></i>Scans Manga &amp; Animés</a>
+      <a href="/alternative/dramas" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-masks-theater" style="color:var(--brand-hover);margin-right:6px"></i>K-Dramas</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

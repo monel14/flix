@@ -218,3 +218,120 @@ async def get_upcoming_matches() -> list[dict[str, Any]]:
     except Exception as exc:  # dernier rideau : la page pilier doit toujours rendre
         logger.warning("bloc fixtures désactivé (erreur cache): %s", exc)
         return []
+
+
+# ---------------------------------------------------------------------------
+# Programme F1, MotoGP, UFC, Boxe & NBA (page pilier /alternative/f1-ufc)
+# ---------------------------------------------------------------------------
+
+_F1_UFC_CACHE_KEY = "f1_ufc:fixtures"
+
+F1_UFC_LEAGUE_IDS: dict[int, str] = {
+    4370: "Formula 1",
+    4407: "MotoGP",
+    4443: "UFC",
+    4445: "Boxing",
+    4387: "NBA",
+}
+
+F1_UFC_BROADCASTERS: dict[str, str] = {
+    "Formula 1": "Canal+ / RTBF Auvio",
+    "MotoGP": "Canal+ Sport 360 / RTBF",
+    "UFC": "RMC Sport",
+    "Boxing": "DAZN / RMC Sport",
+    "NBA": "beIN Sports",
+}
+
+_F1_UFC_LABELS: dict[str, str] = {
+    "Formula 1": "Formule 1",
+    "MotoGP": "MotoGP",
+    "UFC": "UFC / MMA",
+    "Boxing": "Boxe",
+    "NBA": "NBA",
+}
+
+
+async def _fetch_f1_ufc_fixtures() -> tuple[list[dict[str, Any]], int, int]:
+    """Prochains Grands Prix (F1, MotoGP), galas UFC, combats de Boxe et matchs NBA."""
+    import asyncio
+
+    now = datetime.now(timezone.utc)
+    collected: dict[str, dict[str, Any]] = {}
+    ok_count = 0
+    total = 0
+    async with httpx.AsyncClient(timeout=_FETCH_TIMEOUT) as client:
+        for league_id, league_name in F1_UFC_LEAGUE_IDS.items():
+            total += 1
+            url = f"{_BASE_URL}/eventsnextleague.php"
+            try:
+                resp = await client.get(url, params={"id": league_id})
+                resp.raise_for_status()
+                events = (resp.json() or {}).get("events") or []
+                ok_count += 1
+            except (httpx.HTTPError, ValueError) as exc:
+                logger.warning("fixtures F1/UFC TheSportsDB indisponible (%s): %s", league_name, exc)
+                continue
+            for event in events:
+                ts = _parse_ts(event)
+                if ts is None or ts < now - timedelta(hours=6):
+                    continue
+                title = (event.get("strEvent") or "").strip()
+                home = (event.get("strHomeTeam") or "").strip()
+                away = (event.get("strAwayTeam") or "").strip()
+                if not title and home and away:
+                    title = f"{home} vs {away}"
+                if not title:
+                    continue
+                event_id = event.get("idEvent") or f"{league_name}-{title}"
+                collected[str(event_id)] = {
+                    "ts": ts,
+                    "label": _fr_date_label(ts),
+                    "league": _F1_UFC_LABELS.get(league_name, league_name),
+                    "title": title,
+                    "broadcaster": F1_UFC_BROADCASTERS[league_name],
+                }
+            await asyncio.sleep(_LEAGUE_PACE_SECONDS)
+    items = sorted(collected.values(), key=lambda m: m["ts"])
+    return (
+        [
+            {
+                "label": m["label"],
+                "league": m["league"],
+                "title": m["title"],
+                "broadcaster": m["broadcaster"],
+            }
+            for m in items[:_MAX_MATCHES]
+        ],
+        ok_count,
+        total,
+    )
+
+
+async def get_upcoming_motorsport_combat() -> list[dict[str, Any]]:
+    """Prochains événements F1, MotoGP, UFC, Boxe et NBA (+ diffuseurs officiels)."""
+    try:
+        fresh = cache.get(_F1_UFC_CACHE_KEY)
+        if fresh is not None:
+            return fresh
+
+        stale_entry = cache.get_stale(_F1_UFC_CACHE_KEY)
+        stale_data = (stale_entry or {}).get("data") or None
+
+        items, ok_count, total = await _fetch_f1_ufc_fixtures()
+
+        if ok_count == 0:
+            if stale_data:
+                cache.set(_F1_UFC_CACHE_KEY, stale_data, _FAIL_TTL)
+                return stale_data
+            cache.set(_F1_UFC_CACHE_KEY, [], _FAIL_TTL)
+            return []
+
+        if not items and stale_data:
+            cache.set(_F1_UFC_CACHE_KEY, stale_data, _PARTIAL_TTL)
+            return stale_data
+
+        cache.set(_F1_UFC_CACHE_KEY, items, _FIXTURES_TTL if ok_count >= total else _PARTIAL_TTL)
+        return items
+    except Exception as exc:
+        logger.warning("bloc f1_ufc désactivé (erreur cache): %s", exc)
+        return []

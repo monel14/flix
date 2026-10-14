@@ -20,7 +20,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from cache import cache
 from services.indexnow import ensure_indexnow_key, indexnow_key
 from services.alternatives_data import get_all_sites, get_site, get_sites_by_category
-from services.fixtures import get_upcoming_matches
+from services.fixtures import get_upcoming_matches, get_upcoming_motorsport_combat
 from services.seo import breadcrumb_json_ld, faq_page_json_ld, page_seo, site_origin
 from services.sitemap import LEGAL_PATHS as LEGAL_SITEMAP_PATHS
 from services.sitemap import STATIC_PATHS as STATIC_SITEMAP_PATHS
@@ -260,6 +260,130 @@ async def alternative_football_page(request: Request):
             extra_json_ld=[
                 faq_page_json_ld(SPORT_FAQ_ITEMS),
                 breadcrumb_json_ld(request, [("Alternatives", "/alternative"), ("Football & sport en direct", "/alternative/football")]),
+            ],
+        ),
+    })
+
+
+DRAMAS_FAQ_ITEMS = [
+    (
+        "Où regarder des K-Dramas gratuitement en VF et VOSTFR en 2026 ?",
+        "Le catalogue /dramas de NokaTV propose les séries coréennes, chinoises et japonaises en VOSTFR et VF sans création de compte. Côté plateformes officielles, Rakuten Viki permet de visionner gratuitement une partie de son catalogue avec publicités, et certaines chaînes coréennes (KBS World, SBS) diffusent des séries complètes sur YouTube.",
+    ),
+    (
+        "Pourquoi VoirDrama, DramaCool et KissAsian ne fonctionnent plus ?",
+        "DramaCool et KissAsian ont officiellement fermé fin 2024 sous la pression des ayants droit coréens (CJ ENM, SBS) : les sites qui utilisent encore leur nom en 2026 sont des clones non officiels. VoirDrama subit quant à lui le filtrage DNS des FAI français et change régulièrement d'extension (.org, .tv).",
+    ),
+    (
+        "Existe-t-il des K-Dramas doublés en français (VF) ?",
+        "Oui : de plus en plus de séries coréennes disposent d'un doublage français intégral, en plus de la VOSTFR traditionnelle. Sur NokaTV, chaque fiche indique clairement les pistes VF et VOSTFR disponibles.",
+    ),
+    (
+        "Faut-il installer une application comme Pandrama ou HiTV ?",
+        "Non, et c'est même déconseillé en dehors des stores officiels : Pandrama et HiTV ayant été retirés de Google Play et de l'App Store, les fichiers APK qui circulent sur les réseaux sociaux comportent souvent des publicités intrusives ou des spywares. Un accès direct dans le navigateur reste beaucoup plus sûr.",
+    ),
+]
+
+
+@app.get("/alternative/dramas", response_class=HTMLResponse)
+async def alternative_dramas_page(request: Request):
+    """Page pilier « K-Dramas & séries asiatiques » — alimente /dramas."""
+    drama_sites = get_sites_by_category("dramas")
+    return templates.TemplateResponse(request, "alternative_dramas.html", {
+        "request": request,
+        "drama_sites": drama_sites,
+        "faq_items": DRAMAS_FAQ_ITEMS,
+        "total_sites": len(get_all_sites()),
+        "seo": page_seo(
+            request,
+            title="K-Dramas en streaming VF & VOSTFR : VoirDrama, DramaCool & alternatives (2026)",
+            description="Où regarder des dramas coréens gratuitement en VF et VOSTFR en 2026 ? État des sites bloqués ou fermés (VoirDrama, DramaCool, KissAsian, Pandrama) et solutions fiables.",
+            path="/alternative/dramas",
+            extra_json_ld=[
+                faq_page_json_ld(DRAMAS_FAQ_ITEMS),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative"), ("K-Dramas & séries asiatiques", "/alternative/dramas")]),
+            ],
+        ),
+    })
+
+
+MANGA_FAQ_ITEMS = [
+    (
+        "Quelle est la vraie adresse de JapScan et Anime Sama en 2026 ?",
+        "Il n'existe plus d'adresse stable : JapScan (.lol, .vip, .ws) et Anime Sama sont inscrits sur les listes de blocage DNS de l'ARCOM chez Orange, SFR, Free et Bouygues Télécom. Chaque nouveau domaine est filtré en quelques jours et copié par des sites miroirs remplis de pop-ups.",
+    ),
+    (
+        "À quelle heure sortent les scans de One Piece et du Shōnen Jump en France ?",
+        "Les chapitres officiels traduits en français (One Piece, Sakamoto Days, Kagurabachi, Blue Box) sortent gratuitement chaque dimanche à 17h00 (heure de Paris) sur l'application et le site officiel MANGA Plus by Shueisha, sans aucune publicité intrusive.",
+    ),
+    (
+        "Pourquoi Scantrad et Reaper Scans ont-ils fermé ?",
+        "Les éditeurs japonais (Shueisha, Kodansha) et coréens (Kakao, Naver Webtoon) mènent depuis 2024-2026 des actions juridiques directes contre les équipes de traduction non officielles et leurs hébergeurs, entraînant la fermeture définitive de Scantrad France et de Reaper Scans.",
+    ),
+    (
+        "Où regarder les animés adaptés de ces mangas gratuitement en VF et VOSTFR ?",
+        "La section /animes de NokaTV regroupe les adaptations animées (One Piece, Solo Leveling, Dandadan, Demon Slayer, Jujutsu Kaisen...) en VF et VOSTFR, avec plusieurs lecteurs au choix et sans création de compte.",
+    ),
+]
+
+
+@app.get("/alternative/manga", response_class=HTMLResponse)
+async def alternative_manga_page(request: Request):
+    """Page pilier « Scans Manga, Webtoons & Animés » — alimente /animes."""
+    anime_sites = get_sites_by_category("animes")
+    return templates.TemplateResponse(request, "alternative_manga.html", {
+        "request": request,
+        "anime_sites": anime_sites,
+        "faq_items": MANGA_FAQ_ITEMS,
+        "total_sites": len(get_all_sites()),
+        "seo": page_seo(
+            request,
+            title="Scans Manga VF & Animés 2026 : JapScan, Lelscan, Anime Sama & alternatives",
+            description="Horaires officiels des chapitres en VF, état des sites de scans manga et d'animés bloqués en France (JapScan, Lelscan, Scantrad, Anime Sama, Voiranime) et solutions gratuites 2026.",
+            path="/alternative/manga",
+            extra_json_ld=[
+                faq_page_json_ld(MANGA_FAQ_ITEMS),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative"), ("Scans Manga & Animés", "/alternative/manga")]),
+            ],
+        ),
+    })
+
+
+F1_UFC_FAQ_ITEMS = [
+    (
+        "Comment regarder la Formule 1 gratuitement en français ?",
+        "En France, Canal+ détient les droits exclusifs de la F1. En revanche, en Belgique (RTBF Auvio / Tipik) et en Suisse (RTS Sport), le service public diffuse gratuitement les Grands Prix en direct et en français pour les résidents de ces pays.",
+    ),
+    (
+        "Sur quelle chaîne voir l'UFC et les grands combats de boxe en France ?",
+        "Les galas UFC (Main Card dans la nuit du samedi au dimanche, généralement dès 4h00 heure de Paris) sont diffusés sur RMC Sport, tandis que les préliminaires passent sur l'UFC Fight Pass. Les grands combats internationaux de boxe sont partagés entre DAZN et RMC Sport.",
+    ),
+    (
+        "Pourquoi F1 Live Stream, MethStreams et SportSurge bloquent-ils pendant la course ?",
+        "Les blocages DNS ordonnés par l'ARCOM sont activés en temps réel au départ du Grand Prix ou au début de la Main Card UFC, et l'afflux simultané de spectateurs sature les serveurs restants.",
+    ),
+]
+
+
+@app.get("/alternative/f1-ufc", response_class=HTMLResponse)
+async def alternative_f1_ufc_page(request: Request):
+    """Page pilier « Formule 1, UFC, Boxe & MotoGP » avec calendrier auto."""
+    events = await get_upcoming_motorsport_combat()
+    sport_sites = get_sites_by_category("sport")
+    return templates.TemplateResponse(request, "alternative_f1_ufc.html", {
+        "request": request,
+        "events": events,
+        "sport_sites": sport_sites,
+        "faq_items": F1_UFC_FAQ_ITEMS,
+        "total_sites": len(get_all_sites()),
+        "seo": page_seo(
+            request,
+            title="Streaming F1, UFC & Boxe 2026 : horaires GP, chaînes gratuites & sites bloqués",
+            description="Programme des prochains Grands Prix F1, MotoGP, galas UFC et combats de boxe (heure de Paris), chaînes gratuites francophones (RTBF Auvio, RTS) et état des sites bloqués (F1 Live Stream, MethStreams, SportSurge).",
+            path="/alternative/f1-ufc",
+            extra_json_ld=[
+                faq_page_json_ld(F1_UFC_FAQ_ITEMS),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative"), ("Formule 1, UFC & Boxe", "/alternative/f1-ufc")]),
             ],
         ),
     })

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="content-section" style="max-width:840px;margin:0 auto;padding:24px 16px">
+  <nav aria-label="Fil d'Ariane" style="font-size:0.85rem;margin-bottom:14px">
+    <a href="{{ home_href }}" style="color:var(--text-muted);text-decoration:none">Accueil</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <a href="/alternative" style="color:var(--text-muted);text-decoration:none">Alternatives</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <span style="color:var(--text-heading)">K-Dramas &amp; séries asiatiques</span>
+  </nav>
+
+  <h1 class="section-title section-title--page" style="line-height:1.3;margin-bottom:12px">
+    K-Dramas en streaming (VF &amp; VOSTFR) : état des sites &amp; solutions 2026
+  </h1>
+  <p style="color:var(--text-muted);line-height:1.65;margin:0 0 8px">
+    VoirDrama qui change d'adresse, DramaCool et KissAsian fermés, applications mobiles retirées des stores :
+    trouver une série coréenne ou asiatique en français sans tomber sur un faux site est devenu un casse-tête.
+    Voici <strong>où regarder vos K-Dramas gratuitement en VF ou VOSTFR</strong>, le calendrier de diffusion coréen,
+    et l'état vérifié de chaque plateforme en 2026.
+  </p>
+
+  <!-- ============ ACCÈS DIRECT CATALOGUE /dramas (CONVERSION IMMÉDIATE) ============ -->
+  <div style="background:linear-gradient(135deg, rgba(99,102,241,0.14), rgba(168,85,247,0.10));border:1px solid rgba(99,102,241,0.35);border-radius:10px;padding:18px 20px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+    <div style="flex:1;min-width:240px">
+      <div style="font-weight:700;color:var(--text-heading);font-size:1.05rem;margin-bottom:4px">
+        <i class="fas fa-masks-theater" style="color:var(--brand-hover);margin-right:8px"></i>Envie de lancer un épisode tout de suite ?
+      </div>
+      <p style="margin:0;font-size:0.9rem;color:var(--text-muted);line-height:1.5">
+        Accès direct aux K-Dramas, C-Dramas et J-Dramas complets en <strong>VOSTFR et VF</strong> sur NokaTV, sans compte et sans pop-up.
+      </p>
+    </div>
+    <a href="{{ media_base }}/dramas" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem;white-space:nowrap">
+      Ouvrir les Dramas <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <!-- ============ GUIDE PRATIQUE : RYTHME DE SORTIE & VOSTFR vs VF ============ -->
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px;margin-top:20px">
+    <h2 style="margin:0 0 8px;font-size:1.15rem;color:var(--text-heading)">
+      <i class="fas fa-calendar-check" style="color:var(--brand-hover);margin-right:8px"></i>Comment sortent les épisodes de K-Dramas en France ?
+    </h2>
+    <p style="margin:0 0 12px;font-size:0.9rem;color:var(--text-muted);line-height:1.6">
+      Contrairement aux séries occidentales lâchées d'un bloc, la télévision sud-coréenne (tvN, SBS, MBC, JTBC) diffuse
+      <strong>2 épisodes par semaine</strong> (généralement 16 épisodes au total) :
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.9rem">Tranche Lundi &amp; Mardi</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">Diffusion Corée à 21h50 KST → <strong>VOSTFR disponible dès ~17h30</strong> (heure de Paris).</div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.9rem">Tranche Mercredi &amp; Jeudi</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">Thrillers &amp; romances de mi-semaine → sous-titrage français en soirée.</div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,0.015)">
+        <div style="font-weight:600;color:var(--text-heading);font-size:0.9rem">Tranche Week-end (Ven/Sam/Dim)</div>
+        <div style="font-size:0.83rem;color:var(--text-muted);margin-top:4px">Grosses productions tvN / JTBC / Netflix → sorties simultanées ou J+1 en VF/VOSTFR.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TABLEAU COMPARATIF : OÙ REGARDER SELON VOTRE PROFIL ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">VOSTFR rapide, VF doublée ou gratuit légal : que choisir ?</h2>
+  <div style="overflow-x:auto;margin-top:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;overflow:hidden">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border-subtle);text-align:left;color:var(--text-heading);background:rgba(255,255,255,0.03)">
+          <th style="padding:10px 12px">Solution</th>
+          <th style="padding:10px 12px">Langues</th>
+          <th style="padding:10px 12px">Accès</th>
+          <th style="padding:10px 12px">Particularité</th>
+        </tr>
+      </thead>
+      <tbody style="color:var(--text-muted)">
+        <tr style="border-bottom:1px solid var(--border-subtle)">
+          <td style="padding:10px 12px;font-weight:600;color:var(--text-heading)"><a href="{{ media_base }}/dramas" style="color:var(--brand-hover);text-decoration:none">NokaTV (/dramas)</a></td>
+          <td style="padding:10px 12px">VF &amp; VOSTFR</td>
+          <td style="padding:10px 12px">Gratuit, sans compte</td>
+          <td style="padding:10px 12px">Multi-lecteurs HD, séries coréennes, chinoises &amp; japonaises</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-subtle)">
+          <td style="padding:10px 12px;font-weight:600;color:var(--text-heading)">Rakuten Viki</td>
+          <td style="padding:10px 12px">VOSTFR (communauté)</td>
+          <td style="padding:10px 12px">Gratuit (SD + pub) / Pass</td>
+          <td style="padding:10px 12px">Catalogue officiel historique, sous-titres soignés</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-subtle)">
+          <td style="padding:10px 12px;font-weight:600;color:var(--text-heading)">Netflix / Disney+</td>
+          <td style="padding:10px 12px">VF &amp; VOSTFR</td>
+          <td style="padding:10px 12px">Abonnement payant</td>
+          <td style="padding:10px 12px">Productions exclusives doublées en français</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:var(--text-heading)">YouTube (KBS World / SBS)</td>
+          <td style="padding:10px 12px">VOSTA / parfois VOSTFR</td>
+          <td style="padding:10px 12px">100 % gratuit</td>
+          <td style="padding:10px 12px">Dramas classiques mis en ligne légalement par les chaînes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ POURQUOI VOIRDRAMA & DRAMACOOL NE MARCHENT PLUS ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Pourquoi VoirDrama, DramaCool et KissAsian sont bloqués ou instables ?</h2>
+  <p style="margin:8px 0;font-size:0.94rem;line-height:1.7">
+    Depuis fin 2024 et l'accélération des blocages en 2026, les studios sud-coréens (CJ ENM, Studio Dragon, SBS) et la coalition
+    internationale ACE ciblent directement les hébergeurs vidéo et les noms de domaine :
+  </p>
+  <ul style="font-size:0.92rem;line-height:1.8;padding-left:20px">
+    <li><strong>Fermeture définitive des géants anglophones</strong> : <a href="/alternative/dramacool">DramaCool</a> et <a href="/alternative/kissasian">KissAsian</a> ont arrêté leurs serveurs officiels ; les sites qui portent leur nom aujourd'hui sont des copies non affiliées.</li>
+    <li><strong>Rotation DNS francophone</strong> : <a href="/alternative/voirdrama">VoirDrama</a> et <a href="/alternative/dramavostfr">DramaVOSTFR</a> changent régulièrement d'extension (.org, .tv) pour contourner le filtrage des FAI français.</li>
+    <li><strong>Applications mobiles supprimées</strong> : <a href="/alternative/pandrama">Pandrama</a> et <a href="/alternative/hitv">HiTV</a> ont été retirés de Google Play et de l'App Store ; méfiez-vous des fichiers APK modifiés qui circulent sur Telegram ou TikTok.</li>
+  </ul>
+
+  <!-- ============ ÉTAT DES LIEUX DES SITES DRAMAS ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Sites de K-Dramas : l'état des lieux (2026)</h2>
+  <p style="margin:8px 0 14px;font-size:0.93rem;color:var(--text-muted)">
+    Statut vérifié de chaque site de dramas — cliquez sur une fiche pour le diagnostic détaillé et les alternatives.
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
+    {% for s in drama_sites %}
+    <a href="/alternative/{{ s.slug }}" style="display:block;padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px;text-decoration:none;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ s.name }}</div>
+      <div style="margin-top:5px;font-size:0.78rem;{% if s.status_type == 'blocked' %}color:#f87171{% else %}color:#fbbf24{% endif %}">
+        {% if s.status_type == 'blocked' %}<i class="fas fa-circle-xmark"></i>{% else %}<i class="fas fa-triangle-exclamation"></i>{% endif %}
+        {{ s.status }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Questions fréquentes sur les K-Dramas en streaming</h2>
+  <div style="margin-top:10px">
+    {% for question, answer in faq_items %}
+    <details style="border:1px solid var(--border-subtle);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg-surface)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ question }}</summary>
+      <p style="margin:8px 0 0;font-size:0.92rem;line-height:1.65;color:var(--text-muted)">{{ answer }}</p>
+    </details>
+    {% endfor %}
+  </div>
+
+  <!-- ============ MAILLAGE AUTRES GUIDES ============ -->
+  <div style="margin-top:26px;padding:16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-surface)">
+    <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem;margin-bottom:10px">Consulter nos autres dossiers thématiques 2026 :</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <a href="/alternative/manga" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-book-open" style="color:var(--brand-hover);margin-right:6px"></i>Scans Manga &amp; Animés</a>
+      <a href="/alternative/football" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:6px"></i>Football en direct</a>
+      <a href="/alternative/f1-ufc" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-flag-checkered" style="color:var(--brand-hover);margin-right:6px"></i>Formule 1, UFC &amp; Boxe</a>
+      <a href="/alternative" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-list" style="color:var(--brand-hover);margin-right:6px"></i>Tous les {{ total_sites }} sites</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

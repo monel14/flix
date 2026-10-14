@@ -44,12 +44,19 @@ SITEMAP_TTL = 12 * 3600  # 12 h — un sitemap n'a pas besoin d'être plus frais
 from services.alternatives_data import STREAMING_SITES
 
 # Stratégie 2026-10 « coque propre » : seul l'écosystème indexable sans risque
-# est exposé à Google — le Hub /alternative + toutes les fiches d'information
-# /alternative/{slug} (veille ARCOM 2026) + home + pages légales.
-# La page pilier football (/alternative/football) a sa propre route et n'est
-# pas une fiche : elle est listée explicitement.
+# est exposé à Google — le Hub /alternative + les 4 dossiers piliers thématiques
+# (/alternative/football, /alternative/dramas, /alternative/manga,
+# /alternative/f1-ufc) + toutes les fiches d'information /alternative/{slug}
+# (veille ARCOM 2026) + home + pages légales.
+PILLAR_PATHS = [
+    "/alternative/football",
+    "/alternative/dramas",
+    "/alternative/manga",
+    "/alternative/f1-ufc",
+]
 STATIC_PATHS = (
-    ["/", "/alternative", "/alternative/football"]
+    ["/", "/alternative"]
+    + PILLAR_PATHS
     + [f"/alternative/{slug}" for slug in sorted(STREAMING_SITES.keys())]
 )
 # Pages de confiance (E-E-A-T) : toujours disponibles, donc toujours listées.
