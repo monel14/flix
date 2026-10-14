@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="content-section" style="max-width:840px;margin:0 auto;padding:24px 16px">
+  <nav aria-label="Fil d'Ariane" style="font-size:0.85rem;margin-bottom:14px">
+    <a href="{{ home_href }}" style="color:var(--text-muted);text-decoration:none">Accueil</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <a href="/alternative" style="color:var(--text-muted);text-decoration:none">Alternatives</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <span style="color:var(--text-heading)">Football &amp; sport en direct</span>
+  </nav>
+
+  <h1 class="section-title section-title--page" style="line-height:1.3;margin-bottom:12px">
+    Streaming foot 2026 : matchs, chaînes officielles &amp; sites bloqués
+  </h1>
+  <p style="color:var(--text-muted);line-height:1.65;margin:0 0 8px">
+    Chaque journée de match, les mêmes questions reviennent : <strong>quel match ce soir et sur quelle chaîne</strong>,
+    pourquoi le site habituel est bloqué, et pourquoi le flux coupe au coup d'envoi. Cette page répond à tout cela,
+    sans flux ni lien pirate : le programme officiel, l'état réel des sites de streaming foot et les solutions qui marchent vraiment.
+  </p>
+
+  <!-- ============================== PROGRAMME ============================== -->
+  {% if fixtures %}
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px 18px 10px;margin-top:22px">
+    <h2 style="margin:0 0 4px;font-size:1.15rem;color:var(--text-heading)">
+      <i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:8px"></i>Prochains matchs &amp; chaînes officielles
+    </h2>
+    <p style="margin:0 0 12px;font-size:0.85rem;color:var(--text-muted)">
+      Horaires de Paris — diffuseurs officiels en France. Mis à jour automatiquement.
+    </p>
+    {% for m in fixtures %}
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:9px 0;border-top:1px solid var(--border-subtle)">
+      <span style="min-width:150px;font-size:0.85rem;color:var(--text-muted)">{{ m.label }}</span>
+      <span style="flex:1;min-width:180px;font-weight:600;color:var(--text-heading);font-size:0.92rem">{{ m.home }} <span style="color:var(--text-muted);font-weight:400">vs</span> {{ m.away }}</span>
+      <span style="font-size:0.78rem;color:var(--text-muted)">{{ m.league }}</span>
+      <span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:0.82rem;background:rgba(99,102,241,0.12);color:var(--brand-hover, #818cf8);font-weight:600">{{ m.broadcaster }}</span>
+    </div>
+    {% endfor %}
+    <p style="margin:8px 0 4px;font-size:0.78rem;color:var(--text-muted)">
+      Sources droits TV : LFP, Canal+, beIN, DAZN, M6 — aucune retransmission n'est proposée sur cette page.
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- ========================= CHECKLIST « CE SOIR » ========================= -->
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px;margin-top:20px">
+    <h2 style="margin:0 0 10px;font-size:1.15rem;color:var(--text-heading)">
+      <i class="fas fa-bolt" style="color:#f59e0b;margin-right:8px"></i>Ce soir, votre site de foot est bloqué ?
+    </h2>
+    <p style="margin:0 0 10px;font-size:0.92rem;line-height:1.6">
+      Le blocage DNS des matchs en direct se déclenche <strong>au coup d'envoi</strong>, pas avant. Dans 90 % des cas,
+      le problème n'est pas votre connexion :
+    </p>
+    <ol style="margin:0;padding-left:20px;font-size:0.92rem;line-height:1.85">
+      <li><strong>Vérifiez si l'adresse est nouvelle</strong> : les adresses des sites foot vivent quelques jours — voir
+        <a href="/alternative/streamonsport">l'état de Streamonsport</a> ou <a href="/alternative/streameast">StreamEast</a>.</li>
+      <li><strong>Attention aux faux miroirs</strong> : les copies qui demandent vos coordonnées bancaires sont des arnaques, pas des sites de streaming.</li>
+      <li><strong>Changez d'option, pas de site</strong> : un match manqué se rattrape en résumé (L'Équipe, France.tv) ; les solutions légales ci-dessous couvrent l'essentiel.</li>
+    </ol>
+  </div>
+
+  <!-- ====================== POURQUOI ÇA COUPE (E-E-A-T) ====================== -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Pourquoi les streams de foot coupent au coup d'envoi ?</h2>
+  <p style="margin:8px 0;font-size:0.95rem;line-height:1.7">
+    Trois raisons techniques reviennent toujours, et aucune n'est « votre box » :
+  </p>
+  <ul style="font-size:0.93rem;line-height:1.8;padding-left:20px">
+    <li><strong>Le blocage DNS est programmé sur l'événement</strong> : l'ARCOM et les ayants droit activent le filtrage des adresses connues exactement pendant la diffusion — c'est pour ça que le site marchait à 19h et plus à 21h.</li>
+    <li><strong>La surcharge des serveurs</strong> : ces plateformes dimensionnent leurs flux pour une fraction des spectateurs réels ; dès qu'un match populaire démarre, le serveur sature et coupe par à-coups.</li>
+    <li><strong>La rotation des adresses</strong> : si vous arrivez par un miroir qui vient d'être neutralisé, le lecteur essaie de se connecter à une source déjà morte — d'où le chargement infini.</li>
+  </ul>
+  <p style="margin:8px 0;font-size:0.92rem;line-height:1.7">
+    C'est le même phénomène qui touche films et séries sur les gros sites : notre
+    <a href="/alternative">observatoire des alternatives</a> suit l'état de {{ total_sites }} sites jour après jour.
+  </p>
+
+  <!-- ====================== ÉTAT DES LIEUX DES SITES FOOT ====================== -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Sites de streaming foot : l'état des lieux (2026)</h2>
+  <p style="margin:8px 0 14px;font-size:0.93rem;color:var(--text-muted)">
+    Statuts vérifiés par l'observatoire — cliquez pour le détail, les risques et les alternatives de chaque site.
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
+    {% for s in sport_sites %}
+    <a href="/alternative/{{ s.slug }}" style="display:block;padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px;text-decoration:none;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ s.name }}</div>
+      <div style="margin-top:5px;font-size:0.78rem;{% if s.status_type == 'blocked' %}color:#f87171{% else %}color:#fbbf24{% endif %}">
+        {% if s.status_type == 'blocked' %}<i class="fas fa-circle-xmark"></i>{% else %}<i class="fas fa-triangle-exclamation"></i>{% endif %}
+        {{ s.status }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ============================ SOLUTIONS LÉGALES ============================ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Les solutions légales, par compétition</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:12px">
+    <div style="padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px"><strong>Ligue 1</strong><div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">DAZN, Canal+ — résumés gratuits sur L'Équipe et France.tv</div></div>
+    <div style="padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px"><strong>Ligue des Champions</strong><div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">Canal+ Foot — certains matchs en clair sur M6</div></div>
+    <div style="padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px"><strong>Premier League &amp; Liga</strong><div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">Canal+ Sport, beIN Sports</div></div>
+    <div style="padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px"><strong>Sélection française &amp; Euro</strong><div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">TF1, M6 — gratuits en clair</div></div>
+    <div style="padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px"><strong>Coupes &amp; divers</strong><div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">France.tv Sport (gratuit), L'Équipe (résumés, directs sélectionnés)</div></div>
+    <div style="padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px"><strong>Après le match</strong><div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px">Films &amp; séries pour la soirée :
+      <a href="{{ media_base }}/films">NokaTV</a></div></div>
+  </div>
+
+  <!-- ================================= FAQ ================================= -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Questions fréquentes sur le streaming foot</h2>
+  <div style="margin-top:10px">
+    {% for question, answer in faq_items %}
+    <details style="border:1px solid var(--border-subtle);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg-surface)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ question }}</summary>
+      <p style="margin:8px 0 0;font-size:0.92rem;line-height:1.65;color:var(--text-muted)">{{ answer }}</p>
+    </details>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:26px;padding:16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-surface)">
+    <p style="margin:0 0 8px;font-size:0.92rem;color:var(--text-heading);font-weight:600">Et pour ce soir, côté divertissement ?</p>
+    <p style="margin:0 0 12px;font-size:0.9rem;color:var(--text-muted)">
+      NokaTV : films, séries, animés et dramas en streaming gratuit, sans compte obligatoire ni publicités intrusives.
+    </p>
+    <a href="{{ media_base }}/films" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem">
+      Voir le catalogue <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+</section>
+{% endblock %}

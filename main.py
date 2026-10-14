@@ -20,6 +20,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from cache import cache
 from services.indexnow import ensure_indexnow_key, indexnow_key
 from services.alternatives_data import get_all_sites, get_site, get_sites_by_category
+from services.fixtures import get_upcoming_matches
 from services.seo import breadcrumb_json_ld, faq_page_json_ld, page_seo, site_origin
 from services.sitemap import LEGAL_PATHS as LEGAL_SITEMAP_PATHS
 from services.sitemap import STATIC_PATHS as STATIC_SITEMAP_PATHS
@@ -201,6 +202,64 @@ async def alternative_page(request: Request):
             extra_json_ld=[
                 faq_page_json_ld(faq_items),
                 breadcrumb_json_ld(request, [("Alternatives", "/alternative")]),
+            ],
+        ),
+    })
+
+
+SPORT_FAQ_ITEMS = [
+    (
+        "Où regarder le foot gratuitement et légalement ?",
+        "En clair : certains matchs de Ligue des Champions et de la sélection française sur M6 et TF1, les directs sélectionnés de France.tv Sport, et les résumés gratuits sur L'Équipe. Le reste (Ligue 1, Premier League, Liga) passe par les abonnements DAZN, Canal+ et beIN Sports.",
+    ),
+    (
+        "Pourquoi tous les sites de streaming foot sont-ils bloqués en 2026 ?",
+        "Depuis mars 2026, l'ARCOM pilote un blocage DNS dynamique en temps réel des retransmissions sportives : plus de 326 domaines ont été neutralisés, et chaque nouvelle adresse est filtrée par les FAI pendant les matchs en direct.",
+    ),
+    (
+        "Est-ce légal de regarder un match sur un site de streaming gratuit ?",
+        "En France, les procédures visent les sites et les diffuseurs, pas les spectateurs. Les vrais risques pour le visiteur sont techniques : publicités malveillantes, faux miroirs qui volent les coordonnées bancaires, et flux coupés en plein match. Un bloqueur de publicités et la méfiance envers les formulaires de paiement restent les deux réflexes essentiels.",
+    ),
+    (
+        "Pourquoi le flux coupe-t-il toujours au coup d'envoi ?",
+        "Le blocage des adresses connues est programmé exactement pendant la diffusion, et les serveurs de ces plateformes saturent dès qu'un match populaire commence. Avant le coup d'envoi, tout fonctionne ; pendant le match, plus rien. C'est le fonctionnement normal du dispositif de blocage, pas une panne de votre connexion.",
+    ),
+    (
+        "Quelle alternative quand le match est introuvable ?",
+        "Les résumés sont disponibles gratuitement quelques minutes après le coup de sifflet final (L'Équipe, France.tv), et les jours de match sans solution, le catalogue films et séries de NokaTV occupe la soirée. Voir aussi notre observatoire pour l'état à jour des sites bloqués.",
+    ),
+]
+
+
+@app.get("/alternative/football", response_class=HTMLResponse)
+async def alternative_football_page(request: Request):
+    """Page pilier « Football & sport en direct » (stratégie contenu utile 2026-10).
+
+    Cible les requêtes à forte récurrence hebdomadaire (« match ce soir chaîne »,
+    « streaming foot bloqué ») avec :
+    - le programme des matchs + chaînes officielles (cache 12 h, masqué si la
+      source est en panne) — réponse immédiale = le visiteur reste ;
+    - une checklist actionnable « ce soir c'est bloqué » ;
+    - l'état des lieux des sites sport fichés (maillage vers les détails) ;
+    - une FAQ alignée sur les formulations de recherche réelles.
+    Zéro flux, zéro lien de stream : même ligne rouge juridique que l'observatoire.
+    """
+    fixtures = await get_upcoming_matches()
+    sport_sites = get_sites_by_category("sport")
+    return templates.TemplateResponse(request, "alternative_football.html", {
+        "request": request,
+        "fixtures": fixtures,
+        "sport_sites": sport_sites,
+        "faq_items": SPORT_FAQ_ITEMS,
+        "total_sites": len(get_all_sites()),
+        "seo": page_seo(
+            request,
+            title="Streaming foot 2026 : matchs en direct, sites bloqués & alternatives",
+            description="Programme des matchs et chaînes officielles, état des lieux des sites de streaming foot bloqués par l'ARCOM (StreamEast, SportTuna, Streamonsport...) et solutions légales 2026.",
+            path="/alternative/football",
+            extra_json_ld=[
+                faq_page_json_ld(SPORT_FAQ_ITEMS),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative"), ("Football & sport en direct", "/alternative/football")]),
             ],
         ),
     })

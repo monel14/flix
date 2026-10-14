@@ -46,7 +46,12 @@ from services.alternatives_data import STREAMING_SITES
 # Stratégie 2026-10 « coque propre » : seul l'écosystème indexable sans risque
 # est exposé à Google — le Hub /alternative + toutes les fiches d'information
 # /alternative/{slug} (veille ARCOM 2026) + home + pages légales.
-STATIC_PATHS = ["/", "/alternative"] + [f"/alternative/{slug}" for slug in sorted(STREAMING_SITES.keys())]
+# La page pilier football (/alternative/football) a sa propre route et n'est
+# pas une fiche : elle est listée explicitement.
+STATIC_PATHS = (
+    ["/", "/alternative", "/alternative/football"]
+    + [f"/alternative/{slug}" for slug in sorted(STREAMING_SITES.keys())]
+)
 # Pages de confiance (E-E-A-T) : toujours disponibles, donc toujours listées.
 LEGAL_PATHS = ["/mentions-legales", "/contact", "/dmca"]
 BASE_PATHS = STATIC_PATHS + LEGAL_PATHS
