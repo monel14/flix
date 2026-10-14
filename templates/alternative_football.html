@@ -22,15 +22,19 @@
   {% if fixtures %}
   <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px 18px 10px;margin-top:22px">
     <h2 style="margin:0 0 4px;font-size:1.15rem;color:var(--text-heading)">
-      <i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:8px"></i>Prochains matchs &amp; chaînes officielles
+      <i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:8px"></i>Matchs ce soir &amp; affiches de la semaine (chaînes officielles)
     </h2>
     <p style="margin:0 0 12px;font-size:0.85rem;color:var(--text-muted)">
-      Horaires de Paris — diffuseurs officiels en France. Mis à jour automatiquement.
+      Horaires de Paris — sélection des plus grosses affiches (PSG, OM, OL, Ligue des Champions, Ligue 1…) mise à jour automatiquement.
     </p>
     {% for m in fixtures %}
-    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:9px 0;border-top:1px solid var(--border-subtle)">
-      <span style="min-width:150px;font-size:0.85rem;color:var(--text-muted)">{{ m.label }}</span>
-      <span style="flex:1;min-width:180px;font-weight:600;color:var(--text-heading);font-size:0.92rem">{{ m.home }} <span style="color:var(--text-muted);font-weight:400">vs</span> {{ m.away }}</span>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:9px 8px;border-top:1px solid var(--border-subtle);{% if m.is_today %}background:rgba(99,102,241,0.06);border-radius:6px{% endif %}">
+      <span style="min-width:155px;font-size:0.85rem;{% if m.is_today %}color:#fbbf24;font-weight:600{% else %}color:var(--text-muted){% endif %}">
+        {% if m.is_today %}<i class="fas fa-fire" style="color:#f59e0b;margin-right:5px"></i>{% endif %}{{ m.label }}
+      </span>
+      <span style="flex:1;min-width:190px;font-weight:600;color:var(--text-heading);font-size:0.93rem">
+        {{ m.home }} <span style="color:var(--text-muted);font-weight:400">vs</span> {{ m.away }}
+      </span>
       <span style="font-size:0.78rem;color:var(--text-muted)">{{ m.league }}</span>
       <span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:0.82rem;background:rgba(99,102,241,0.12);color:var(--brand-hover, #818cf8);font-weight:600">{{ m.broadcaster }}</span>
     </div>

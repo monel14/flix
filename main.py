@@ -246,6 +246,19 @@ async def alternative_football_page(request: Request):
     """
     fixtures = await get_upcoming_matches()
     sport_sites = get_sites_by_category("sport")
+    today_matches = [m for m in fixtures if m.get("is_today")]
+    if today_matches:
+        top_today = today_matches[0]
+        foot_desc = (
+            f"À l'affiche ({top_today['label']}) : {top_today['home']} vs {top_today['away']} "
+            f"({top_today['broadcaster']}). Programme complet des matchs, sites de streaming foot "
+            "bloqués par l'ARCOM (Streamonsport, StreamEast...) et alternatives 2026."
+        )
+    else:
+        foot_desc = (
+            "Programme des matchs et chaînes officielles, état des lieux des sites de streaming foot "
+            "bloqués par l'ARCOM (StreamEast, SportTuna, Streamonsport...) et solutions légales 2026."
+        )
     return templates.TemplateResponse(request, "alternative_football.html", {
         "request": request,
         "fixtures": fixtures,
@@ -254,8 +267,8 @@ async def alternative_football_page(request: Request):
         "total_sites": len(get_all_sites()),
         "seo": page_seo(
             request,
-            title="Streaming foot 2026 : matchs en direct, sites bloqués & alternatives",
-            description="Programme des matchs et chaînes officielles, état des lieux des sites de streaming foot bloqués par l'ARCOM (StreamEast, SportTuna, Streamonsport...) et solutions légales 2026.",
+            title="Streaming foot 2026 : matchs ce soir, sites bloqués & alternatives",
+            description=foot_desc,
             path="/alternative/football",
             extra_json_ld=[
                 faq_page_json_ld(SPORT_FAQ_ITEMS),
