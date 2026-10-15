@@ -491,6 +491,53 @@ async def alternative_iptv_page(request: Request):
     })
 
 
+NETFLIX_FAQ_ITEMS = [
+    (
+        "Quelle est la meilleure alternative gratuite à Netflix sans compte en 2026 ?",
+        "Pour retrouver une interface fluide similaire à Netflix avec films, séries, animés et K-Dramas en VF et VOSTFR sans créer de compte, NokaTV offre un accès direct dans le navigateur. Côté plateformes officielles financées par la publicité (AVOD), Pluto TV, Arte.tv, France.tv et Rakuten TV permettent aussi de regarder des films et séries gratuitement et légalement.",
+    ),
+    (
+        "Existe-t-il encore un mois d'essai gratuit sur Netflix en France ?",
+        "Non : Netflix a définitivement supprimé son offre d'essai gratuit de 30 jours en France, tout comme Disney+. Toute page web qui promet un mois gratuit Netflix contre une empreinte de carte bancaire est une tentative d'hameçonnage (phishing).",
+    ),
+    (
+        "Quel site ressemble à Netflix mais gratuitement ?",
+        "Les anciens clones en -flix (Coflix, Wiflix, Sadisflix, Filmoflix, Xalaflix) sont désormais bloqués par filtrage DNS chez Orange, SFR, Free et Bouygues Télécom. NokaTV reprend une navigation sombre par affiches et catégories (Films, Séries, Animés, Dramas) accessible gratuitement sans inscription.",
+    ),
+    (
+        "Quelle alternative gratuite à Crunchyroll et Disney+ en 2026 ?",
+        "Pour les animés japonais en VF et VOSTFR, la section /animes de NokaTV complète les chapitres gratuits officiels de MANGA Plus. Pour les séries et le cinéma familial, Pluto TV et France.tv proposent des catalogues gratuits sans abonnement.",
+    ),
+]
+
+
+@app.get("/alternative/netflix", response_class=HTMLResponse)
+async def alternative_netflix_page(request: Request):
+    """Page pilier « Alternative à Netflix gratuite » — cible 'alternative netflix' & 'site comme netflix'."""
+    flix_slugs = {
+        "coflix", "wiflix", "sadisflix", "filmoflix", "xalaflix",
+        "alloflix", "monflix", "gogoflix", "yopflix", "filmnetflix",
+        "french-stream", "papadustream",
+    }
+    flix_sites = [s for s in get_all_sites() if s["slug"] in flix_slugs]
+    return templates.TemplateResponse(request, "alternative_netflix.html", {
+        "request": request,
+        "flix_sites": flix_sites,
+        "faq_items": NETFLIX_FAQ_ITEMS,
+        "total_sites": len(get_all_sites()),
+        "seo": page_seo(
+            request,
+            title="Alternative à Netflix gratuite (2026) : les meilleurs sites comme Netflix sans compte",
+            description="Quelle alternative gratuite à Netflix, Disney+ et Crunchyroll en 2026 ? Comparatif des sites comme Netflix sans compte ni carte bancaire (NokaTV, Pluto TV, Arte.tv...) et état des sites en -flix.",
+            path="/alternative/netflix",
+            extra_json_ld=[
+                faq_page_json_ld(NETFLIX_FAQ_ITEMS),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative"), ("Alternative à Netflix gratuite", "/alternative/netflix")]),
+            ],
+        ),
+    })
+
+
 @app.get("/alternative/{slug}", response_class=HTMLResponse)
 async def alternative_detail_page(request: Request, slug: str):
     """Page dédiée à un site spécifique (SEO chirurgical sur 'X ne marche plus').

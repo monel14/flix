@@ -49,6 +49,7 @@ from services.alternatives_data import STREAMING_SITES
 # /alternative/f1-ufc) + toutes les fiches d'information /alternative/{slug}
 # (veille ARCOM 2026) + home + pages légales.
 PILLAR_PATHS = [
+    "/alternative/netflix",
     "/alternative/football",
     "/alternative/dramas",
     "/alternative/manga",
