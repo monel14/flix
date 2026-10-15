@@ -53,6 +53,8 @@ PILLAR_PATHS = [
     "/alternative/dramas",
     "/alternative/manga",
     "/alternative/f1-ufc",
+    "/alternative/telechargement",
+    "/alternative/iptv",
 ]
 STATIC_PATHS = (
     ["/", "/alternative"]

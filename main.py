@@ -402,6 +402,95 @@ async def alternative_f1_ufc_page(request: Request):
     })
 
 
+DDL_FAQ_ITEMS = [
+    (
+        "Quelle est la nouvelle adresse de DarkiWorld (ex-Darkino / Tirexo) et WawaCity en 2026 ?",
+        "DarkiWorld et WawaCity changent d'adresse et de numéro en permanence car chaque nouveau domaine est inscrit en quelques jours sur la liste de blocage DNS de l'ARCOM chez Orange, SFR, Free et Bouygues Télécom. La majorité des sites qui s'affichent en tête des moteurs de recherche sont des copies malveillantes.",
+    ),
+    (
+        "Pourquoi YggTorrent et Sharewood demandent-ils un compte ou bloquent-ils l'inscription ?",
+        "Les trackers BitTorrent semi-privés comme YggTorrent et Sharewood ferment régulièrement leurs inscriptions et imposent un ratio d'envoi strict (ou payant). En outre, le protocole BitTorrent expose l'adresse IP du téléchargeur dans l'essaim P2P, contrairement au streaming direct en HTTPS dans un navigateur.",
+    ),
+    (
+        "Où lire ou télécharger des ebooks gratuitement après le blocage de Fourtoutici et Z-Library ?",
+        "Fourtoutici, Z-Library, Anna's Archive et Bookys font l'objet d'ordonnances de blocage DNS en France. Pour un accès gratuit et 100 % légal, utilisez Gallica (Bibliothèque nationale de France), le Projet Gutenberg, Open Library ou le Prêt Numérique en Bibliothèque (PNB) inclus avec votre carte de médiathèque.",
+    ),
+    (
+        "Pourquoi remplacer le téléchargement direct (1fichier, Rapidgator) par le streaming ?",
+        "Avec la disparition d'Uptobox et les quotas d'attente de 60 minutes entre deux fichiers sur les hébergeurs gratuits, lancer directement un film ou une série en HD sur NokaTV évite les liens expirés, les débrideurs payants et les fichiers infectés.",
+    ),
+]
+
+
+@app.get("/alternative/telechargement", response_class=HTMLResponse)
+async def alternative_telechargement_page(request: Request):
+    """Page pilier « Téléchargement DDL, Torrents & Ebooks » — capitalise sur Tirexo/WawaCity/DarkiWorld."""
+    ddl_sites = get_sites_by_category("ddl-torrent")
+    return templates.TemplateResponse(request, "alternative_telechargement.html", {
+        "request": request,
+        "ddl_sites": ddl_sites,
+        "faq_items": DDL_FAQ_ITEMS,
+        "total_sites": len(get_all_sites()),
+        "seo": page_seo(
+            request,
+            title="Sites de téléchargement bloqués 2026 : WawaCity, Tirexo, DarkiWorld, Ygg & alternatives",
+            description="État des sites de téléchargement direct (DarkiWorld, Darkino, WawaCity, Tirexo), torrents (YggTorrent, Sharewood, Nyaa) et ebooks (Fourtoutici, Z-Library) bloqués en 2026 + solutions en streaming direct.",
+            path="/alternative/telechargement",
+            extra_json_ld=[
+                faq_page_json_ld(DDL_FAQ_ITEMS),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative"), ("Téléchargement DDL, Torrents & Ebooks", "/alternative/telechargement")]),
+            ],
+        ),
+    })
+
+
+IPTV_FAQ_ITEMS = [
+    (
+        "Pourquoi mon IPTV (Atlas Pro, Iron TV, King 365) bloque le soir chez Orange, SFR ou Free ?",
+        "Depuis 2025-2026, l'ARCOM et les détenteurs de droits sportifs (LFP, Canal+, beIN) activent un blocage dynamique d'adresses IP en temps réel au coup d'envoi des matchs. Les quatre grands FAI français coupent alors l'accès aux serveurs Xtream Codes, ce qui bloque à la fois les chaînes en direct et la VOD du boîtier.",
+    ),
+    (
+        "Pourquoi l'application IPTV Smarters Pro affiche-t-elle « Échec de connexion » ?",
+        "IPTV Smarters Pro (comme TiviMate ou XCIPTV) n'est qu'un lecteur vidéo vide et ne fournit aucune chaîne. Si l'écran reste noir, le problème ne vient pas de l'application mais de l'URL du serveur de votre fournisseur qui est bloquée par votre opérateur ou hors service.",
+    ),
+    (
+        "Par quoi remplacer Mamcin pour voir la TV et les émissions en replay sans compte ?",
+        "Pluto TV permet de regarder plus de 100 chaînes et séries en direct gratuitement sans créer de compte. Pour les replays officiels des grandes chaînes françaises, France.tv, TF1+ et M6+ restent les sources gratuites de référence, et NokaTV donne accès aux films, séries, animés et dramas sans inscription.",
+    ),
+    (
+        "Où regarder des séries turques (Dizi) en VF et VOSTFR quand Diziturk ne marche plus ?",
+        "De nombreuses chaînes officielles turques (ATV, Kanal D, Star TV) publient désormais leurs épisodes complets gratuitement sur YouTube avec sous-titres, et NokaTV propose une sélection de séries internationales et dramas en VF et VOSTFR.",
+    ),
+]
+
+
+@app.get("/alternative/iptv", response_class=HTMLResponse)
+async def alternative_iptv_page(request: Request):
+    """Page pilier « IPTV, Replay TV & Séries Turques » — capte les pannes IPTV du soir."""
+    iptv_slugs = {
+        "atlas-pro", "iron-tv", "king365", "iptv-smarters",
+        "mamcin", "diziturk", "turksubfr", "xalaflix",
+        "streamonsport", "livetv", "nbabite", "stream2watch",
+    }
+    iptv_sites = [s for s in get_all_sites() if s["slug"] in iptv_slugs]
+    return templates.TemplateResponse(request, "alternative_iptv.html", {
+        "request": request,
+        "iptv_sites": iptv_sites,
+        "faq_items": IPTV_FAQ_ITEMS,
+        "total_sites": len(get_all_sites()),
+        "seo": page_seo(
+            request,
+            title="IPTV bloquée 2026 (Orange, SFR, Free) : Atlas Pro, Iron TV, Smarters & solutions",
+            description="Pourquoi votre IPTV (Atlas Pro ONTV, Iron TV Pro, King 365, IPTV Smarters) coupe à 21h chez Orange, SFR et Free ? Explications du blocage ARCOM, état de Mamcin/Diziturk et solutions VOD sans coupure.",
+            path="/alternative/iptv",
+            extra_json_ld=[
+                faq_page_json_ld(IPTV_FAQ_ITEMS),
+                breadcrumb_json_ld(request, [("Alternatives", "/alternative"), ("IPTV, Replay TV & Séries Turques", "/alternative/iptv")]),
+            ],
+        ),
+    })
+
+
 @app.get("/alternative/{slug}", response_class=HTMLResponse)
 async def alternative_detail_page(request: Request, slug: str):
     """Page dédiée à un site spécifique (SEO chirurgical sur 'X ne marche plus').

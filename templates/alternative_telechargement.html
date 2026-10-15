@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="content-section" style="max-width:840px;margin:0 auto;padding:24px 16px">
+  <nav aria-label="Fil d'Ariane" style="font-size:0.85rem;margin-bottom:14px">
+    <a href="{{ home_href }}" style="color:var(--text-muted);text-decoration:none">Accueil</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <a href="/alternative" style="color:var(--text-muted);text-decoration:none">Alternatives</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <span style="color:var(--text-heading)">Téléchargement DDL, Torrents &amp; Ebooks</span>
+  </nav>
+
+  <h1 class="section-title section-title--page" style="line-height:1.3;margin-bottom:12px">
+    Sites de téléchargement bloqués en 2026 : WawaCity, Tirexo, DarkiWorld, YggTorrent &amp; solutions
+  </h1>
+  <p style="color:var(--text-muted);line-height:1.65;margin:0 0 8px">
+    Depuis la fermeture d'Uptobox et l'automatisation des blocages DNS par l'ARCOM, les géants du téléchargement direct
+    (<strong>WawaCity, Tirexo, DarkiWorld / Darkino, Zone-Téléchargement</strong>), des torrents (<strong>YggTorrent, Sharewood, Cpasbien, Nyaa</strong>)
+    et des ebooks (<strong>Fourtoutici, Z-Library</strong>) changent d'adresse chaque semaine. Voici l'état réel de chaque site en 2026
+    et pourquoi le streaming direct remplace désormais le téléchargement de fichiers.
+  </p>
+
+  <!-- ============ PASSERELLE DIRECTE : POURQUOI ATTENDRE UN FICHIER ? ============ -->
+  <div style="background:linear-gradient(135deg, rgba(99,102,241,0.14), rgba(16,185,129,0.10));border:1px solid rgba(99,102,241,0.35);border-radius:10px;padding:18px 20px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+    <div style="flex:1;min-width:240px">
+      <div style="font-weight:700;color:var(--text-heading);font-size:1.05rem;margin-bottom:4px">
+        <i class="fas fa-bolt" style="color:#10b981;margin-right:8px"></i>Pourquoi attendre 60 minutes sur 1fichier quand le film se lance en 2 secondes ?
+      </div>
+      <p style="margin:0;font-size:0.9rem;color:var(--text-muted);line-height:1.5">
+        Sur NokaTV, les films, séries, animés et K-Dramas se lancent <strong>immédiatement en HD (VF &amp; VOSTFR)</strong> dans votre navigateur : zéro quota d'attente, zéro débrideur payant, zéro disque dur saturé.
+      </p>
+    </div>
+    <a href="{{ media_base }}/films" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem;white-space:nowrap">
+      Lancer en streaming <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <!-- ============ COMPARATIF CONCRET : DDL / TORRENT / STREAMING DIRECT ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:26px">Téléchargement Direct (DDL), Torrent ou Streaming en 2026 : le vrai comparatif</h2>
+  <div style="overflow-x:auto;margin-top:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;overflow:hidden">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border-subtle);text-align:left;color:var(--text-heading);background:rgba(255,255,255,0.03)">
+          <th style="padding:10px 12px">Critère</th>
+          <th style="padding:10px 12px">DDL (WawaCity, DarkiWorld…)</th>
+          <th style="padding:10px 12px">Torrents (Ygg, Sharewood…)</th>
+          <th style="padding:10px 12px;color:var(--brand-hover)">Streaming direct (NokaTV)</th>
+        </tr>
+      </thead>
+      <tbody style="color:var(--text-muted)">
+        <tr style="border-bottom:1px solid var(--border-subtle)">
+          <td style="padding:10px 12px;font-weight:600;color:var(--text-heading)">Délai avant lecture</td>
+          <td style="padding:10px 12px">15 à 60 min d'attente entre 2 fichiers</td>
+          <td style="padding:10px 12px">Dépend des seeders + client BitTorrent</td>
+          <td style="padding:10px 12px;color:#10b981;font-weight:600">Instantané (1 clic)</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-subtle)">
+          <td style="padding:10px 12px;font-weight:600;color:var(--text-heading)">Compte / Ratio</td>
+          <td style="padding:10px 12px">Débrideur (AllDebrid/Real-Debrid) bridé</td>
+          <td style="padding:10px 12px">Inscription fermée + ratio strict</td>
+          <td style="padding:10px 12px;color:var(--text-heading)">Aucun compte requis</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border-subtle)">
+          <td style="padding:10px 12px;font-weight:600;color:var(--text-heading)">Surveillance ARCOM (P2P)</td>
+          <td style="padding:10px 12px">Blocage DNS des sites</td>
+          <td style="padding:10px 12px">IP visible dans l'essaim BitTorrent sans VPN</td>
+          <td style="padding:10px 12px;color:var(--text-heading)">Lecture HTTPS standard</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:600;color:var(--text-heading)">Compatibilité TV / Mobile</td>
+          <td style="padding:10px 12px">Transfert clé USB / Plex nécessaire</td>
+          <td style="padding:10px 12px">Complexe sur iPhone / Smart TV</td>
+          <td style="padding:10px 12px;color:var(--text-heading)">Direct sur PC, Mobile &amp; TV</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ CE QUI S'EST PASSÉ SUR DARKIWORLD / WAWACITY / DEBRIDEURS ============ -->
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px;margin-top:22px">
+    <h2 style="margin:0 0 10px;font-size:1.15rem;color:var(--text-heading)">
+      <i class="fas fa-triangle-exclamation" style="color:#f59e0b;margin-right:8px"></i>Pourquoi DarkiWorld, WawaCity, Tirexo et les débrideurs bloquent en 2026 ?
+    </h2>
+    <ul style="margin:0;padding-left:20px;font-size:0.92rem;line-height:1.8">
+      <li><strong>De Tirexo à Darkino puis DarkiWorld</strong> : pour survivre aux blocages DNS de l'ARCOM, la plateforme historique a changé de nom plusieurs fois (<a href="/alternative/tirexo">Tirexo</a> → <a href="/alternative/darkino">Darkino</a> → <a href="/alternative/darkiworld">DarkiWorld</a> numéroté). Résultat : des dizaines de faux sites copient l'interface pour voler des identifiants.</li>
+      <li><strong>Bride des débrideurs et hébergeurs français</strong> : sous pression juridique, les hébergeurs de fichiers (1fichier, Rapidgator) et les débrideurs suppriment les liens signalés en quelques heures (« fichier introuvable »).</li>
+      <li><strong>Trackers privés verrouillés</strong> : <a href="/alternative/yggtorrent">YggTorrent</a> et <a href="/alternative/sharewood">Sharewood</a> ferment leurs inscriptions ou facturent l'achat de gigaoctets de ratio, tandis que les trackers publics (<a href="/alternative/cpasbien">Cpasbien</a>, <a href="/alternative/torrent9">Torrent9</a>, <a href="/alternative/oxtorrent">Oxtorrent</a>) sont envahis de faux fichiers `.exe` ou `.iso`.</li>
+    </ul>
+  </div>
+
+  <!-- ============ FOCUS EBOOKS & PRESSE PDF (FOURTOUTICI / Z-LIBRARY) ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Ebooks, Livres &amp; Presse PDF : l'état de Fourtoutici, Z-Library et Bookys</h2>
+  <p style="margin:8px 0;font-size:0.94rem;line-height:1.7">
+    Les portails de livres numériques subissent exactement le même filtrage DNS que les sites vidéo :
+    <a href="/alternative/fourtoutici">Fourtoutici</a>, <a href="/alternative/z-library">Z-Library</a>,
+    <a href="/alternative/annas-archive">Anna's Archive</a>, <a href="/alternative/bookys">Bookys</a> et
+    <a href="/alternative/ebdz">EbookDZ</a> sont bloqués chez Orange, SFR, Free et Bouygues Télécom.
+    Pour lire gratuitement et légalement en France, privilégiez <strong>Gallica (BnF)</strong>, le <strong>Projet Gutenberg</strong>
+    ou le <strong>Prêt Numérique en Bibliothèque (PNB)</strong> inclus gratuitement avec votre carte de médiathèque municipale.
+  </p>
+
+  <!-- ============ ÉTAT DES LIEUX DES SITES DDL / TORRENT / EBOOKS ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Sites de Téléchargement, Torrents &amp; Ebooks : l'état des lieux ({{ ddl_sites|length }} sites)</h2>
+  <p style="margin:8px 0 14px;font-size:0.93rem;color:var(--text-muted)">
+    Cliquez sur un site pour vérifier son statut exact en France, les risques de faux clones et les solutions.
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
+    {% for s in ddl_sites %}
+    <a href="/alternative/{{ s.slug }}" style="display:block;padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px;text-decoration:none;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ s.name }}</div>
+      <div style="margin-top:5px;font-size:0.78rem;{% if s.status_type == 'blocked' %}color:#f87171{% else %}color:#fbbf24{% endif %}">
+        {% if s.status_type == 'blocked' %}<i class="fas fa-circle-xmark"></i>{% else %}<i class="fas fa-triangle-exclamation"></i>{% endif %}
+        {{ s.status }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Questions fréquentes sur le téléchargement et les torrents en 2026</h2>
+  <div style="margin-top:10px">
+    {% for question, answer in faq_items %}
+    <details style="border:1px solid var(--border-subtle);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg-surface)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ question }}</summary>
+      <p style="margin:8px 0 0;font-size:0.92rem;line-height:1.65;color:var(--text-muted)">{{ answer }}</p>
+    </details>
+    {% endfor %}
+  </div>
+
+  <!-- ============ MAILLAGE AUTRES GUIDES ============ -->
+  <div style="margin-top:26px;padding:16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-surface)">
+    <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem;margin-bottom:10px">Consulter nos autres dossiers thématiques 2026 :</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <a href="/alternative/iptv" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-tv" style="color:var(--brand-hover);margin-right:6px"></i>IPTV &amp; Replay TV</a>
+      <a href="/alternative/football" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:6px"></i>Football en direct</a>
+      <a href="/alternative/f1-ufc" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-flag-checkered" style="color:var(--brand-hover);margin-right:6px"></i>Formule 1, UFC &amp; Boxe</a>
+      <a href="/alternative/manga" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-book-open" style="color:var(--brand-hover);margin-right:6px"></i>Scans Manga &amp; Animés</a>
+      <a href="/alternative/dramas" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-masks-theater" style="color:var(--brand-hover);margin-right:6px"></i>K-Dramas</a>
+      <a href="/alternative" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-list" style="color:var(--brand-hover);margin-right:6px"></i>Tous les {{ total_sites }} sites</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

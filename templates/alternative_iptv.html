@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="content-section" style="max-width:840px;margin:0 auto;padding:24px 16px">
+  <nav aria-label="Fil d'Ariane" style="font-size:0.85rem;margin-bottom:14px">
+    <a href="{{ home_href }}" style="color:var(--text-muted);text-decoration:none">Accueil</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <a href="/alternative" style="color:var(--text-muted);text-decoration:none">Alternatives</a>
+    <span style="color:var(--text-muted)"> / </span>
+    <span style="color:var(--text-heading)">IPTV, Replay TV &amp; Séries Turques</span>
+  </nav>
+
+  <h1 class="section-title section-title--page" style="line-height:1.3;margin-bottom:12px">
+    IPTV bloquée en 2026 (Orange, SFR, Free) : Atlas Pro, Iron TV, Smarters Pro &amp; alternatives
+  </h1>
+  <p style="color:var(--text-muted);line-height:1.65;margin:0 0 8px">
+    Écran noir sur <strong>IPTV Smarters Pro</strong> à 21h, coupures sur <strong>Atlas Pro ONTV</strong>, <strong>Iron TV Pro</strong>
+    ou <strong>King 365</strong> dès le coup d'envoi, et sites de replay TV comme <strong>Mamcin</strong> ou <strong>Diziturk</strong> introuvables :
+    voici pourquoi les FAI français bloquent les flux IPTV en temps réel en 2026 et comment regarder vos films, séries et programmes sans boîtier ni coupure.
+  </p>
+
+  <!-- ============ PASSERELLE DIRECTE : ZÉRO CONFIGURATION, ZÉRO COUPURE ============ -->
+  <div style="background:linear-gradient(135deg, rgba(99,102,241,0.14), rgba(59,130,246,0.10));border:1px solid rgba(99,102,241,0.35);border-radius:10px;padding:18px 20px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+    <div style="flex:1;min-width:240px">
+      <div style="font-weight:700;color:var(--text-heading);font-size:1.05rem;margin-bottom:4px">
+        <i class="fas fa-circle-play" style="color:var(--brand-hover);margin-right:8px"></i>Votre IPTV coupe ce soir ? Passez en streaming direct sans configuration
+      </div>
+      <p style="margin:0;font-size:0.9rem;color:var(--text-muted);line-height:1.5">
+        Pas de liste M3U, pas d'identifiant Xtream Codes ni d'abonnement qui saute : accédez directement aux Films, Séries, Animés et Dramas sur NokaTV.
+      </p>
+    </div>
+    <a href="{{ media_base }}/films" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand-primary, #6366f1);color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem;white-space:nowrap">
+      Ouvrir NokaTV <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <!-- ============ POURQUOI L'IPTV BLOQUE CHEZ ORANGE / SFR / FREE LE SOIR ============ -->
+  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px;margin-top:20px">
+    <h2 style="margin:0 0 10px;font-size:1.15rem;color:var(--text-heading)">
+      <i class="fas fa-network-wired" style="color:#f59e0b;margin-right:8px"></i>Pourquoi votre IPTV marche l'après-midi et bloque à 21h chez Orange, SFR, Free et Bouygues ?
+    </h2>
+    <p style="margin:0 0 10px;font-size:0.92rem;line-height:1.65;color:var(--text-muted)">
+      Depuis les ordonnances obtenues par la LFP, Canal+ et beIN Sports auprès du tribunal judiciaire de Paris, l'ARCOM ne bloque plus seulement des sites web : elle ordonne le <strong>blocage dynamique des adresses IP des serveurs IPTV</strong> (+5 000 serveurs ciblés).
+    </p>
+    <ol style="margin:0;padding-left:20px;font-size:0.92rem;line-height:1.85">
+      <li><strong>Smarters Pro / TiviMate n'est pas en panne</strong> : ces applications sont de simples lecteurs vides. Quand elles affichent <em>« Échec de connexion »</em> ou <em>« Aucun flux »</em>, c'est l'adresse du serveur Xtream (<a href="/alternative/atlas-pro">Atlas Pro</a>, <a href="/alternative/iron-tv">Iron TV</a>, <a href="/alternative/king365">King 365</a>) qui est coupée par votre opérateur.</li>
+      <li><strong>Le blocage touche aussi la VOD du boîtier</strong> : comme les films et séries d'un abonnement IPTV sont hébergés sur les mêmes serveurs que les chaînes sport, tout le boîtier devient inutilisable pendant les soirées de Ligue des Champions ou de Ligue 1.</li>
+      <li><strong>Attention aux faux « codes gratuits 2026 »</strong> : les sites qui promettent des listes M3U gratuites ou des renouvellements Atlas Pro à bas prix sont très souvent des pages de phishing bancaire.</li>
+    </ol>
+  </div>
+
+  <!-- ============ TABLEAU : QUE FAIRE SELON CE QUE VOUS CHERCHEZ CE SOIR ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Par quoi remplacer une IPTV qui coupe ou un site de Replay bloqué ?</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:12px">
+    <div style="padding:14px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem"><i class="fas fa-film" style="color:var(--brand-hover);margin-right:6px"></i>Films &amp; Séries (VOD)</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;line-height:1.55">
+        Accès immédiat en VF &amp; VOSTFR sur <a href="{{ media_base }}/films">NokaTV (/films)</a> et <a href="{{ media_base }}/series">/series</a> — fonctionne sur navigateur TV, mobile et PC même pendant les blocages IPTV.
+      </div>
+    </div>
+    <div style="padding:14px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem"><i class="fas fa-tv" style="color:var(--brand-hover);margin-right:6px"></i>Chaînes TV gratuites &amp; Replay</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;line-height:1.55">
+        En remplacement de <a href="/alternative/mamcin">Mamcin</a> : <strong>Pluto TV</strong> (+100 chaînes direct sans compte), <strong>France.tv</strong>, <strong>TF1+</strong> et <strong>M6+</strong>.
+      </div>
+    </div>
+    <div style="padding:14px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem"><i class="fas fa-masks-theater" style="color:var(--brand-hover);margin-right:6px"></i>Séries Turques (Dizi) &amp; Dramas</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;line-height:1.55">
+        Face aux coupures de <a href="/alternative/diziturk">Diziturk</a> et <a href="/alternative/turksubfr">TurkSubFR</a>, retrouvez les séries internationales sur <a href="{{ media_base }}/dramas">NokaTV (/dramas)</a> et les chaînes YouTube officielles sous-titrées.
+      </div>
+    </div>
+    <div style="padding:14px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem"><i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:6px"></i>Matchs de ce soir &amp; Chaînes</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;line-height:1.55">
+        Consultez notre <a href="/alternative/football">programme Football en direct</a> et le <a href="/alternative/f1-ufc">calendrier F1 / UFC</a> pour vérifier le diffuseur officiel.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ÉTAT DES LIEUX DES SERVICES IPTV / REPLAY / DIZI ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Fournisseurs IPTV, Lecteurs &amp; Replays : l'état des lieux en 2026</h2>
+  <p style="margin:8px 0 14px;font-size:0.93rem;color:var(--text-muted)">
+    Cliquez sur une fiche pour le diagnostic détaillé du service et ses alternatives fonctionnelles.
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
+    {% for s in iptv_sites %}
+    <a href="/alternative/{{ s.slug }}" style="display:block;padding:12px 14px;border:1px solid var(--border-subtle);border-radius:8px;text-decoration:none;background:var(--bg-surface)">
+      <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ s.name }}</div>
+      <div style="margin-top:5px;font-size:0.78rem;{% if s.status_type == 'blocked' %}color:#f87171{% else %}color:#fbbf24{% endif %}">
+        {% if s.status_type == 'blocked' %}<i class="fas fa-circle-xmark"></i>{% else %}<i class="fas fa-triangle-exclamation"></i>{% endif %}
+        {{ s.status }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <h2 style="font-size:1.2rem;color:var(--text-heading);margin-top:28px">Questions fréquentes sur les blocages IPTV et le Replay TV</h2>
+  <div style="margin-top:10px">
+    {% for question, answer in faq_items %}
+    <details style="border:1px solid var(--border-subtle);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg-surface)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--text-heading);font-size:0.95rem">{{ question }}</summary>
+      <p style="margin:8px 0 0;font-size:0.92rem;line-height:1.65;color:var(--text-muted)">{{ answer }}</p>
+    </details>
+    {% endfor %}
+  </div>
+
+  <!-- ============ MAILLAGE AUTRES GUIDES ============ -->
+  <div style="margin-top:26px;padding:16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-surface)">
+    <div style="font-weight:600;color:var(--text-heading);font-size:0.95rem;margin-bottom:10px">Consulter nos autres dossiers thématiques 2026 :</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <a href="/alternative/telechargement" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-download" style="color:var(--brand-hover);margin-right:6px"></i>Téléchargement &amp; Torrents</a>
+      <a href="/alternative/football" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-futbol" style="color:var(--brand-hover);margin-right:6px"></i>Football en direct</a>
+      <a href="/alternative/f1-ufc" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-flag-checkered" style="color:var(--brand-hover);margin-right:6px"></i>Formule 1, UFC &amp; Boxe</a>
+      <a href="/alternative/manga" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-book-open" style="color:var(--brand-hover);margin-right:6px"></i>Scans Manga &amp; Animés</a>
+      <a href="/alternative/dramas" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-masks-theater" style="color:var(--brand-hover);margin-right:6px"></i>K-Dramas</a>
+      <a href="/alternative" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border-subtle);text-decoration:none;color:var(--text-heading);font-size:0.86rem"><i class="fas fa-list" style="color:var(--brand-hover);margin-right:6px"></i>Tous les {{ total_sites }} sites</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
