@@ -605,7 +605,7 @@ async def alternative_detail_page(request: Request, slug: str):
 # SEO : Sitemap.xml & Robots.txt
 # ---------------------------------------------------------------------------
 
-@app.get("/robots.txt", response_class=PlainTextResponse)
+@app.api_route("/robots.txt", methods=["GET", "HEAD"], response_class=PlainTextResponse)
 async def robots_txt(request: Request):
     """Robots.txt : tout le HTML public est crawlable, sauf l'API (JSON sans
     valeur d'indexation) qui gaspillerait le budget de crawl.
@@ -807,7 +807,7 @@ async def service_worker():
     )
 
 
-@app.get("/sitemap.xml")
+@app.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 async def sitemap_xml(request: Request):
     """Sitemap dynamique : pages statiques + fiches de contenu réelles.
 
@@ -874,7 +874,13 @@ async def sitemap_xml(request: Request):
     )
 
 
-@app.get("/sitemap-index.xml")
+@app.api_route("/sitemap.xml/", methods=["GET", "HEAD"])
+async def sitemap_xml_trailing_slash(request: Request):
+    """Redirection permanente pour corriger la saisie avec slash final dans GSC."""
+    return RedirectResponse(url="/sitemap.xml", status_code=301)
+
+
+@app.api_route("/sitemap-index.xml", methods=["GET", "HEAD"])
 async def sitemap_index(request: Request):
     """Index de sitemaps par catégorie (facilite le crawl budget pour les 1019 Détectée)."""
     import datetime
