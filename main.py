@@ -19,7 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cache import cache
 from services.indexnow import ensure_indexnow_key, indexnow_key
-from services.alternatives_data import get_all_sites, get_site, get_sites_by_category
+from services.alternatives_data import CATEGORY_GUIDES, get_all_sites, get_site, get_sites_by_category, get_related_sites
 from services.fixtures import get_upcoming_matches, get_upcoming_motorsport_combat
 from services.seo import breadcrumb_json_ld, faq_page_json_ld, page_seo, site_origin
 from services.sitemap import LEGAL_PATHS as LEGAL_SITEMAP_PATHS
@@ -549,60 +549,25 @@ async def alternative_detail_page(request: Request, slug: str):
     if not site:
         raise HTTPException(status_code=404, detail="Site non répertorié dans l'observatoire")
 
-    related_sites = [s for s in get_sites_by_category(site["category"]) if s["slug"] != slug][:8]
-
-    # Variante stable par slug : casse la duplication mot-à-mot entre les pages
-    # (paragraphe ARCOM + FAQ) sans aléatoire entre requêtes.
-    variant = sum(ord(c) for c in slug) % 3
+    related_sites = get_related_sites(slug)
 
     name = site["name"]
-    why_down = site["why_down"]
-    label = site["target_label"]
-    if variant == 1:
-        site_faq = [
-            (
-                f"Pourquoi {name} ne fonctionne plus ?",
-                f"{why_down} Les quatre grands FAI français (Orange, SFR, Bouygues Télécom, Free) appliquent depuis mars 2026 un filtrage DNS automatique demandé par l'ARCOM et le tribunal judiciaire de Paris.",
-            ),
-            (
-                f"Quelle est la nouvelle adresse de {name} en 2026 ?",
-                f"Il n'existe plus d'adresse officielle stable : chaque nouveau domaine de {name} est bloqué chez les opérateurs en quelques jours, et la plupart des adresses qui circulent sont des arnaques.",
-            ),
-            (
-                f"Par quoi remplacer {name} ?",
-                f"NokaTV permet de regarder {label} gratuitement, sans compte obligatoire ni publicités intrusives.",
-            ),
-        ]
-    elif variant == 2:
-        site_faq = [
-            (
-                f"{name} est-il définitivement fermé ?",
-                f"{why_down} Le nom continue d'exister sous de nouvelles adresses, mais le blocage DNS automatique piloté par l'ARCOM et le tribunal judiciaire de Paris les neutralise désormais en quelques heures.",
-            ),
-            (
-                f"Où trouver la vraie nouvelle adresse de {name} ?",
-                f"Prudence : les adresses qui circulent pour {name} sont soit déjà bloquées par les FAI, soit des clones malveillants qui cherchent à récupérer vos coordonnées bancaires.",
-            ),
-            (
-                f"Quelle alternative gratuite à {name} ?",
-                f"NokaTV offre un accès gratuit et direct à {label}, avec plusieurs lecteurs au choix et sans inscription obligatoire.",
-            ),
-        ]
-    else:
-        site_faq = [
-            (
-                f"Pourquoi {name} est-il inaccessible ou bloqué ?",
-                f"{why_down} Depuis mars 2026, l'ARCOM et le tribunal judiciaire de Paris imposent un blocage DNS dynamique auprès des quatre grands FAI (Orange, SFR, Free, Bouygues).",
-            ),
-            (
-                f"Quelle est la nouvelle adresse officielle de {name} en 2026 ?",
-                f"Toute nouvelle adresse ou clone de {name} est neutralisé en quelques jours par les opérateurs. La grande majorité des résultats Google actuels sont des faux sites miroirs piégés.",
-            ),
-            (
-                f"Existe-t-il une alternative stable à {name} ?",
-                f"Oui. NokaTV propose un accès direct et gratuit au catalogue {label} sans inscription obligatoire et sans publicité intrusive.",
-            ),
-        ]
+    legal_names = ", ".join(site.get("legal_alternatives", []))
+    site_faq = [
+        (
+            f"Une erreur sur {name} signifie-t-elle que le site est fermé ?",
+            "Non. Une panne, une adresse modifiée, une restriction locale ou un lecteur indisponible peuvent produire la même erreur. Cette fiche ne fournit pas de test d'accès en temps réel.",
+        ),
+        (
+            f"Comment vérifier une adresse présentée comme celle de {name} ?",
+            "Un nom, un logo ou une position dans Google ne prouvent pas qu'une adresse est authentique. Ne fournissez pas de coordonnées bancaires et n'installez pas de fichier imposé par un prétendu lecteur.",
+        ),
+        (
+            f"Quelles offres officielles comparer pour remplacer {name} ?",
+            f"Pistes à comparer : {legal_names}. Le catalogue, le prix et la disponibilité varient selon le pays et les droits de diffusion. Vérifiez l'offre officielle pour le titre recherché."
+            if legal_names else "Consultez le dossier de la catégorie pour comparer les offres officielles selon votre pays et les contenus recherchés.",
+        ),
+    ]
 
     # Meta description en langage de recherche utilisateur (« ne marche plus »,
     # « nouvelle adresse », « bloqué ») alignée sur le statut réel du site.
@@ -621,7 +586,7 @@ async def alternative_detail_page(request: Request, slug: str):
         "request": request,
         "site": site,
         "related_sites": related_sites,
-        "variant": variant,
+        "category_guides": CATEGORY_GUIDES.get(site["category"], []),
         "faq_items": site_faq,
         "seo": page_seo(
             request,

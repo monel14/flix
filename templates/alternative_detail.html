@@ -28,13 +28,13 @@
       </div>
       <div>
         <div style="font-weight:600;color:var(--text-heading);margin-bottom:4px">
-          État constaté en octobre 2026 :
+          Statut indiqué dans notre référentiel :
           <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.85rem;margin-left:6px;{% if site.status_type == 'blocked' %}background:rgba(239,68,68,0.15);color:#f87171{% else %}background:rgba(245,158,11,0.15);color:#fbbf24{% endif %}">
             {{ site.status }}
           </span>
         </div>
         <p style="margin:0;font-size:0.92rem;color:var(--text-muted)">
-          Dernière vérification des adresses et DNS : <strong>octobre 2026</strong>.
+          Ce statut ne constitue pas un test DNS en direct. Une indisponibilité ne prouve pas à elle seule un blocage ou une fermeture.
         </p>
       </div>
     </div>
@@ -44,19 +44,11 @@
     <p style="margin-top:8px">
       {{ site.why_down }}
     </p>
-    {% if variant == 1 %}
     <p style="margin-top:10px">
-      Le blocage est appliqué directement par <strong>Orange, SFR, Bouygues Télécom et Free</strong> depuis les ordonnances du tribunal judiciaire de Paris et l'automatisation lancée par l'<strong>ARCOM en mars 2026</strong>. Concrètement, chaque nouvelle adresse ou miroir de <strong>{{ site.name }}</strong> est inscrit sur liste noire puis neutralisé en quelques heures, sans nouvelle décision de justice.
+      Une panne, un changement de domaine, une suppression de vidéo ou une restriction d'accès peuvent produire des symptômes similaires.
+      Pour attribuer un blocage à une décision précise, il faut une source officielle correspondant au service et à l'adresse concernés.
+      Cette fiche n'effectue pas de mesure automatique chez les fournisseurs d'accès.
     </p>
-    {% elif variant == 2 %}
-    <p style="margin-top:10px">
-      Depuis mars 2026, l'<strong>ARCOM</strong> pilote un dispositif de blocage dynamique validé par le tribunal judiciaire de Paris : les FAI français (<strong>Orange, SFR, Free, Bouygues Télécom</strong>) ajoutent les adresses visées à leur liste noire en quelques heures. C'est pour cela qu'aucun miroir de <strong>{{ site.name }}</strong> ne reste accessible bien longtemps.
-    </p>
-    {% else %}
-    <p style="margin-top:10px">
-      Depuis l'automatisation des procédures par l'<strong>ARCOM en mars 2026</strong> et les ordonnances rendues par le tribunal judiciaire de Paris, les quatre principaux fournisseurs d'accès à Internet français (<strong>Orange, SFR, Bouygues Télécom et Free</strong>) appliquent un blocage DNS dynamique. Dès qu'un miroir ou une nouvelle adresse pour <strong>{{ site.name }}</strong> apparaît, elle est neutralisée en quelques heures sans nécessiter de nouveau jugement.
-    </p>
-    {% endif %}
 
     <!-- Alerte clones piégés -->
     <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:16px;margin:20px 0">
@@ -127,6 +119,17 @@
     </p>
     {% endfor %}
 
+    {% if category_guides %}
+    <nav aria-label="Dossiers de la même catégorie" style="margin-top:24px">
+      <h2 style="font-size:1.1rem">Approfondir le sujet</h2>
+      <ul>
+        {% for path, label in category_guides %}
+        <li><a href="{{ path }}">{{ label }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+    {% endif %}
+
     <!-- Navigation transversale vers d'autres alternatives -->
     {% if related_sites %}
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border-subtle)">
@@ -147,7 +150,7 @@
     {% endif %}
 
     <p style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border-subtle);font-size:0.82rem;color:var(--text-muted)">
-      Page d'information et de veille indépendante — mise à jour en temps réel : octobre 2026. Les marques citées appartiennent à leurs ayants droit respectifs.
+      Page d'information indépendante — les accès peuvent varier selon le pays, l'opérateur et l'adresse utilisée. Les marques citées appartiennent à leurs ayants droit respectifs.
     </p>
   </div>
 </section>

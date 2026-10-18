@@ -13,11 +13,18 @@
     Streaming F1, UFC &amp; Boxe 2026 : horaires, chaînes gratuites &amp; sites bloqués
   </h1>
   <p style="color:var(--text-muted);line-height:1.65;margin:0 0 8px">
-    Grand Prix de Formule 1 le dimanche, gala UFC ou combat de boxe dans la nuit du samedi : ce sont les événements où
-    le blocage DNS en temps réel est le plus agressif. Voici le <strong>programme automatique des prochains rendez-vous</strong>
-    (heure de Paris), les <strong>chaînes officielles et gratuites francophones</strong>, et l'état réel des sites comme
-    F1 Live Stream, MethStreams ou SportSurge.
+    Consultez les prochains rendez-vous sportifs et comparez les moyens officiels de les suivre.
+    Le calendrier est indicatif : confirmez l'horaire et les droits de diffusion dans le programme du diffuseur pour votre pays.
   </p>
+  <aside style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:18px;margin-top:18px">
+    <h2 style="font-size:1.15rem;margin-top:0">Avant une course ou un combat : les trois points à vérifier</h2>
+    <ol style="line-height:1.7">
+      <li><strong>La séance exacte</strong> : essais, qualifications, course, préliminaires et carte principale peuvent avoir des horaires et des offres différents.</li>
+      <li><strong>Le fuseau horaire</strong> : un événement annoncé samedi aux États-Unis peut commencer dimanche en France. Les horaires ci-dessous sont présentés en heure de Paris.</li>
+      <li><strong>Votre territoire</strong> : une diffusion gratuite à l'étranger n'est pas nécessairement disponible depuis la France. Les conditions géographiques et l'abonnement doivent être vérifiés auprès du diffuseur.</li>
+    </ol>
+    <p>Pour le ballon rond, consultez le <a href="/alternative/football">programme football et les chaînes annoncées</a>.</p>
+  </aside>
 
   <!-- ============================== PROGRAMME AUTO F1 / UFC / BOXE ============================== -->
   {% if events %}
@@ -40,6 +47,8 @@
       Calendrier indicatif des diffuseurs officiels — aucun flux vidéo n'est hébergé ni relayé sur cette page.
     </p>
   </div>
+  {% else %}
+  <p role="status" style="margin-top:18px">Aucun événement n'a pu être chargé pour le moment. Cela ne signifie pas qu'aucune compétition n'est programmée : consultez le calendrier de l'organisateur et le programme de votre diffuseur.</p>
   {% endif %}
 
   <!-- ========================= ASTUCE LÉGALE F1 / UFC ========================= -->

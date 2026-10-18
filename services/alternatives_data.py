@@ -2188,3 +2188,30 @@ def get_popular_sites(limit: int = 12) -> list[dict[str, Any]]:
         if site:
             popular.append(site)
     return popular[:limit]
+
+
+CATEGORY_GUIDES = {
+    CAT_FILMS_SERIES: [("/alternative/netflix", "Comparer les alternatives à Netflix")],
+    CAT_ANIMES: [("/alternative/manga", "Animés et manga : consulter le dossier")],
+    CAT_DRAMAS: [("/alternative/dramas", "Consulter le guide des dramas")],
+    CAT_DDL_TORRENT: [("/alternative/telechargement", "Téléchargement, torrents et livres : comprendre les différences")],
+    CAT_SPORT: [
+        ("/alternative/football", "Football : programme et chaînes officielles"),
+        ("/alternative/f1-ufc", "F1, UFC et MotoGP : horaires et diffuseurs"),
+    ],
+}
+
+
+def get_related_sites(slug: str, limit: int = 8) -> list[dict[str, Any]]:
+    """Voisins circulaires stables : chaque fiche reçoit des liens de sa catégorie.
+
+    Prendre toujours les huit premiers noms privait les autres fiches de liens
+    entrants depuis leurs voisines. Aucun aléatoire ni classement SEO supposé.
+    """
+    site = get_site(slug)
+    if not site or limit <= 0:
+        return []
+    peers = get_sites_by_category(site["category"])
+    index = next(i for i, peer in enumerate(peers) if peer["slug"] == slug)
+    count = min(limit, len(peers) - 1)
+    return [peers[(index + offset) % len(peers)] for offset in range(1, count + 1)]
