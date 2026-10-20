@@ -26,7 +26,6 @@ from services.seo import item_list_json_ld, page_seo, website_json_ld
 logger = logging.getLogger(__name__)
 router = APIRouter()
 from services.templates import templates
-from services.secret_story import get_secret_story, secret_story_slide
 
 
 async def _load_home_section(section: str, page: int = 1, genre: str | None = None) -> dict:
@@ -188,16 +187,9 @@ async def home(request: Request, top_filter: str = Query(default="day", pattern=
             key = canonical_slug(slide.get("slug", ""))
             slide["content_type"] = "series" if key and key in series_keys and key not in movie_keys else "movie"
 
-    secret_story = get_secret_story()
-    # Copie de la liste : ne pas injecter la promotion dans le cache du scraper.
-    display_slides = list(hero_slides) if isinstance(hero_slides, list) else []
-    if secret_story["enabled"]:
-        display_slides.insert(0, secret_story_slide(secret_story))
-
     return templates.TemplateResponse(request, "home.html", {
         "request": request,
-        "hero_slides": display_slides,
-        "secret_story": secret_story,
+        "hero_slides": hero_slides if isinstance(hero_slides, list) else [],
         "recent_movies": movies_items,
         "recent_series": series_items,
         "animation_movies": animation_movies,
