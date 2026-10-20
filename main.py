@@ -601,6 +601,26 @@ async def alternative_detail_page(request: Request, slug: str):
     })
 
 
+@app.get("/secret-story-afrique", response_class=HTMLResponse)
+async def secret_story_afrique_page(request: Request):
+    from services.secret_story import get_secret_story
+    config = get_secret_story()
+    if not config["enabled"]:
+        raise HTTPException(status_code=404, detail="Page indisponible")
+    return templates.TemplateResponse(request, "secret_story.html", {
+        "request": request,
+        "secret_story": config,
+        "seo": page_seo(
+            request,
+            title="Secret Story Afrique : lecteur YouTube, horaires et diffusion — NokaTV",
+            description="Retrouvez le lecteur YouTube intégré et les horaires de Secret Story Afrique, avec les accès officiels aux candidats, votes et rediffusions.",
+            path=config["path"],
+            image=config["artwork"],
+            noindex=True,
+        ),
+    })
+
+
 # ---------------------------------------------------------------------------
 # SEO : Sitemap.xml & Robots.txt
 # ---------------------------------------------------------------------------

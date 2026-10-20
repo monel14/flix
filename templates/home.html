@@ -37,15 +37,19 @@
                 <p class="hero-slide-synopsis">{{ slide.synopsis }}</p>
                 {% endif %}
                 <div class="hero-slide-actions">
-                    <a href="/film/{{ slide.slug }}" class="btn-cta btn-cta--primary btn-cta--big">
-                        <i class="fas fa-play"></i> Regarder
+                    <a href="{{ slide.href if slide.href else '/film/' ~ slide.slug }}" class="btn-cta btn-cta--primary btn-cta--big">
+                        <i class="fas fa-play"></i> {{ slide.cta_label or 'Regarder' }}
                     </a>
+                    {% if slide.secondary_href %}
+                    <a href="{{ slide.secondary_href }}" class="btn-cta btn-cta--secondary">Horaires et infos</a>
+                    {% else %}
                     <button type="button"
                             class="btn-cta btn-cta--secondary hero-watchlist-btn"
                             data-item='{{ {"title": slide.title, "slug": slide.slug, "image": hero_image_sd, "version": slide.version or "", "type": slide.content_type or "movie"} | tojson }}'
                             aria-label="Ajouter {{ slide.title }} à ma liste">
                         <i class="fas fa-plus"></i> <span>Ma Liste</span>
                     </button>
+                    {% endif %}
                 </div>
             </div>
             {% if slide.image %}
@@ -77,6 +81,31 @@
 </section>
 {% endif %}
 
+
+{% if secret_story and secret_story.enabled %}
+<section class="content-section" aria-labelledby="secret-story-rail-title">
+    <div class="section-header">
+        <h2 class="section-title" id="secret-story-rail-title">Secret Story Afrique · Saison 3</h2>
+        <a href="{{ secret_story.path }}" class="see-all-link">Le rendez-vous <i class="fas fa-chevron-right"></i></a>
+    </div>
+    <div class="cards-rail">
+        {% for anchor, title, subtitle in [
+            ('lecteur', 'Le lecteur YouTube', 'Accéder à la diffusion disponible'),
+            ('horaires', 'Horaires par pays', 'Prime et quotidienne'),
+            ('candidats', 'Les candidats', 'Retrouver les profils officiels'),
+            ('rediffusions', 'Rediffusions & votes', 'Les accès officiels')
+        ] %}
+        <a href="{{ secret_story.path }}#{{ anchor }}" class="stream-card">
+            <div class="card-poster-wrap">
+                <img src="{{ secret_story.artwork }}" alt="" width="1200" height="1600" loading="lazy">
+                <div class="card-play-overlay"><div class="card-play-btn"><i class="fas fa-arrow-right"></i></div></div>
+            </div>
+            <div class="card-details"><p class="card-title">{{ title }}</p><small style="color:var(--text-muted)">{{ subtitle }}</small></div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 
 <!-- 2. REPRENDRE LA LECTURE (CONTINUE WATCHING) -->
 <section class="content-section content-section--important continue-watching-section" id="continue-watching-section">
