@@ -168,6 +168,41 @@ async def dmca_page(request: Request):
     })
 
 
+# Guide éditorial indexable sur le domaine observatoire uniquement.
+@app.api_route("/secret-story-afrique", methods=["GET", "HEAD"], response_class=HTMLResponse)
+async def secret_story_guide(request: Request):
+    alt_domain = (os.getenv("ALTERNATIVES_DOMAIN") or "noka-tv.xyz").strip().lower()
+    canonical = f"https://{alt_domain}/secret-story-afrique"
+    if not getattr(request.state, "is_alternatives_domain", False):
+        return RedirectResponse(canonical, status_code=301)
+    seo = page_seo(
+        request,
+        title="Secret Story Afrique : direct, horaires, replay et vote — NokaTV",
+        description="Où regarder Secret Story Afrique ? Chaînes officielles, horaires GMT et Cotonou, replay et plateforme de vote. Guide indépendant de la saison 3.",
+        path="/secret-story-afrique",
+        image=f"https://{alt_domain}/static/secret-story-guide.png",
+        extra_json_ld=[{
+            "@context": "https://schema.org", "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Guides NokaTV", "item": f"https://{alt_domain}/alternative"},
+                {"@type": "ListItem", "position": 2, "name": "Secret Story Afrique", "item": canonical},
+            ],
+        }],
+    )
+    # SITE_URL reste le domaine catalogue ; ce guide possède sa propre canonical.
+    seo.canonical = canonical
+    return templates.TemplateResponse(request, "secret_story_guide.html", {
+        "request": request, "seo": seo,
+        "nokatv_url": "https://nokatv.xyz/?utm_source=noka-tv.xyz&utm_medium=guide&utm_campaign=secret-story-afrique",
+    })
+
+
+@app.api_route("/secret-story-afrique/", methods=["GET", "HEAD"])
+async def secret_story_guide_slash(request: Request):
+    alt_domain = (os.getenv("ALTERNATIVES_DOMAIN") or "noka-tv.xyz").strip().lower()
+    return RedirectResponse(f"https://{alt_domain}/secret-story-afrique", status_code=301)
+
+
 @app.get("/alternative", response_class=HTMLResponse)
 async def alternative_page(request: Request):
     """Observatoire des alternatives — Hub de veille ARCOM 2026.
@@ -679,7 +714,7 @@ async def canonical_domain_redirect(request: Request, call_next):
         if path == "/":
             return RedirectResponse(f"https://{alt_domain}/alternative", status_code=301)
         alt_allowed = (
-            path == "/alternative"
+            path in ("/alternative", "/secret-story-afrique", "/secret-story-afrique/")
             or path.startswith("/alternative/")
             or path in ("/mentions-legales", "/contact", "/dmca",
                         "/robots.txt", "/sitemap.xml", "/sitemap-index.xml",
@@ -826,8 +861,10 @@ async def sitemap_xml(request: Request):
     # Coque observatoire (2026-10) : sur le domaine dédié, la racine est une
     # redirection 301 vers /alternative — on ne soumet pas d'URL qui redirige.
     alt_domain = (os.getenv("ALTERNATIVES_DOMAIN") or "noka-tv.xyz").strip().lower()
-    base_host = base_url.split("//", 1)[-1].split("/", 1)[0].split(":")[0].strip().lower()
-    on_alt_domain = base_host in (alt_domain, f"www.{alt_domain}")
+    request_host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(":")[0].strip().lower()
+    on_alt_domain = request_host in (alt_domain, f"www.{alt_domain}")
+    if on_alt_domain:
+        base_url = f"https://{alt_domain}"
 
     try:
         paths = await collect_sitemap_paths()
@@ -841,6 +878,11 @@ async def sitemap_xml(request: Request):
         logger.warning("Sitemap : collecte impossible, version statique seule (%s)", exc)
         paths = list(STATIC_SITEMAP_PATHS) + list(LEGAL_SITEMAP_PATHS)
         lastmod_date = datetime.date.today().isoformat()
+
+    # Copier la liste potentiellement cachée, sans modifier le sitemap catalogue.
+    paths = list(paths)
+    if on_alt_domain and "/secret-story-afrique" not in paths:
+        paths.append("/secret-story-afrique")
 
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
