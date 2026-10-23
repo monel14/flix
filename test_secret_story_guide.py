@@ -74,8 +74,9 @@ def test_destination_lecteur_sur_catalogue_sans_redirection(client):
     assert r.headers["x-robots-tag"] == "noindex, follow"
     assert 'rel="canonical" href="https://nokatv.xyz/secret-story-afrique"' in r.text
     assert '<meta name="robots" content="noindex, follow">' in r.text
-    assert 'id="ss-load-player"' in r.text
-    assert 'data-embed="https://www.youtube-nocookie.com/embed/U-n78xt3LNU?' in r.text
+    assert 'data-token="' in r.text
+    assert 'youtube-nocookie.com' not in r.text
+    assert 'U-n78xt3LNU' not in r.text
     assert "<iframe" not in r.text  # créé uniquement après clic par le JS
     assert 'href="https://noka-tv.xyz/secret-story-afrique"' in r.text
     assert "18 h 00" in r.text and "18 h 15" not in r.text

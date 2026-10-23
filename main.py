@@ -177,8 +177,8 @@ async def secret_story_guide(request: Request):
         from services.secret_story import get_secret_story
         seo = page_seo(
             request,
-            title="Secret Story Afrique — lecteur YouTube sur NokaTV",
-            description="Accédez au lecteur YouTube de Secret Story Afrique sur NokaTV. Lecture après votre clic, liens de secours et informations officielles.",
+            title="Secret Story Afrique — Diffusion en Direct sur NokaTV",
+            description="Accédez à la diffusion en direct de Secret Story Afrique sur NokaTV. Programme, horaires et accès officiel.",
             path="/secret-story-afrique",
             noindex=True,
             image="https://nokatv.xyz/static/secret-story-guide.png",
