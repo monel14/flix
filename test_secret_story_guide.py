@@ -75,7 +75,7 @@ def test_destination_lecteur_sur_catalogue_sans_redirection(client):
     assert 'rel="canonical" href="https://nokatv.xyz/secret-story-afrique"' in r.text
     assert '<meta name="robots" content="noindex, follow">' in r.text
     assert 'id="ss-load-player"' in r.text
-    assert 'data-embed="https://www.youtube-nocookie.com/embed/_ZqZmDeWmDI?' in r.text
+    assert 'data-embed="https://www.youtube-nocookie.com/embed/U-n78xt3LNU?' in r.text
     assert "<iframe" not in r.text  # créé uniquement après clic par le JS
     assert 'href="https://noka-tv.xyz/secret-story-afrique"' in r.text
     assert "18 h 00" in r.text and "18 h 15" not in r.text
@@ -91,7 +91,7 @@ def test_slash_catalogue_reste_sur_catalogue_et_preserve_utm(client):
     assert r.headers["location"] == "/secret-story-afrique?utm_source=test"
 
 
-@pytest.mark.parametrize("video_id,enabled", [("bad-id", "true"), ("_ZqZmDeWmDI", "off"), ("", "true")])
+@pytest.mark.parametrize("video_id,enabled", [("bad-id", "true"), ("U-n78xt3LNU", "off"), ("", "true")])
 def test_source_invalide_ou_desactivee_pas_de_lecteur(client, monkeypatch, video_id, enabled):
     monkeypatch.setenv("SECRET_STORY_YOUTUBE_ID", video_id)
     monkeypatch.setenv("SECRET_STORY_ENABLED", enabled)

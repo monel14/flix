@@ -15,7 +15,7 @@
     url.searchParams.set('autoplay', '1');
     const frame = document.createElement('iframe');
     frame.src = url.href;
-    frame.title = 'Secret Story Afrique — lecteur YouTube';
+    frame.title = 'SSA SAISON 3 - 2026';
     frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
     frame.allowFullscreen = true;
     frame.referrerPolicy = 'strict-origin-when-cross-origin';
