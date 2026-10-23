@@ -26,7 +26,7 @@ def test_guide_indexable_et_destination_claire(client):
     assert len(re.findall(r"<h1[ >]", r.text)) == 1
     assert "18 h 00" in r.text and "20 h 30" in r.text
     assert "https://secretstoryafrique.com/vote" in r.text
-    assert "https://nokatv.xyz/?utm_source=noka-tv.xyz" in r.text
+    assert "https://nokatv.xyz/secret-story-afrique?utm_source=noka-tv.xyz" in r.text
     assert "utm_campaign=secret-story-afrique" in r.text
     assert "<iframe" not in r.text
     assert 'http-equiv="refresh"' not in r.text.lower()
@@ -37,7 +37,7 @@ def test_guide_indexable_et_destination_claire(client):
 def test_head_et_variantes(client):
     assert client.head("/secret-story-afrique").status_code == 200
     assert client.head("/secret-story-afrique").content == b""
-    for host, path in [("noka-tv.xyz", "/secret-story-afrique/"), ("www.noka-tv.xyz", "/secret-story-afrique"), ("nokatv.xyz", "/secret-story-afrique")]:
+    for host, path in [("noka-tv.xyz", "/secret-story-afrique/"), ("www.noka-tv.xyz", "/secret-story-afrique")]:
         r = client.get(f"https://{host}{path}", headers={"cf-ray": "test"})
         assert r.status_code == 301
         assert r.headers["location"] == "https://noka-tv.xyz/secret-story-afrique"
@@ -65,3 +65,39 @@ def test_maillage_et_catalogue_toujours_ferme(client):
     assert 'href="https://noka-tv.xyz/secret-story-afrique"' in r.text
     assert client.get("/films").status_code == 404
     assert client.get("/secret-story-autre").status_code == 404
+
+
+def test_destination_lecteur_sur_catalogue_sans_redirection(client):
+    r = client.get("https://nokatv.xyz/secret-story-afrique?utm_source=noka-tv.xyz", headers={"cf-ray": "test"})
+    assert r.status_code == 200
+    assert "location" not in r.headers
+    assert r.headers["x-robots-tag"] == "noindex, follow"
+    assert 'rel="canonical" href="https://nokatv.xyz/secret-story-afrique"' in r.text
+    assert '<meta name="robots" content="noindex, follow">' in r.text
+    assert 'id="ss-load-player"' in r.text
+    assert 'data-embed="https://www.youtube-nocookie.com/embed/_ZqZmDeWmDI?' in r.text
+    assert "<iframe" not in r.text  # créé uniquement après clic par le JS
+    assert 'href="https://noka-tv.xyz/secret-story-afrique"' in r.text
+    assert "18 h 00" in r.text and "18 h 15" not in r.text
+    assert "pas présenté comme une diffusion officielle" in r.text
+    head = client.head("https://nokatv.xyz/secret-story-afrique", headers={"cf-ray": "test"})
+    assert head.status_code == 200 and head.content == b""
+    assert head.headers["x-robots-tag"] == "noindex, follow"
+
+
+def test_slash_catalogue_reste_sur_catalogue_et_preserve_utm(client):
+    r = client.get("https://nokatv.xyz/secret-story-afrique/?utm_source=test", headers={"cf-ray": "test"})
+    assert r.status_code == 301
+    assert r.headers["location"] == "/secret-story-afrique?utm_source=test"
+
+
+@pytest.mark.parametrize("video_id,enabled", [("bad-id", "true"), ("_ZqZmDeWmDI", "off"), ("", "true")])
+def test_source_invalide_ou_desactivee_pas_de_lecteur(client, monkeypatch, video_id, enabled):
+    monkeypatch.setenv("SECRET_STORY_YOUTUBE_ID", video_id)
+    monkeypatch.setenv("SECRET_STORY_ENABLED", enabled)
+    r = client.get("https://nokatv.xyz/secret-story-afrique", headers={"cf-ray": "test"})
+    assert r.status_code == 200
+    assert "Le lecteur n’est pas disponible" in r.text
+    assert 'id="ss-load-player"' not in r.text
+    assert "youtube-nocookie.com/embed/" not in r.text
+    assert "https://secretstoryafrique.com/vote" in r.text

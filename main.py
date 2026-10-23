@@ -168,13 +168,26 @@ async def dmca_page(request: Request):
     })
 
 
-# Guide éditorial indexable sur le domaine observatoire uniquement.
+# Guide indexable sur noka-tv ; lecteur dédié non indexable sur le catalogue.
 @app.api_route("/secret-story-afrique", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def secret_story_guide(request: Request):
     alt_domain = (os.getenv("ALTERNATIVES_DOMAIN") or "noka-tv.xyz").strip().lower()
     canonical = f"https://{alt_domain}/secret-story-afrique"
     if not getattr(request.state, "is_alternatives_domain", False):
-        return RedirectResponse(canonical, status_code=301)
+        from services.secret_story import get_secret_story
+        seo = page_seo(
+            request,
+            title="Secret Story Afrique — lecteur YouTube sur NokaTV",
+            description="Accédez au lecteur YouTube de Secret Story Afrique sur NokaTV. Lecture après votre clic, liens de secours et informations officielles.",
+            path="/secret-story-afrique",
+            noindex=True,
+            image="https://nokatv.xyz/static/secret-story-guide.png",
+        )
+        seo.canonical = "https://nokatv.xyz/secret-story-afrique"
+        return templates.TemplateResponse(request, "secret_story_watch.html", {
+            "request": request, "seo": seo, "secret_story": get_secret_story(),
+            "guide_url": canonical,
+        }, headers={"X-Robots-Tag": "noindex, follow"})
     seo = page_seo(
         request,
         title="Secret Story Afrique : direct, horaires, replay et vote — NokaTV",
@@ -193,14 +206,17 @@ async def secret_story_guide(request: Request):
     seo.canonical = canonical
     return templates.TemplateResponse(request, "secret_story_guide.html", {
         "request": request, "seo": seo,
-        "nokatv_url": "https://nokatv.xyz/?utm_source=noka-tv.xyz&utm_medium=guide&utm_campaign=secret-story-afrique",
+        "nokatv_url": "https://nokatv.xyz/secret-story-afrique?utm_source=noka-tv.xyz&utm_medium=guide&utm_campaign=secret-story-afrique#lecteur",
     })
 
 
 @app.api_route("/secret-story-afrique/", methods=["GET", "HEAD"])
 async def secret_story_guide_slash(request: Request):
     alt_domain = (os.getenv("ALTERNATIVES_DOMAIN") or "noka-tv.xyz").strip().lower()
-    return RedirectResponse(f"https://{alt_domain}/secret-story-afrique", status_code=301)
+    destination = f"https://{alt_domain}/secret-story-afrique" if getattr(request.state, "is_alternatives_domain", False) else "/secret-story-afrique"
+    if request.url.query:
+        destination += "?" + request.url.query
+    return RedirectResponse(destination, status_code=301)
 
 
 @app.get("/alternative", response_class=HTMLResponse)
