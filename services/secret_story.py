@@ -5,7 +5,7 @@ import base64
 import os
 import re
 
-DEFAULT_VIDEO_ID = "U-n78xt3LNU"
+DEFAULT_VIDEO_ID = "vUtbR0rvdOI"
 
 
 def _encode_stream(url: str) -> str:
@@ -21,7 +21,7 @@ def get_secret_story() -> dict:
     enabled = os.getenv("SECRET_STORY_ENABLED", "true").strip().lower() not in {"0", "false", "off"}
 
     raw_embed = (
-        f"https://www.youtube-nocookie.com/embed/{video_id}?autoplay=1&controls=0&disablekb=1&fs=0&rel=0&playsinline=1&enablejsapi=1&iv_load_policy=3&modestbranding=1"
+        f"https://www.youtube-nocookie.com/embed/{video_id}?autoplay=1&controls=0&disablekb=1&fs=1&rel=0&playsinline=1&enablejsapi=1&iv_load_policy=3&modestbranding=1"
         if enabled and valid else ""
     )
 

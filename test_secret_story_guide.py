@@ -76,9 +76,10 @@ def test_destination_lecteur_sur_catalogue_sans_redirection(client):
     assert '<meta name="robots" content="noindex, follow">' in r.text
     assert 'data-token="' in r.text
     assert 'youtube-nocookie.com' not in r.text
-    assert 'U-n78xt3LNU' not in r.text
+    assert 'vUtbR0rvdOI' not in r.text
     assert "<iframe" not in r.text  # créé uniquement après clic par le JS
-    assert 'href="https://noka-tv.xyz/secret-story-afrique"' in r.text
+    assert 'href="https://noka-tv.xyz/secret-story-afrique"' not in r.text
+    assert "Cotonou" not in r.text and "Douala" not in r.text and "Libreville" not in r.text
     assert "18 h 00" in r.text and "18 h 15" not in r.text
     assert "pas présenté comme une diffusion officielle" in r.text
     head = client.head("https://nokatv.xyz/secret-story-afrique", headers={"cf-ray": "test"})
@@ -92,7 +93,7 @@ def test_slash_catalogue_reste_sur_catalogue_et_preserve_utm(client):
     assert r.headers["location"] == "/secret-story-afrique?utm_source=test"
 
 
-@pytest.mark.parametrize("video_id,enabled", [("bad-id", "true"), ("U-n78xt3LNU", "off"), ("", "true")])
+@pytest.mark.parametrize("video_id,enabled", [("bad-id", "true"), ("vUtbR0rvdOI", "off"), ("", "true")])
 def test_source_invalide_ou_desactivee_pas_de_lecteur(client, monkeypatch, video_id, enabled):
     monkeypatch.setenv("SECRET_STORY_YOUTUBE_ID", video_id)
     monkeypatch.setenv("SECRET_STORY_ENABLED", enabled)
