@@ -6,7 +6,7 @@ import os
 
 import httpx
 
-SOURCE_URL = os.getenv("COFLIX_SOURCE_URL", "https://coflix.wiki").rstrip("/")
+SOURCE_URL = os.getenv("COFLIX_SOURCE_URL", "https://coflix.gold").rstrip("/")
 TIMEOUT_SECONDS = 15
 
 logger = logging.getLogger(__name__)
@@ -77,6 +77,10 @@ async def coflix_get_html(path: str, params: dict | None = None) -> str:
             if r.status_code == 404:
                 raise CoflixNotFoundError(f"Introuvable : {url}")
             r.raise_for_status()
+            # Un ancien domaine peut rediriger tous les chemins vers l'accueil
+            # avec un HTTP 200 : ne pas mettre cette page en cache comme catégorie.
+            if httpx.URL(url).path.rstrip("/") and not r.url.path.rstrip("/"):
+                raise CoflixFetchError(f"Chemin perdu dans une redirection Coflix : {url} -> {r.url}")
             return r.text
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code == 404:

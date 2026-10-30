@@ -29,7 +29,7 @@ from services.sw import generate_service_worker
 from services.templates import templates
 SITE_NAME = "NokaTV"
 from routes import anime, detail, drama, home, player, search
-from scraper.coflix_client import close_coflix_client
+from scraper.coflix_client import SOURCE_URL as COFLIX_SOURCE_URL, close_coflix_client
 from scraper.frenchstream_client import close_frenchstream_client
 from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_client
 from scraper.voiranime_client import close_voiranime_client, get_voiranime_client
@@ -988,7 +988,7 @@ async def image_proxy(url: str = Query(...)):
         referer = "https://voir-anime.to/"
         client = get_voiranime_client()
     else:
-        referer = "https://coflix.wiki/"
+        referer = COFLIX_SOURCE_URL + "/"
         client = get_voirdrama_client()
 
     try:

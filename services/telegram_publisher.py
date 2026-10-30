@@ -1167,7 +1167,9 @@ class TelegramBotClient:
         elif "voirdrama" in target:
             headers["Referer"] = "https://voirdrama.to/"
         elif "coflix" in target:
-            headers["Referer"] = "https://coflix.wiki/"
+            from scraper.coflix_client import SOURCE_URL
+
+            headers["Referer"] = SOURCE_URL + "/"
 
         try:
             response = await self._client.get(target, headers=headers, timeout=15.0)

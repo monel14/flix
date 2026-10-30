@@ -5,6 +5,8 @@ from typing import TypedDict
 
 from bs4 import BeautifulSoup
 
+from scraper.coflix_client import SOURCE_URL
+
 
 # ---------------------------------------------------------------------------
 # Genres supportés par Coflix
@@ -281,7 +283,7 @@ def parse_coflix_detail(html: str, slug: str) -> CoflixDetail:
 
     watch = soup.select_one("#watch-page")
     movie_id = watch.get("data-id", "") if watch else ""
-    detail_url = watch.get("data-url", f"https://coflix.wiki/film/{slug}") if watch else ""
+    detail_url = watch.get("data-url", f"{SOURCE_URL}/film/{slug}") if watch else ""
 
     # Extraction de l'ID d'épisode / lecteur (data-ep-name sur #watch-page ou URL /ep-XXXX)
     episode_id = ""

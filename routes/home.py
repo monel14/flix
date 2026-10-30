@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse
 
 from cache import HOME_TTL, cache
-from scraper.coflix_client import CoflixFetchError, coflix_get_html
+from scraper.coflix_client import SOURCE_URL, CoflixFetchError, coflix_get_html
 from scraper.coflix_parser import (
     AVAILABLE_GENRES,
     get_last_page,
@@ -208,7 +208,7 @@ async def movies_list(
     genre: str | None = Query(default=None),
     version: str | None = Query(default=None, pattern="^(all|vf|vostfr)$"),
 ) -> HTMLResponse:
-    cache_key = f"list:movies:{genre}:{page}" if genre else f"list:movies:{page}"
+    cache_key = f"coflix:{SOURCE_URL}:list:movies:{genre or 'all'}:{page}"
     try:
         data = await cache.get_or_set(
             cache_key, HOME_TTL, lambda: _load_home_section("movies", page, genre)
@@ -286,7 +286,7 @@ async def series_list(
     genre: str | None = Query(default=None),
     version: str | None = Query(default=None, pattern="^(all|vf|vostfr)$"),
 ) -> HTMLResponse:
-    cache_key = f"list:series:{genre}:{page}" if genre else f"list:series:{page}"
+    cache_key = f"coflix:{SOURCE_URL}:list:series:{genre or 'all'}:{page}"
     try:
         data = await cache.get_or_set(
             cache_key, HOME_TTL, lambda: _load_home_section("series", page, genre)
