@@ -984,7 +984,7 @@ async def image_proxy(url: str = Query(...)):
     if "voirdrama" in url:
         referer = "https://voirdrama.to/"
         client = get_voirdrama_client()
-    elif "voir-anime" in url:
+    elif "voiranime" in url:
         referer = "https://voiranime.cx/"
         client = get_voiranime_client()
     else:

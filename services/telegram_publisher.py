@@ -1162,7 +1162,7 @@ class TelegramBotClient:
             ),
             "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         }
-        if "voir-anime" in target:
+        if "voiranime" in target:
             headers["Referer"] = "https://voiranime.cx/"
         elif "voirdrama" in target:
             headers["Referer"] = "https://voirdrama.to/"
@@ -1205,7 +1205,7 @@ class TelegramBotClient:
             # 1. Toujours tenter le téléchargement direct (avec les en-têtes
             #    anti-hotlink selon la source), puis l'envoi en multipart. C'est
             #    le seul chemin fiable pour les affiches protégées par Referer
-            #    (voir-anime, voirdrama, coflix) ; l'URL distante que Telegram
+            #    (voiranime, voirdrama, coflix) ; l'URL distante que Telegram
             #    récupérerait lui-même ne transporte aucun Referer et échoue.
             image_data = await self._download_image(post.image_url)
             if image_data is not None:
