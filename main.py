@@ -985,7 +985,7 @@ async def image_proxy(url: str = Query(...)):
         referer = "https://voirdrama.to/"
         client = get_voirdrama_client()
     elif "voir-anime" in url:
-        referer = "https://voir-anime.to/"
+        referer = "https://voiranime.cx/"
         client = get_voiranime_client()
     else:
         referer = COFLIX_SOURCE_URL + "/"
