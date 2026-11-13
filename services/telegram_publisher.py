@@ -1163,7 +1163,7 @@ class TelegramBotClient:
             "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         }
         if "voir-anime" in target:
-            headers["Referer"] = "https://voir-anime.to/"
+            headers["Referer"] = "https://voiranime.cx/"
         elif "voirdrama" in target:
             headers["Referer"] = "https://voirdrama.to/"
         elif "coflix" in target:

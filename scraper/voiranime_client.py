@@ -6,7 +6,7 @@ import os
 
 import httpx
 
-SOURCE_URL = os.getenv("VOIRANIME_SOURCE_URL", "https://voir-anime.to").rstrip("/")
+SOURCE_URL = os.getenv("VOIRANIME_SOURCE_URL", "https://voiranime.cx").rstrip("/")
 TIMEOUT_SECONDS = 15
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class VoiranimeNotFoundError(VoiranimeFetchError):
 
 
 def get_voiranime_client() -> httpx.AsyncClient:
-    """Retourne le client HTTP async singleton pour voir-anime.to lié à la boucle courante."""
+    """Retourne le client HTTP async singleton pour voiranime.cx lié à la boucle courante."""
     global _http_client, _client_loop
     try:
         current_loop = asyncio.get_running_loop()
@@ -60,7 +60,7 @@ async def close_voiranime_client() -> None:
 
 
 async def voiranime_get_html(path: str, params: dict | None = None) -> str:
-    """GET HTML depuis voir-anime.to avec retry + backoff."""
+    """GET HTML depuis voiranime.cx avec retry + backoff."""
     url = path if path.startswith("http") else SOURCE_URL + path
     client = get_voiranime_client()
     backoff = 2.0

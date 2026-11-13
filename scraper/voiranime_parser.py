@@ -91,7 +91,7 @@ _WORDPRESS_SIZE_SUFFIX = re.compile(r"-\d+x\d+(?=\.(?:jpg|jpeg|png|webp))")
 
 def _best_voiranime_src(img_tag) -> str:
     """Sélectionne la plus grande image disponible (srcset trié décroissant
-    chez voir-anime.to) puis remonte à l'originale pleine résolution."""
+    chez voiranime.cx) puis remonte à l'originale pleine résolution."""
     srcset = img_tag.get("srcset", "")
     if srcset:
         candidates: list[tuple[int, str]] = []
@@ -117,7 +117,7 @@ def _best_voiranime_src(img_tag) -> str:
 def _extract_voiranime_image(img_tag) -> str:
     """
     Extrait l'image en pleine résolution et l'encapsule dans le proxy
-    pour contourner l'anti-hotlink 403 de voir-anime.to.
+    pour contourner l'anti-hotlink 403 de voiranime.cx.
     """
     if not img_tag:
         return ""
@@ -129,7 +129,7 @@ def _extract_voiranime_image(img_tag) -> str:
     if src.startswith("//"):
         src = "https:" + src
     elif src.startswith("/"):
-        src = "https://voir-anime.to" + src
+        src = "https://voiranime.cx" + src
 
     return f"/api/image-proxy?url={urllib.parse.quote_plus(src)}"
 
@@ -264,7 +264,7 @@ def parse_voiranime_detail(html: str, slug: str) -> AnimeDetail:
     return AnimeDetail(
         title=title,
         slug=slug,
-        url=f"https://voir-anime.to/anime/{slug}/",
+        url=f"https://voiranime.cx/anime/{slug}/",
         image=image,
         version=version_global,
         type="anime",
@@ -315,7 +315,7 @@ def parse_voiranime_servers(html: str) -> list[AnimeServer]:
 
 
 def parse_voiranime_search(html: str) -> list[AnimeItem]:
-    """Parse les résultats de recherche sur voir-anime.to."""
+    """Parse les résultats de recherche sur voiranime.cx."""
     soup = BeautifulSoup(html, "html.parser")
     items: list[AnimeItem] = []
 

@@ -1,7 +1,7 @@
 # NokaTV — Films, Séries, K-Dramas & Animés
 
 Interface web moderne pour parcourir et regarder des films, séries, K-Dramas et animés japonais en streaming gratuit HD.
-L'application agrège à la volée le contenu de 3 sources majeures (`coflix.gold`, `voirdrama.to`, `voir-anime.to`), le présente dans une interface cinématique soignée et sans publicité, et lit les vidéos via des lecteurs intégrés.
+L'application agrège à la volée le contenu de 3 sources majeures (`coflix.gold`, `voirdrama.to`, `voiranime.cx`), le présente dans une interface cinématique soignée et sans publicité, et lit les vidéos via des lecteurs intégrés.
 
 ---
 
@@ -326,7 +326,7 @@ CONTACT_EMAIL=contact@nokatv.xyz
 BASE_URL=http://localhost:8001
 COFLIX_SOURCE_URL=https://coflix.gold
 VOIRDRAMA_SOURCE_URL=https://voirdrama.to
-VOIRANIME_SOURCE_URL=https://voir-anime.to
+VOIRANIME_SOURCE_URL=https://voiranime.cx
 # Optionnel : profondeur de collecte du sitemap par catégorie (défaut 5)
 # SITEMAP_MAX_PAGES=5
 ```
