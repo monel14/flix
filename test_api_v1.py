@@ -71,7 +71,8 @@ def test_validation(client, query):
 
 def test_genres(client):
     assert len(client.get('/api/v1/genres?type=anime').json()['items']) == 19
-    assert client.get('/api/v1/genres?type=movie').status_code == 422
+    assert len(client.get('/api/v1/genres?type=movie').json()['items']) == 18
+    assert client.get('/api/v1/genres?type=invalid').status_code == 422
 
 
 def test_search_encoded(client):
@@ -79,7 +80,7 @@ def test_search_encoded(client):
     assert response.status_code == 200
     assert api.voiranime_get_html.await_args.args[0] == '/?s=test+%26+name&post_type=wp-manga'
     assert client.get('/api/v1/search?q=%20%20').status_code == 422
-    assert client.get('/api/v1/search?q=test&type=movie').status_code == 422
+    assert client.get('/api/v1/search?q=test&type=invalid').status_code == 422
 
 
 def test_detail_and_episodes(client):

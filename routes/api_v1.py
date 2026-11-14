@@ -1,4 +1,4 @@
-"""API v1 additive : première tranche animés, sans changement des routes HTML."""
+"""API v1 catalogue et lecture, additive aux routes HTML existantes."""
 from __future__ import annotations
 
 import hashlib
@@ -19,6 +19,8 @@ from scraper.voiranime_client import SOURCE_URL, VoiranimeFetchError, VoiranimeN
 from scraper.voiranime_parser import (VOIRANIME_GENRES, get_voiranime_last_page,
     parse_voiranime_detail, parse_voiranime_list, parse_voiranime_search)
 from services.blocklist import is_blocked
+from services import api_catalog as catalog
+import asyncio
 
 logger = logging.getLogger(__name__)
 # Limiteur par processus et par clé serveur (pas de confiance dans X-Forwarded-For).
@@ -47,12 +49,13 @@ async def authorize(response: Response, x_api_key: str | None = Header(default=N
     hits.append(now)
 
 
-router = APIRouter(prefix='/api/v1', tags=['API v1 — animés'], dependencies=[Depends(authorize)])
+router = APIRouter(prefix='/api/v1', tags=['API v1'], dependencies=[Depends(authorize)])
 
 
 class Item(BaseModel):
     id: str
-    type: Literal['anime'] = 'anime'
+    type: Literal['anime', 'movie', 'series', 'drama'] = 'anime'
+    source: str = 'voiranime'
     slug: str
     title: str
     image_url: str
@@ -69,6 +72,7 @@ class Pagination(BaseModel):
 class Listing(BaseModel):
     items: list[Item]
     pagination: Pagination
+    warnings: list[dict[str, str]] = []
 
 
 class Episode(BaseModel):
@@ -76,6 +80,7 @@ class Episode(BaseModel):
     title: str
     number: str
     version: str
+    season: str | None = None
 
 
 class Detail(Item):
@@ -96,7 +101,9 @@ def public_image(image: str, request: Request) -> str:
 
 def item_payload(data: dict, request: Request) -> dict:
     slug = data['slug']
-    return dict(id=f'voiranime:{slug}', type='anime', slug=slug, title=data['title'],
+    kind = data.get('type', 'anime')
+    source = data.get('_source', 'voiranime')
+    return dict(id=f'{source}:{slug}', type=kind, source=source, slug=slug, title=data['title'],
                 image_url=public_image(data.get('image', ''), request),
                 version=data.get('version', ''), latest_episode=data.get('latest_episode'))
 
@@ -129,30 +136,35 @@ async def cached_html(key: str, path: str, ttl: int):
 
 
 @router.get('/genres')
-async def genres(type: Literal['anime'] = 'anime'):
-    return {'type': type, 'items': VOIRANIME_GENRES}
+async def genres(type: Literal['anime', 'movie', 'series', 'drama'] = 'anime'):
+    items = VOIRANIME_GENRES if type == 'anime' else catalog.dp.VOIRDRAMA_GENRES if type == 'drama' else catalog.cp.AVAILABLE_GENRES
+    return {'type': type, 'items': items}
 
 
 @router.get('/animes', response_model=Listing)
 async def animes(request: Request, page: int = Query(1, ge=1, le=1000),
-                 genre: str | None = None, sort: Literal['latest', 'az'] = 'latest'):
+                 genre: str | None = None, sort: Literal['latest', 'az'] = 'latest',
+                 version: Literal['all', 'vf', 'vostfr'] = 'all'):
     if genre is not None and genre not in {g['slug'] for g in VOIRANIME_GENRES}:
         raise HTTPException(422, detail={'code': 'invalid_genre'})
     path = f'/anime-genre/{genre}/' if genre else '/liste-danimes/' if sort == 'az' else '/'
     if page > 1:
         path += f'page/{page}/'
     html = await cached_html(f'list:{genre}:{sort}:{page}', path, HOME_TTL)
-    items = [item_payload(i, request) for i in parse_voiranime_list(html) if not is_blocked(i['slug'])]
+    items = [item_payload(i, request) for i in catalog.version_filter(parse_voiranime_list(html), version) if not is_blocked(i['slug'])]
     return {'items': items, 'pagination': {'page': page, 'has_next': get_voiranime_last_page(html) > page,
             'total_pages': None}}
 
 
 @router.get('/search', response_model=Listing)
 async def search(request: Request, q: str = Query(..., min_length=2, max_length=120),
-                 type: Literal['anime'] = 'anime', page: int = Query(1, ge=1, le=100)):
+                 type: Literal['anime', 'movie', 'series', 'drama', 'all'] = 'anime', page: int = Query(1, ge=1, le=100)):
     q = q.strip()
     if len(q) < 2:
         raise HTTPException(422, detail={'code': 'invalid_query'})
+    if type != 'anime':
+        data = await catalog_call(catalog.search_all(q, type, page))
+        return listing_payload(data, request)
     from urllib.parse import urlencode
     path = ('/' if page == 1 else f'/page/{page}/') + '?' + urlencode({'s': q, 'post_type': 'wp-manga'})
     html = await cached_html('search:' + hashlib.sha256(path.encode()).hexdigest(), path, HOME_TTL)
@@ -176,3 +188,106 @@ async def detail(request: Request, slug: str):
             'genres': data.get('genres', []), 'year': data.get('year', ''), 'status': data.get('status', ''),
             'first_episode_id': data.get('first_episode_id'),
             'episodes': [dict(id=e['episode_id'], title=e['title'], number=e['number'], version=e['version']) for e in data.get('episodes', [])]}
+
+
+async def catalog_call(awaitable):
+    try:
+        return await awaitable
+    except catalog.CatalogError as exc:
+        raise HTTPException(exc.status, detail={'code': exc.code}) from None
+
+
+def listing_payload(data, request):
+    return {**data, 'items': [item_payload(i, request) for i in data['items']]}
+
+
+def detail_payload(data, request):
+    return {**item_payload(data, request),
+            'synopsis': data.get('synopsis', ''), 'genres': data.get('genres', []),
+            'year': str(data.get('year') or ''), 'status': data.get('status', ''),
+            'first_episode_id': data.get('first_episode_id'),
+            'episodes': [dict(id=str(e['episode_id']), title=e.get('title', ''),
+                number=str(e.get('number', '')), season=str(e['season']) if e.get('season') is not None else None,
+                version=e.get('version', data.get('version', ''))) for e in data.get('episodes', [])]}
+
+
+@router.get('/movies', response_model=Listing)
+async def movies(request: Request, page: int = Query(1, ge=1, le=1000), genre: str | None = None,
+                 version: Literal['all', 'vf', 'vostfr'] = 'all'):
+    return listing_payload(await catalog_call(catalog.coflix_list('movie', page, genre, version)), request)
+
+
+@router.get('/series', response_model=Listing)
+async def series(request: Request, page: int = Query(1, ge=1, le=1000), genre: str | None = None,
+                 version: Literal['all', 'vf', 'vostfr'] = 'all'):
+    return listing_payload(await catalog_call(catalog.coflix_list('series', page, genre, version)), request)
+
+
+@router.get('/dramas', response_model=Listing)
+async def dramas(request: Request, page: int = Query(1, ge=1, le=1000), genre: str | None = None,
+                 version: Literal['all', 'vf', 'vostfr'] = 'all', sort: Literal['latest', 'az'] = 'latest',
+                 source: Literal['all', 'voirdrama', 'frenchstream'] = 'all'):
+    if source == 'frenchstream' and version == 'vf':
+        raise HTTPException(422, detail={'code': 'version_not_supported_for_source'})
+    return listing_payload(await catalog_call(catalog.drama_list(page, genre, sort, version, source)), request)
+
+
+@router.get('/titles/{kind}/{slug}', response_model=Detail)
+async def other_detail(request: Request, kind: Literal['movie', 'series', 'drama'], slug: str,
+                       source: Literal['auto', 'voirdrama', 'frenchstream'] = 'auto'):
+    if kind != 'drama' and source != 'auto':
+        raise HTTPException(422, detail={'code': 'invalid_source'})
+    return detail_payload(await catalog_call(catalog.title(kind, slug, source)), request)
+
+
+@router.get('/titles/{kind}/{slug}/episodes')
+async def episodes(request: Request, kind: Literal['anime', 'movie', 'series', 'drama'], slug: str,
+                   source: Literal['auto', 'voirdrama', 'frenchstream'] = 'auto'):
+    if kind != 'drama' and source != 'auto':
+        raise HTTPException(422, detail={'code': 'invalid_source'})
+    data = await catalog_call(catalog.title(kind, slug, source))
+    payload = detail_payload(data, request)
+    return {'id': payload['id'], 'type': kind, 'slug': slug, 'source': payload['source'],
+            'items': payload['episodes'], 'first_episode_id': payload['first_episode_id']}
+
+
+@router.get('/playback/{kind}/{slug}/{episode_id}')
+async def playback(kind: Literal['anime', 'movie', 'series', 'drama'], slug: str, episode_id: str,
+                   source: Literal['auto', 'voirdrama', 'frenchstream'] = 'auto'):
+    if kind != 'drama' and source != 'auto':
+        raise HTTPException(422, detail={'code': 'invalid_source'})
+    return await catalog_call(catalog.playback(kind, slug, episode_id, source))
+
+
+@router.get('/home')
+async def home(request: Request, top: Literal['day', 'week', 'month'] = 'day'):
+    jobs = {'hero': catalog.hero(), 'movies': catalog.coflix_list('movie'),
+            'series': catalog.coflix_list('series'), 'animation_movies': catalog.coflix_list('movie', genre='animation'),
+            'dramas': catalog.drama_list(), 'animes': animes(request, page=1, genre=None, sort='latest', version='all'),
+            'top': catalog.top_items(top)}
+    results = await asyncio.gather(*jobs.values(), return_exceptions=True)
+    sections, warnings, success = {}, [], 0
+    for name, result in zip(jobs, results):
+        if isinstance(result, BaseException):
+            if not isinstance(result, (catalog.CatalogError, HTTPException)):
+                raise result
+            code = result.code if isinstance(result, catalog.CatalogError) else 'source_unavailable'
+            warnings.append({'section': name, 'code': code})
+            sections[name] = {'status': 'unavailable', 'items': []}
+            continue
+        success += 1
+        if name == 'animes':
+            items = result['items']
+        else:
+            raw = result['items'] if isinstance(result, dict) else result
+            items = [item_payload(i, request) for i in catalog.visible(raw)]
+            if name == 'hero':
+                by_slug = {i['slug']: i for i in raw}
+                items = [{**i, 'synopsis': by_slug[i['slug']].get('synopsis', ''),
+                          'year': by_slug[i['slug']].get('year', '')} for i in items]
+        sections[name] = {'status': 'ok', 'items': items}
+        if isinstance(result, dict):
+            warnings.extend({'section': name, **w} for w in result.get('warnings', []))
+    if not success:
+        raise HTTPException(502, detail={'code': 'source_unavailable'})
+    return {'sections': sections, 'warnings': warnings}
