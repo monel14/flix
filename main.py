@@ -28,7 +28,7 @@ from services.sitemap import collect_sitemap_paths
 from services.sw import generate_service_worker
 from services.templates import templates
 SITE_NAME = "NokaTV"
-from routes import anime, detail, drama, home, player, search
+from routes import anime, api_v1, detail, drama, home, player, search
 from scraper.coflix_client import SOURCE_URL as COFLIX_SOURCE_URL, close_coflix_client
 from scraper.frenchstream_client import close_frenchstream_client
 from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_client
@@ -72,6 +72,16 @@ app = FastAPI(title="NokaTV", lifespan=lifespan)
 # Compression transparente des réponses textuelles (HTML, CSS, JS, JSON) —
 # actif dès lors que le reverse-proxy frontal ne compresse pas déjà.
 app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+
+@app.middleware("http")
+async def private_api_responses(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/v1/"):
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -1078,4 +1088,5 @@ app.include_router(detail.router)
 app.include_router(player.router)
 app.include_router(drama.router)
 app.include_router(anime.router)
+app.include_router(api_v1.router)
 app.include_router(search.router)
