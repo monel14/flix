@@ -320,9 +320,9 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
 ```env
 # Domaine public (OBLIGATOIRE en prod) : ancre canonicals, Open Graph & sitemap
-SITE_URL=https://nokatv.xyz
+SITE_URL=https://noka-tv.xyz
 # Email de contact affiché sur /contact et /mentions-legales (retraits, liens morts)
-CONTACT_EMAIL=contact@nokatv.xyz
+CONTACT_EMAIL=contact@noka-tv.xyz
 BASE_URL=http://localhost:8001
 COFLIX_SOURCE_URL=https://coflix.gold
 VOIRDRAMA_SOURCE_URL=https://voirdrama.to

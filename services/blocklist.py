@@ -1,17 +1,17 @@
 """Blocklist DMCA + Watchlist Amazon - anticipation.
 
-- BLOCKED_SLUGS: hard 404 (DMCA déjà reçu, URL nokatv.xyz nommée dans la notice)
-  - Lumen 95976390 (07/09/2026) Claim 49 Butterfly -> nokatv.xyz 1 URL
-  - Lumen 95726417 (04/09/2026) Claim 20 Balls Up -> nokatv.xyz 1 URL
-  - Lumen 96775472 (14/09/2026) Claim 11 Over Your Dead Body -> nokatv.xyz 1 URL
-  - Lumen 96775472 (14/09/2026) Claim 25 The Last Sunrise -> www.nokatv.xyz 1 URL (ex-TOP 1 trafic, règle "DMCA direct -> 404")
-  - Lumen 96775472 (14/09/2026) Claim 51 Une Famille de Bâtards -> www.nokatv.xyz 1 URL
-  - Lumen 96775526 (14/09/2026) Claim 27 Pillion (A24 Distribution LLC) -> www.nokatv.xyz 1 URL
+- BLOCKED_SLUGS: hard 404 (DMCA déjà reçu, URL noka-tv.xyz nommée dans la notice)
+  - Lumen 95976390 (07/09/2026) Claim 49 Butterfly -> noka-tv.xyz 1 URL
+  - Lumen 95726417 (04/09/2026) Claim 20 Balls Up -> noka-tv.xyz 1 URL
+  - Lumen 96775472 (14/09/2026) Claim 11 Over Your Dead Body -> noka-tv.xyz 1 URL
+  - Lumen 96775472 (14/09/2026) Claim 25 The Last Sunrise -> www.noka-tv.xyz 1 URL (ex-TOP 1 trafic, règle "DMCA direct -> 404")
+  - Lumen 96775472 (14/09/2026) Claim 51 Une Famille de Bâtards -> www.noka-tv.xyz 1 URL
+  - Lumen 96775526 (14/09/2026) Claim 27 Pillion (A24 Distribution LLC) -> www.noka-tv.xyz 1 URL
 - AMAZON_RISKY: soft noindex + exclusion sitemap (anticipation 100+ titres)
   - Marketly LLC / Amazon Content Services LLC
   - Sources: https://lumendatabase.org/notices/95976390 + https://lumendatabase.org/notices/95726417
              + https://lumendatabase.org/notices/96775472 (nouveaux titres Amazon 14/09/2026)
-  - Note: notice A24 (96775526) ne vise nokatv.xyz QUE sur Pillion -> pas de watchlist A24 (décision 15/09/2026)
+  - Note: notice A24 (96775526) ne vise noka-tv.xyz QUE sur Pillion -> pas de watchlist A24 (décision 15/09/2026)
 
 Stratégie:
 - is_blocked() -> 404 dur (compliance DMCA)
@@ -20,7 +20,7 @@ Stratégie:
 
 # === HARD BLOCK - DMCA reçu - 404 ===
 BLOCKED_SLUGS = {
-    # Lumen 95976390 Claim 49 - Butterfly - nokatv.xyz 1 URL - 07/09/2026
+    # Lumen 95976390 Claim 49 - Butterfly - noka-tv.xyz 1 URL - 07/09/2026
     "butterfly",
     "butterfly-saison-1-vostfr",
     "butterfly-saison-1-vf",
@@ -29,7 +29,7 @@ BLOCKED_SLUGS = {
     "butterfly-vf",
     "butterfly-2025",
     "butterfly-saison-1-2025",
-    # Lumen 95726417 Claim 20 - Balls Up - nokatv.xyz 1 URL - 04/09/2026
+    # Lumen 95726417 Claim 20 - Balls Up - noka-tv.xyz 1 URL - 04/09/2026
     # GSC: 1 clic / 13 imp + 0 clic / 9 imp requêtes - page balls-up-mettez-le-paquet-vf
     "balls-up",
     "balls-up-mettez-le-paquet-vf",
@@ -37,29 +37,29 @@ BLOCKED_SLUGS = {
     "balls-up-vf",
     "balls-up-vostfr",
     # --- Lumen 96775472 (Amazon Content Services LLC, ~14/09/2026) ---
-    # Claim 11 - Over Your Dead Body - nokatv.xyz 1 URL
+    # Claim 11 - Over Your Dead Body - noka-tv.xyz 1 URL
     # GSC: 0 clic / 16 imp - page over-your-dead-body-vostfr (était en soft noindex, escalade -> 404)
     "over-your-dead-body",
-    # Claim 18 - Crime 101 - www.nokatv.xyz 1 URL
+    # Claim 18 - Crime 101 - www.noka-tv.xyz 1 URL
     # GSC: 0 clic / 15 imp - page crime-101-vf (était en soft noindex, escalade -> 404)
     "crime-101",
-    # Claim 25 - The Last Sunrise - www.nokatv.xyz 1 URL
+    # Claim 25 - The Last Sunrise - www.noka-tv.xyz 1 URL
     # Ex-TOP 1 trafic (84 clics période 18-31/08, 7 clics / 26 imp 06-13/09)
-    # Règle pré-déclarée Option B: "Si DMCA direct nokatv.xyz -> passage 404" - appliquée le 15/09/2026
+    # Règle pré-déclarée Option B: "Si DMCA direct noka-tv.xyz -> passage 404" - appliquée le 15/09/2026
     "the-last-sunrise",
     "last-sunrise",
-    # Claim 51 - Une Famille de Bâtards - www.nokatv.xyz 1 URL
+    # Claim 51 - Une Famille de Bâtards - www.noka-tv.xyz 1 URL
     # GSC: 0 clic / 32 imp - page une-famille-de-batards-french (était en soft noindex, escalade -> 404)
     "une-famille-de-batards",
     "famille-de-batards",
     # --- Lumen 96775526 (A24 Distribution LLC, ~14/09/2026) ---
-    # Claim 27 - Pillion - www.nokatv.xyz 1 URL (seul titre A24 visant nokatv.xyz, pas de watchlist A24)
+    # Claim 27 - Pillion - www.noka-tv.xyz 1 URL (seul titre A24 visant noka-tv.xyz, pas de watchlist A24)
     # GSC: 0 clic / 4 imp - page pillion-vostfr
     "pillion",
 }
 
 # === SOFT WATCHLIST - Titres Amazon des 2 notices Lumen ===
-# Option B: The Last Sunrise retiré de la watchlist car TOP 1 trafic (84 clics) et pas de DMCA direct nokatv.xyz
+# Option B: The Last Sunrise retiré de la watchlist car TOP 1 trafic (84 clics) et pas de DMCA direct noka-tv.xyz
 AMAZON_RISKY_EXACT = {
     # --- Lumen 95976390 (100 titres) ---
     "honeymoon",

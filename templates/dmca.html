@@ -2,29 +2,37 @@
 {% block content %}
 <section class="content-section" style="max-width:800px;margin:0 auto;padding:24px">
   <h1 class="section-title section-title--page">DMCA — Droits d'auteur & Retrait</h1>
-  
-  <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:24px;margin-top:16px;line-height:1.7;color:var(--text-body)">
-    <p><strong>NokaTV</strong> est un agrégateur qui référence des liens hypertextes vers des contenus hébergés sur des plateformes tierces et publiques. Aucun fichier multimédia n'est hébergé ou stocké sur nos serveurs.</p>
+
+  <div
+    style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:24px;margin-top:16px;line-height:1.7;color:var(--text-body)">
+    <p><strong>NokaTV</strong> est un agrégateur qui référence des liens hypertextes vers des contenus hébergés sur des
+      plateformes tierces et publiques. Aucun fichier multimédia n'est hébergé ou stocké sur nos serveurs.</p>
 
     <h2 style="margin-top:24px;font-size:1.15rem;color:var(--text-heading)">Procédure de signalement (DMCA)</h2>
-    <p style="margin-top:8px">Nous respectons scrupuleusement les droits de propriété intellectuelle. Si vous êtes titulaire de droits d'auteur ou mandataire légal et que vous constatez qu'un lien renvoie vers un contenu non autorisé, vous pouvez nous transmettre une notification de retrait à l'adresse suivante :</p>
-    
+    <p style="margin-top:8px">Nous respectons scrupuleusement les droits de propriété intellectuelle. Si vous êtes
+      titulaire de droits d'auteur ou mandataire légal et que vous constatez qu'un lien renvoie vers un contenu non
+      autorisé, vous pouvez nous transmettre une notification de retrait à l'adresse suivante :</p>
+
     <p style="margin-top:12px">
-      <strong>Email de contact :</strong> 
-      <a href="mailto:{{ contact_email or 'contact@nokatv.xyz' }}" style="color:var(--brand-hover);text-decoration:underline">{{ contact_email or 'contact@nokatv.xyz' }}</a>
+      <strong>Email de contact :</strong>
+      <a href="mailto:{{ contact_email or 'contact@noka-tv.xyz' }}"
+        style="color:var(--brand-hover);text-decoration:underline">{{ contact_email or 'contact@noka-tv.xyz' }}</a>
     </p>
 
     <h3 style="margin-top:20px;font-size:1rem;color:var(--text-heading)">Éléments à inclure dans votre demande :</h3>
     <ul style="margin-top:8px;padding-left:20px;list-style:disc">
       <li>L'identification claire de l'œuvre protégée par le droit d'auteur.</li>
-      <li>L'URL exacte de la page sur NokaTV contenant le lien contesté (ex : <code>https://nokatv.xyz/film/...</code>).</li>
+      <li>L'URL exacte de la page sur NokaTV contenant le lien contesté (ex :
+        <code>https://noka-tv.xyz/film/...</code>).</li>
       <li>Une preuve attestant que vous êtes le titulaire des droits ou habilité à agir en son nom.</li>
       <li>Vos coordonnées de contact (nom, adresse postale, numéro de téléphone et adresse email).</li>
-      <li>Une déclaration sur l'honneur indiquant que l'utilisation du contenu contesté n'est pas autorisée par le titulaire des droits, son mandataire ou la loi.</li>
+      <li>Une déclaration sur l'honneur indiquant que l'utilisation du contenu contesté n'est pas autorisée par le
+        titulaire des droits, son mandataire ou la loi.</li>
     </ul>
 
     <h2 style="margin-top:24px;font-size:1.15rem;color:var(--text-heading)">Délai de traitement</h2>
-    <p style="margin-top:8px">Dès réception d'une notification valide et complète, nous procédons à la suppression des liens incriminés dans un délai de <strong>24 à 48 heures</strong>.</p>
+    <p style="margin-top:8px">Dès réception d'une notification valide et complète, nous procédons à la suppression des
+      liens incriminés dans un délai de <strong>24 à 48 heures</strong>.</p>
   </div>
 </section>
 {% endblock %}

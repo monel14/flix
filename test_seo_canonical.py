@@ -26,7 +26,7 @@ client = TestClient(app)
 def test_fiche_vostfr_canonical_pointe_vers_la_vf_connue(monkeypatch):
     import routes.detail
 
-    monkeypatch.setenv("SITE_URL", "https://nokatv.xyz")
+    monkeypatch.setenv("SITE_URL", "https://noka-tv.xyz")
 
     def _fake_film(slug: str, version: str) -> dict:
         return {
@@ -48,14 +48,14 @@ def test_fiche_vostfr_canonical_pointe_vers_la_vf_connue(monkeypatch):
     canonical = re.search(r'rel="canonical" href="([^"]+)"', r.text)
     assert canonical is not None
     # Version préférée (VF) connue -> canonical vers elle, sur l'origine publique configurée.
-    assert canonical.group(1) == "https://nokatv.xyz/film/lodyssee-vf"
+    assert canonical.group(1) == "https://noka-tv.xyz/film/lodyssee-vf"
 
     # Version préférée inconnue -> canonical = page courante (aucune URL cassée)
     cache.set("sitemap:paths", ["/film/lodyssee-vostfr"], 3600)
     r2 = client.get("/film/lodyssee-vostfr")
     canonical2 = re.search(r'rel="canonical" href="([^"]+)"', r2.text)
     assert canonical2 is not None
-    assert canonical2.group(1) == "https://nokatv.xyz/film/lodyssee-vostfr"
+    assert canonical2.group(1) == "https://noka-tv.xyz/film/lodyssee-vostfr"
 
 
 def test_sitemap_ne_liste_que_la_version_preferee():

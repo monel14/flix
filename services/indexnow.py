@@ -69,7 +69,7 @@ def key_location(site_url: str, key: str) -> str:
 
 
 def _host_of(site_url: str) -> str:
-    """Hôte nu attendu par IndexNow (ex. « nokatv.xyz », sans schéma ni chemin)."""
+    """Hôte nu attendu par IndexNow (ex. « noka-tv.xyz », sans schéma ni chemin)."""
     origin = (site_url or "").strip().rstrip("/")
     if not origin:
         return ""

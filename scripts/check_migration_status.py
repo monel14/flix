@@ -105,11 +105,11 @@ def check_url_variants_distribution(token: str, site: str) -> dict[str, dict[str
                 clicks = int(r.get("clicks", 0))
                 impr = int(r.get("impressions", 0))
 
-                if p.startswith("https://nokatv.xyz"):
+                if p.startswith("https://noka-tv.xyz"):
                     results["canonical"]["pages"] += 1
                     results["canonical"]["clicks"] += clicks
                     results["canonical"]["impressions"] += impr
-                elif "www.nokatv.xyz" in p:
+                elif "www.noka-tv.xyz" in p:
                     results["legacy_www"]["pages"] += 1
                     results["legacy_www"]["clicks"] += clicks
                     results["legacy_www"]["impressions"] += impr
@@ -126,7 +126,7 @@ def check_url_variants_distribution(token: str, site: str) -> dict[str, dict[str
 def main():
     print("🔍 Analyse de l'état de la migration canonique...")
     token = get_token()
-    site = "sc-domain:nokatv.xyz"
+    site = "sc-domain:noka-tv.xyz"
 
     # 1. État du Sitemap
     sm = check_sitemap(token, site)
@@ -166,7 +166,7 @@ def main():
     print("\n" + "=" * 60)
     print("2. RÉPARTITION DES PAGES & CONSOLIDATION 301 (7 derniers jours)")
     print("=" * 60)
-    print(f"• URLs propres (https://nokatv.xyz) : {dist['canonical']['pages']} pages | {dist['canonical']['clicks']} clics | {dist['canonical']['impressions']} impressions")
+    print(f"• URLs propres (https://noka-tv.xyz) : {dist['canonical']['pages']} pages | {dist['canonical']['clicks']} clics | {dist['canonical']['impressions']} impressions")
     print(f"• Anciennes URLs WWW (à purger)     : {dist['legacy_www']['pages']} pages | {dist['legacy_www']['clicks']} clics | {dist['legacy_www']['impressions']} impressions")
     print(f"• Anciennes URLs HTTP (à purger)    : {dist['legacy_http']['pages']} pages | {dist['legacy_http']['clicks']} clics | {dist['legacy_http']['impressions']} impressions")
 
@@ -180,7 +180,7 @@ def main():
     if pct_consolidated >= 90 and not sm.get("isPending", False):
         print("\n🎉 MIGRATION COMPLÈTE : Google a entièrement consolidé votre trafic sur l'URL canonique propre !")
     else:
-        print("\n⏳ MIGRATION EN COURS : Googlebot transfère progressivement l'autorité des anciennes pages vers https://nokatv.xyz.")
+        print("\n⏳ MIGRATION EN COURS : Googlebot transfère progressivement l'autorité des anciennes pages vers https://noka-tv.xyz.")
         print("   Re-lancez ce script dans 2 à 4 jours pour suivre la montée du pourcentage.")
 
 

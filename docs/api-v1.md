@@ -8,7 +8,7 @@ API initiale intégrée dans `81e283d`, puis complétée par le présent patch. 
 
 ```dotenv
 NOKATV_API_KEY=<clé aléatoire privée générée pour le serveur PHP>
-NOKATV_API_PUBLIC_URL=https://nokatv.xyz
+NOKATV_API_PUBLIC_URL=https://noka-tv.xyz
 VOIRANIME_SOURCE_URL=https://voiranime.cx
 ```
 
@@ -34,7 +34,7 @@ Recherche exacte de la source, sans correction orthographique nouvelle dans cett
 ```bash
 curl --fail-with-body \
   -H "X-API-Key: $NOKATV_API_KEY" \
-  'https://nokatv.xyz/api/v1/animes?genre=action&page=1'
+  'https://noka-tv.xyz/api/v1/animes?genre=action&page=1'
 ```
 
 ```json
@@ -44,7 +44,7 @@ curl --fail-with-body \
     "type": "anime",
     "slug": "exemple",
     "title": "Exemple",
-    "image_url": "https://nokatv.xyz/api/image-proxy?url=...",
+    "image_url": "https://noka-tv.xyz/api/image-proxy?url=...",
     "version": "VOSTFR",
     "latest_episode": "03"
   }],

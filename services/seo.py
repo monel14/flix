@@ -4,7 +4,7 @@ Toutes les métadonnées de page (title, description, canonical, Open Graph,
 Twitter Cards, JSON-LD) sont construites ici et rendues par base.html.
 Aucun template ne redéfinit sa propre logique de métadonnées.
 
-Domaine public : variable d'environnement SITE_URL (ex. "https://nokatv.xyz").
+Domaine public : variable d'environnement SITE_URL (ex. "https://noka-tv.xyz").
 Sans elle, on retombe sur l'origine réellement vue par la requête
 (en tenant compte des en-têtes de proxy X-Forwarded-*).
 """
@@ -57,7 +57,7 @@ def _forwarded_scheme(request: Request) -> str:
 def site_origin(request: Request) -> str:
     """Origine publique du site, sans slash final.
 
-    - Si la requête arrive sur un sous-domaine lié (ex. ww1.nokatv.xyz, ww2.nokatv.xyz)
+    - Si la requête arrive sur un sous-domaine lié (ex. ww1.noka-tv.xyz, ww2.noka-tv.xyz)
       ou un domaine supplémentaire autorisé, l'origine de ce sous-domaine est retournée
       pour que ses sitemaps, robots.txt et balises canonical soient cohérents et autonomes.
     - Sinon (domaine principal ou requêtes internes/tests), SITE_URL est utilisé.

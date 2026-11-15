@@ -3,7 +3,7 @@
 Base du correctif : origin/master e868f58.
 
 - Acquisition : https://noka-tv.xyz/secret-story-afrique (indexable, canonical propre, sitemap éditorial).
-- Destination : https://nokatv.xyz/secret-story-afrique (GET/HEAD 200, noindex/follow dans le HTML et l'en-tête HTTP, hors sitemap catalogue).
+- Destination : https://noka-tv.xyz/secret-story-afrique (GET/HEAD 200, noindex/follow dans le HTML et l'en-tête HTTP, hors sitemap catalogue).
 - Les boutons du guide ciblent désormais la page de lecture, avec les mêmes UTM et l'ancre #lecteur. Plus de retour automatique au guide côté catalogue, ni de renvoi vers l'accueil général.
 - Aucun rétablissement du hero ou du rail d'accueil précédemment annulés. Aucun changement des autres rubriques ou domaines.
 - Lecteur youtube-nocookie chargé seulement après clic ; bouton de fermeture, liens de secours YouTube et plateforme officielle ; aucune extraction de flux ni de session BestLive.

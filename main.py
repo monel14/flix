@@ -124,7 +124,7 @@ async def watchlist_page(request: Request):
 # Pages de confiance (E-E-A-T) : mentions légales & contact
 # ---------------------------------------------------------------------------
 
-CONTACT_EMAIL_FALLBACK = "contact@nokatv.xyz"
+CONTACT_EMAIL_FALLBACK = "contact@noka-tv.xyz"
 
 
 def _contact_email() -> str:
@@ -191,9 +191,9 @@ async def secret_story_guide(request: Request):
             description="Accédez à la diffusion en direct de Secret Story Afrique sur NokaTV. Programme, horaires et accès officiel.",
             path="/secret-story-afrique",
             noindex=True,
-            image="https://nokatv.xyz/static/secret-story-guide.png",
+            image="https://noka-tv.xyz/static/secret-story-guide.png",
         )
-        seo.canonical = "https://nokatv.xyz/secret-story-afrique"
+        seo.canonical = "https://noka-tv.xyz/secret-story-afrique"
         return templates.TemplateResponse(request, "secret_story_watch.html", {
             "request": request, "seo": seo, "secret_story": get_secret_story(),
             "guide_url": canonical,
@@ -216,7 +216,7 @@ async def secret_story_guide(request: Request):
     seo.canonical = canonical
     return templates.TemplateResponse(request, "secret_story_guide.html", {
         "request": request, "seo": seo,
-        "nokatv_url": "https://nokatv.xyz/secret-story-afrique?utm_source=noka-tv.xyz&utm_medium=guide&utm_campaign=secret-story-afrique#lecteur",
+        "nokatv_url": "https://noka-tv.xyz/secret-story-afrique?utm_source=noka-tv.xyz&utm_medium=guide&utm_campaign=secret-story-afrique#lecteur",
     })
 
 
@@ -701,7 +701,7 @@ async def canonical_domain_redirect(request: Request, call_next):
     """Force https + non-www pour consolider le jus SEO.
 
     Pages.csv montre 4 variantes indexées:
-    http://nokatv.xyz, http://www.nokatv.xyz, https://www.nokatv.xyz, https://nokatv.xyz
+    http://noka-tv.xyz, http://www.noka-tv.xyz, https://www.noka-tv.xyz, https://noka-tv.xyz
     → dilution, 13 canonical mismatch, 114 canonicalisée.
     On 301 tout vers SITE_URL si défini, sinon vers https:// + host sans www.
     Exclut /api/image-proxy et health checks pour éviter boucles.
@@ -778,7 +778,7 @@ async def canonical_domain_redirect(request: Request, call_next):
             canonical_scheme = "https"
 
         if canonical_host:
-            # Domaine racine (ex: nokatv.xyz)
+            # Domaine racine (ex: noka-tv.xyz)
             apex_domain = canonical_host[4:] if canonical_host.startswith("www.") else canonical_host
 
             # Domaines liés/miroirs supplémentaires déclarés via variable d'environnement (séparés par virgule)
@@ -788,7 +788,7 @@ async def canonical_domain_redirect(request: Request, call_next):
                 if d.strip()
             }
 
-            # 1. Domaine principal apex (ex: nokatv.xyz)
+            # 1. Domaine principal apex (ex: noka-tv.xyz)
             if raw_host == apex_domain:
                 # Si derrière Cloudflare, Cloudflare gère déjà le HTTPS : ne pas rediriger pour éviter boucle 301
                 if is_behind_cf:
@@ -807,14 +807,14 @@ async def canonical_domain_redirect(request: Request, call_next):
                     url += f"?{request.url.query}"
                 return RedirectResponse(url, status_code=301)
 
-            # 3. Tous les sous-domaines liés (ex: ww1.nokatv.xyz, ww2.nokatv.xyz, ...)
+            # 3. Tous les sous-domaines liés (ex: ww1.noka-tv.xyz, ww2.noka-tv.xyz, ...)
             #    ou domaines supplémentaires autorisés
             is_subdomain = raw_host.endswith(f".{apex_domain}")
             is_extra_domain = raw_host in extra_linked or any(raw_host.endswith(f".{d}") for d in extra_linked)
 
             if is_subdomain or is_extra_domain:
                 target_host = raw_host
-                # Supprimer www. devant un sous-domaine (ex: www.ww1.nokatv.xyz -> ww1.nokatv.xyz)
+                # Supprimer www. devant un sous-domaine (ex: www.ww1.noka-tv.xyz -> ww1.noka-tv.xyz)
                 if target_host.startswith("www."):
                     target_host = target_host[4:]
 
@@ -971,7 +971,7 @@ async def indexnow_key_file(key: str):
     """Sert la clé IndexNow à l'emplacement exact exigé par le protocole.
 
     IndexNow vérifie la propriété du domaine en demandant ce fichier
-    (https://nokatv.xyz/{clé}.txt). Sans clé configurée (ou avec une clé qui
+    (https://noka-tv.xyz/{clé}.txt). Sans clé configurée (ou avec une clé qui
     ne correspond pas), on répond 404 : la route n'expose jamais autre chose.
     """
     expected = indexnow_key()

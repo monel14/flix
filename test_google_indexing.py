@@ -26,7 +26,7 @@ def test_missing_credentials(monkeypatch):
     google_indexing._token_cache["token"] = ""
     google_indexing._token_cache["expires_at"] = 0.0
 
-    ok, msg = publish_url_to_google("https://nokatv.xyz/film/test")
+    ok, msg = publish_url_to_google("https://noka-tv.xyz/film/test")
     assert ok is False
     assert "Impossible de s'authentifier" in msg
 
@@ -40,14 +40,14 @@ def test_successful_publish(monkeypatch):
     fake_resp.__exit__.return_value = None
 
     with patch("urllib.request.urlopen", return_value=fake_resp):
-        ok, msg = publish_url_to_google("https://nokatv.xyz/film/lodyssee-vf")
+        ok, msg = publish_url_to_google("https://noka-tv.xyz/film/lodyssee-vf")
         assert ok is True
         assert "Google notifié avec succès" in msg
 
 
 def test_publish_urls_batch(monkeypatch):
     monkeypatch.setattr(google_indexing, "publish_url_to_google", lambda u, action="URL_UPDATED": (True, f"OK {u}"))
-    urls = ["https://nokatv.xyz/film/a", "https://nokatv.xyz/film/b"]
+    urls = ["https://noka-tv.xyz/film/a", "https://noka-tv.xyz/film/b"]
     results = publish_urls_to_google(urls)
     assert len(results) == 2
     assert results[0][1] is True

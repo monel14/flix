@@ -23,7 +23,7 @@ def test_sans_cle_submit_est_un_noop_silencieux(monkeypatch):
     monkeypatch.setattr(indexnow, "KEY_FILE", Path("/tmp/does-not-exist-indexnow-key.txt"))
 
     async def scenario():
-        return await submit_urls(["https://nokatv.xyz/film/x"], site_url="https://nokatv.xyz")
+        return await submit_urls(["https://noka-tv.xyz/film/x"], site_url="https://noka-tv.xyz")
 
     ok, message = asyncio.run(scenario())
     assert ok is False
@@ -53,15 +53,15 @@ def test_payload_envoye_respecte_le_protocole(monkeypatch):
 
     async def scenario():
         return await submit_urls(
-            ["https://nokatv.xyz/film/lodyssee-vf"],
-            site_url="https://nokatv.xyz",
+            ["https://noka-tv.xyz/film/lodyssee-vf"],
+            site_url="https://noka-tv.xyz",
         )
 
     ok, message = asyncio.run(scenario())
     assert ok is True
     assert captured["url"] == "https://api.indexnow.org/indexnow"
     payload = captured["json"]
-    assert payload["host"] == "nokatv.xyz"
+    assert payload["host"] == "noka-tv.xyz"
     assert payload["key"] == "cle-de-test"
-    assert payload["keyLocation"] == "https://nokatv.xyz/cle-de-test.txt"
-    assert payload["urlList"] == ["https://nokatv.xyz/film/lodyssee-vf"]
+    assert payload["keyLocation"] == "https://noka-tv.xyz/cle-de-test.txt"
+    assert payload["urlList"] == ["https://noka-tv.xyz/film/lodyssee-vf"]

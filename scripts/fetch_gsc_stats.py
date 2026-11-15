@@ -2,7 +2,7 @@
 """Script de récupération et d'affichage des statistiques Google Search Console.
 
 Usage :
-    python3 scripts/fetch_gsc_stats.py [--site-url https://nokatv.xyz/] [--days 14] [--dimension date|query|page]
+    python3 scripts/fetch_gsc_stats.py [--site-url https://noka-tv.xyz/] [--days 14] [--dimension date|query|page]
     python3 scripts/fetch_gsc_stats.py --queries
     python3 scripts/fetch_gsc_stats.py --pages
 """
@@ -101,7 +101,7 @@ def query_analytics(token: str, site_url: str, dimension: str = "date", days: in
 
 def main():
     parser = argparse.ArgumentParser(description="Affiche les stats Google Search Console")
-    parser.add_argument("--site-url", default=os.getenv("SITE_URL", "https://nokatv.xyz/"), help="URL de la propriété")
+    parser.add_argument("--site-url", default=os.getenv("SITE_URL", "https://noka-tv.xyz/"), help="URL de la propriété")
     parser.add_argument("--days", type=int, default=14, help="Nombre de jours d'historique")
     parser.add_argument("--dimension", choices=["date", "query", "page"], default="date", help="Dimension d'analyse")
     parser.add_argument("--queries", action="store_true", help="Raccourci pour afficher les top requêtes")

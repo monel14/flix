@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="fr">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,26 +14,26 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="{{ static_url('manifest.webmanifest') }}">
     {# Capture très tôt les événements PWA : les modules différés les
-       consomment ensuite sans risquer de rater un beforeinstallprompt déjà
-       émis pendant le chargement d'une page avec un SW existant. #}
+    consomment ensuite sans risquer de rater un beforeinstallprompt déjà
+    émis pendant le chargement d'une page avec un SW existant. #}
     <script>
-    (function (window) {
-        if (!window || !window.addEventListener) return;
-        var state = window.NokaTVPWAInstallBootstrap = window.NokaTVPWAInstallBootstrap || {};
-        if (state.initialized) return;
-        state.initialized = true;
-        state.deferredPrompt = null;
-        state.appInstalled = false;
-
-        window.addEventListener('beforeinstallprompt', function (event) {
-            if (event && typeof event.preventDefault === 'function') event.preventDefault();
-            state.deferredPrompt = event;
-        });
-        window.addEventListener('appinstalled', function () {
-            state.appInstalled = true;
+        (function (window) {
+            if (!window || !window.addEventListener) return;
+            var state = window.NokaTVPWAInstallBootstrap = window.NokaTVPWAInstallBootstrap || {};
+            if (state.initialized) return;
+            state.initialized = true;
             state.deferredPrompt = null;
-        });
-    })(window);
+            state.appInstalled = false;
+
+            window.addEventListener('beforeinstallprompt', function (event) {
+                if (event && typeof event.preventDefault === 'function') event.preventDefault();
+                state.deferredPrompt = event;
+            });
+            window.addEventListener('appinstalled', function () {
+                state.appInstalled = true;
+                state.deferredPrompt = null;
+            });
+        })(window);
     </script>
     <link rel="icon" type="image/svg+xml" href="{{ static_url('icons/icon.svg') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ static_url('icons/icon-192.png') }}">
@@ -44,30 +45,33 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-F96G5JC4K3"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+        function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
         gtag('config', 'G-F96G5JC4K3');
     </script>
 
     {# Métadonnées SEO & partage — source unique de vérité : services/seo.py.
-       Chaque route construit un objet `seo` (SeoMeta) ; si une page n'en
-       fournit pas, les valeurs génériques du site s'appliquent. #}
+    Chaque route construit un objet `seo` (SeoMeta) ; si une page n'en
+    fournit pas, les valeurs génériques du site s'appliquent. #}
     <title>{{ seo.title if seo else 'NokaTV — Streaming Films, Séries, K-Dramas & Animés HD' }}</title>
-    <meta name="description" content="{{ seo.description if seo else 'Plateforme NokaTV de streaming gratuit pour regarder des films, séries, K-Dramas et animés en VF et VOSTFR HD.' }}">
+    <meta name="description"
+        content="{{ seo.description if seo else 'Plateforme NokaTV de streaming gratuit pour regarder des films, séries, K-Dramas et animés en VF et VOSTFR HD.' }}">
     {% if seo %}
     <link rel="canonical" href="{{ seo.canonical }}">
     {% endif %}
     {% if seo and seo.noindex %}
     {# Pages d'usage (players, recherche, ma-liste, erreurs) : hors index,
-       mais liens suivis (`follow`) vers les fiches. #}
+    mais liens suivis (`follow`) vers les fiches. #}
     <meta name="robots" content="noindex, follow">
     {% endif %}
 
     <!-- Open Graph -->
     <meta property="og:site_name" content="NokaTV">
-    <meta property="og:title" content="{{ seo.og_title if seo else 'NokaTV — Films, Séries, K-Dramas & Animés en Streaming HD' }}">
-    <meta property="og:description" content="{{ seo.og_description if seo else 'Regardez des milliers de films, séries, K-Dramas et animés en streaming gratuit VF et VOSTFR sans coupure.' }}">
-    <meta property="og:image" content="{{ seo.image if seo else 'https://nokatv.xyz/static/og-banner.jpg' }}">
+    <meta property="og:title"
+        content="{{ seo.og_title if seo else 'NokaTV — Films, Séries, K-Dramas & Animés en Streaming HD' }}">
+    <meta property="og:description"
+        content="{{ seo.og_description if seo else 'Regardez des milliers de films, séries, K-Dramas et animés en streaming gratuit VF et VOSTFR sans coupure.' }}">
+    <meta property="og:image" content="{{ seo.image if seo else 'https://noka-tv.xyz/static/og-banner.jpg' }}">
     {% if seo %}
     <meta property="og:url" content="{{ seo.canonical }}">
     <meta property="og:type" content="{{ seo.og_type }}">
@@ -78,15 +82,16 @@
     <!-- Twitter/X Cards — mêmes données que Open Graph -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ seo.twitter_title if seo else 'NokaTV — Streaming Gratuit HD' }}">
-    <meta name="twitter:description" content="{{ seo.twitter_description if seo else 'Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR.' }}">
-    <meta name="twitter:image" content="{{ seo.image if seo else 'https://nokatv.xyz/static/og-banner.jpg' }}">
+    <meta name="twitter:description"
+        content="{{ seo.twitter_description if seo else 'Films, Séries, K-Dramas & Animés en streaming VF et VOSTFR.' }}">
+    <meta name="twitter:image" content="{{ seo.image if seo else 'https://noka-tv.xyz/static/og-banner.jpg' }}">
     {% if seo and seo.all_json_ld %}
     <!-- Données structurées (œuvre éventuelle + WebSite / BreadcrumbList / ItemList) -->
     {% for ld in seo.all_json_ld %}
     <script type="application/ld+json">{{ ld | tojson }}</script>
     {% endfor %}
     {% endif %}
-    
+
     <!-- Assets locaux : icônes SVG (mask CSS) + police auto-hébergée.
        Zéro CDN tiers sur le chemin critique de rendu (plus de DNS/TLS
        bloquants). URLs versionnées automatiquement -> cache navigateur 1 an sain. -->
@@ -96,186 +101,202 @@
     <link rel="stylesheet" href="{{ static_url('pwa-install.css') }}">
     {% block head %}{% endblock %}
 </head>
+
 <body>
 
-{# Domaine observatoire (ALTERNATIVES_DOMAIN) : la navigation média pointe vers
-   le domaine principal du catalogue, la recherche n'existe pas sur ce domaine. #}
-{% set is_alt = request.state.is_alternatives_domain | default(false) %}
-{% set media_base = MEDIA_SITE_URL if is_alt else "" %}
-{% set home_href = "/alternative" if is_alt else "/" %}
+    {# Domaine observatoire (ALTERNATIVES_DOMAIN) : la navigation média pointe vers
+    le domaine principal du catalogue, la recherche n'existe pas sur ce domaine. #}
+    {% set is_alt = request.state.is_alternatives_domain | default(false) %}
+    {% set media_base = MEDIA_SITE_URL if is_alt else "" %}
+    {% set home_href = "/alternative" if is_alt else "/" %}
 
-<!-- Header / Navigation Bar -->
-<header class="site-header" id="site-header">
-    <div class="header-inner">
-        <!-- Logo NokaTV -->
-        <a class="brand" href="{{ home_href }}">
-            <div class="brand-icon"><i class="fas fa-play"></i></div>
-            <span>Noka<b>TV</b></span>
+    <!-- Header / Navigation Bar -->
+    <header class="site-header" id="site-header">
+        <div class="header-inner">
+            <!-- Logo NokaTV -->
+            <a class="brand" href="{{ home_href }}">
+                <div class="brand-icon"><i class="fas fa-play"></i></div>
+                <span>Noka<b>TV</b></span>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="main-nav">
+                <a href="{{ home_href }}" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+                    Accueil
+                </a>
+                <a href="{{ media_base }}/films"
+                    class="nav-link {% if request.url.path.startswith('/films') %}active{% endif %}">
+                    Films
+                </a>
+                <a href="{{ media_base }}/series"
+                    class="nav-link {% if request.url.path.startswith('/series') %}active{% endif %}">
+                    Séries
+                </a>
+                <a href="{{ media_base }}/dramas"
+                    class="nav-link {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
+                    K-Dramas
+                </a>
+                <a href="{{ media_base }}/animes"
+                    class="nav-link {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
+                    Animés
+                </a>
+                <a href="{{ media_base }}/ma-liste"
+                    class="nav-link {% if request.url.path == '/ma-liste' %}active{% endif %}">
+                    <i class="fas fa-bookmark" style="font-size: 0.8rem;"></i> Ma Liste
+                </a>
+            </nav>
+
+            {% if not is_alt %}
+            <!-- Search Bar with Live Dropdown -->
+            <form class="search-bar" action="/recherche" method="get" id="search-form" autocomplete="off">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-magnifying-glass search-icon"></i>
+                    <input type="text" name="q" id="search-input" placeholder="Films, séries, animés…"
+                        value="{% block search_value %}{% endblock %}">
+                </div>
+                <div id="search-dropdown" class="search-dropdown" hidden></div>
+            </form>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="site-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Mobile Bottom Navigation (Native App feel) -->
+    <nav class="mobile-bottom-bar" aria-label="Navigation mobile">
+        <a href="{{ home_href }}" class="mobile-tab {% if request.url.path == '/' %}active{% endif %}">
+            <i class="fas fa-house"></i>
+            <span>Accueil</span>
         </a>
+        <a href="{{ media_base }}/films"
+            class="mobile-tab {% if request.url.path.startswith('/films') %}active{% endif %}">
+            <i class="fas fa-film"></i>
+            <span>Films</span>
+        </a>
+        <a href="{{ media_base }}/series"
+            class="mobile-tab {% if request.url.path.startswith('/series') %}active{% endif %}">
+            <i class="fas fa-tv"></i>
+            <span>Séries</span>
+        </a>
+        <a href="{{ media_base }}/animes"
+            class="mobile-tab {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
+            <i class="fas fa-dragon"></i>
+            <span>Animés</span>
+        </a>
+        <a href="{{ media_base }}/ma-liste"
+            class="mobile-tab {% if request.url.path == '/ma-liste' %}active{% endif %}">
+            <i class="fas fa-bookmark"></i>
+            <span>Ma Liste</span>
+        </a>
+    </nav>
 
-        <!-- Desktop Navigation -->
-        <nav class="main-nav">
-            <a href="{{ home_href }}" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
-                Accueil
-            </a>
-            <a href="{{ media_base }}/films" class="nav-link {% if request.url.path.startswith('/films') %}active{% endif %}">
-                Films
-            </a>
-            <a href="{{ media_base }}/series" class="nav-link {% if request.url.path.startswith('/series') %}active{% endif %}">
-                Séries
-            </a>
-            <a href="{{ media_base }}/dramas" class="nav-link {% if request.url.path.startswith('/drama') or request.url.path.startswith('/dramas') %}active{% endif %}">
-                K-Dramas
-            </a>
-            <a href="{{ media_base }}/animes" class="nav-link {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
-                Animés
-            </a>
-            <a href="{{ media_base }}/ma-liste" class="nav-link {% if request.url.path == '/ma-liste' %}active{% endif %}">
-                <i class="fas fa-bookmark" style="font-size: 0.8rem;"></i> Ma Liste
-            </a>
-        </nav>
-
-        {% if not is_alt %}
-        <!-- Search Bar with Live Dropdown -->
-        <form class="search-bar" action="/recherche" method="get" id="search-form" autocomplete="off">
-            <div class="search-input-wrapper">
-                <i class="fas fa-magnifying-glass search-icon"></i>
-                <input type="text" name="q" id="search-input" placeholder="Films, séries, animés…"
-                       value="{% block search_value %}{% endblock %}">
+    <!-- Share Modal Component -->
+    <div id="share-modal" class="share-modal-overlay">
+        <div class="share-modal-box">
+            <div class="share-modal-title">
+                <span>Partager ce titre</span>
+                <button class="share-close-btn" id="share-close-btn" aria-label="Fermer"><i class="fas fa-xmark"
+                        aria-hidden="true"></i></button>
             </div>
-            <div id="search-dropdown" class="search-dropdown" hidden></div>
-        </form>
-        {% endif %}
-    </div>
-</header>
-
-<!-- Main Container -->
-<main class="site-main">
-    {% block content %}{% endblock %}
-</main>
-
-<!-- Mobile Bottom Navigation (Native App feel) -->
-<nav class="mobile-bottom-bar" aria-label="Navigation mobile">
-    <a href="{{ home_href }}" class="mobile-tab {% if request.url.path == '/' %}active{% endif %}">
-        <i class="fas fa-house"></i>
-        <span>Accueil</span>
-    </a>
-    <a href="{{ media_base }}/films" class="mobile-tab {% if request.url.path.startswith('/films') %}active{% endif %}">
-        <i class="fas fa-film"></i>
-        <span>Films</span>
-    </a>
-    <a href="{{ media_base }}/series" class="mobile-tab {% if request.url.path.startswith('/series') %}active{% endif %}">
-        <i class="fas fa-tv"></i>
-        <span>Séries</span>
-    </a>
-    <a href="{{ media_base }}/animes" class="mobile-tab {% if request.url.path.startswith('/anime') or request.url.path.startswith('/animes') %}active{% endif %}">
-        <i class="fas fa-dragon"></i>
-        <span>Animés</span>
-    </a>
-    <a href="{{ media_base }}/ma-liste" class="mobile-tab {% if request.url.path == '/ma-liste' %}active{% endif %}">
-        <i class="fas fa-bookmark"></i>
-        <span>Ma Liste</span>
-    </a>
-</nav>
-
-<!-- Share Modal Component -->
-<div id="share-modal" class="share-modal-overlay">
-    <div class="share-modal-box">
-        <div class="share-modal-title">
-            <span>Partager ce titre</span>
-            <button class="share-close-btn" id="share-close-btn" aria-label="Fermer"><i class="fas fa-xmark" aria-hidden="true"></i></button>
-        </div>
-        <div class="share-grid">
-            <button class="share-btn-item whatsapp" id="share-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
-            <button class="share-btn-item telegram" id="share-telegram"><i class="fab fa-telegram"></i> Telegram</button>
-            <button class="share-btn-item twitter" id="share-twitter"><i class="fab fa-x-twitter"></i> X / Twitter</button>
-            <button class="share-btn-item copy" id="share-copy"><i class="fas fa-link"></i> Copier</button>
-        </div>
-        <div id="share-copied-msg" style="display: none; text-align: center; color: #22c55e; font-size: 0.82rem; font-weight: 600;">
-            <i class="fas fa-check"></i> Lien copié dans le presse-papier !
+            <div class="share-grid">
+                <button class="share-btn-item whatsapp" id="share-whatsapp"><i class="fab fa-whatsapp"></i>
+                    WhatsApp</button>
+                <button class="share-btn-item telegram" id="share-telegram"><i class="fab fa-telegram"></i>
+                    Telegram</button>
+                <button class="share-btn-item twitter" id="share-twitter"><i class="fab fa-x-twitter"></i> X /
+                    Twitter</button>
+                <button class="share-btn-item copy" id="share-copy"><i class="fas fa-link"></i> Copier</button>
+            </div>
+            <div id="share-copied-msg"
+                style="display: none; text-align: center; color: #22c55e; font-size: 0.82rem; font-weight: 600;">
+                <i class="fas fa-check"></i> Lien copié dans le presse-papier !
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Installation PWA : masquée par défaut. Les modules dédiés ne l'ouvrent
+    <!-- Installation PWA : masquée par défaut. Les modules dédiés ne l'ouvrent
      qu'avec beforeinstallprompt ou les consignes Apple iOS/iPadOS fiables. -->
-<div id="pwa-install-modal" class="pwa-install-overlay" hidden aria-hidden="true">
-    <section id="pwa-install-dialog" class="pwa-install-dialog" role="dialog" aria-modal="true"
-             aria-labelledby="pwa-install-title" aria-describedby="pwa-install-description" tabindex="-1">
-        <button type="button" id="pwa-install-close" class="pwa-install-close"
+    <div id="pwa-install-modal" class="pwa-install-overlay" hidden aria-hidden="true">
+        <section id="pwa-install-dialog" class="pwa-install-dialog" role="dialog" aria-modal="true"
+            aria-labelledby="pwa-install-title" aria-describedby="pwa-install-description" tabindex="-1">
+            <button type="button" id="pwa-install-close" class="pwa-install-close"
                 aria-label="Fermer la fenêtre d'installation">
-            <i class="fas fa-xmark" aria-hidden="true"></i>
-        </button>
-        <div class="pwa-install-heading">
-            <span class="pwa-install-mark" aria-hidden="true"><i class="fas fa-plus"></i></span>
-            <h2 id="pwa-install-title" class="pwa-install-title">Installer l'application</h2>
-        </div>
-        <p id="pwa-install-description" class="pwa-install-description">
-            Installez l'application pour y accéder plus rapidement depuis votre appareil.
+                <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
+            <div class="pwa-install-heading">
+                <span class="pwa-install-mark" aria-hidden="true"><i class="fas fa-plus"></i></span>
+                <h2 id="pwa-install-title" class="pwa-install-title">Installer l'application</h2>
+            </div>
+            <p id="pwa-install-description" class="pwa-install-description">
+                Installez l'application pour y accéder plus rapidement depuis votre appareil.
+            </p>
+            <ol id="pwa-install-ios-instructions" class="pwa-install-steps" hidden
+                aria-label="Étapes d'installation sur iPhone et iPad">
+                <li><strong>Appuyez sur le bouton Partager</strong> dans Safari.</li>
+                <li>Choisissez <strong>« Ajouter à l'écran d'accueil »</strong>.</li>
+                <li>Confirmez avec <strong>« Ajouter »</strong>.</li>
+            </ol>
+            <div class="pwa-install-actions">
+                <button type="button" id="pwa-install-later" class="pwa-install-button pwa-install-button--later">
+                    Plus tard
+                </button>
+                <button type="button" id="pwa-install-action" class="pwa-install-button pwa-install-button--primary">
+                    <i class="fas fa-plus" aria-hidden="true"></i><span id="pwa-install-action-label">Installer</span>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <p>© 2026 NokaTV — Plateforme de streaming multi-sources (Films, Séries, K-Dramas & Animés).</p>
+        <p class="footer-links">
+            <a href="/alternative">État des sites & Alternatives</a> · <a href="/mentions-legales">Mentions légales</a>
+            · <a href="/contact">Contact</a> · <a href="/dmca">DMCA</a>
         </p>
-        <ol id="pwa-install-ios-instructions" class="pwa-install-steps" hidden
-            aria-label="Étapes d'installation sur iPhone et iPad">
-            <li><strong>Appuyez sur le bouton Partager</strong> dans Safari.</li>
-            <li>Choisissez <strong>« Ajouter à l'écran d'accueil »</strong>.</li>
-            <li>Confirmez avec <strong>« Ajouter »</strong>.</li>
-        </ol>
-        <div class="pwa-install-actions">
-            <button type="button" id="pwa-install-later" class="pwa-install-button pwa-install-button--later">
-                Plus tard
-            </button>
-            <button type="button" id="pwa-install-action" class="pwa-install-button pwa-install-button--primary">
-                <i class="fas fa-plus" aria-hidden="true"></i><span id="pwa-install-action-label">Installer</span>
-            </button>
-        </div>
-    </section>
-</div>
+    </footer>
 
-<!-- Footer -->
-<footer class="site-footer">
-    <p>© 2026 NokaTV — Plateforme de streaming multi-sources (Films, Séries, K-Dramas & Animés).</p>
-    <p class="footer-links">
-        <a href="/alternative">État des sites & Alternatives</a> · <a href="/mentions-legales">Mentions légales</a> · <a href="/contact">Contact</a> · <a href="/dmca">DMCA</a>
-    </p>
-</footer>
+    <!-- Global Scripts, History & Watchlist Tracker -->
+    <script>
+        (function () {
+            // 1. Recherche instantanée
+            const input = document.getElementById('search-input');
+            const dropdown = document.getElementById('search-dropdown');
+            if (input && dropdown) {
+                let timer = null;
+                let seq = 0; // évite qu'une réponse lente écrase une recherche plus récente
+                input.addEventListener('input', () => {
+                    clearTimeout(timer);
+                    const q = input.value.trim();
+                    if (q.length < 2) {
+                        dropdown.hidden = true;
+                        return;
+                    }
+                    timer = setTimeout(() => {
+                        const mySeq = ++seq;
+                        dropdown.innerHTML = '<div class="dd-status">Recherche…</div>';
+                        dropdown.hidden = false;
+                        fetch(`/api/search?q=${encodeURIComponent(q)}`)
+                            .then(r => r.json())
+                            .then(data => {
+                                if (mySeq !== seq) return;
+                                const results = data.results || [];
+                                if (!results.length) {
+                                    dropdown.innerHTML = '<div class="dd-status">Aucun résultat</div>';
+                                    return;
+                                }
+                                dropdown.innerHTML = results.map(r => {
+                                    let badge = 'Film';
+                                    if (r.type === 'drama') badge = 'K-Drama';
+                                    else if (r.type === 'anime') badge = 'Animé';
+                                    else if (r.type === 'series') badge = 'Série';
 
-<!-- Global Scripts, History & Watchlist Tracker -->
-<script>
-(function () {
-    // 1. Recherche instantanée
-    const input = document.getElementById('search-input');
-    const dropdown = document.getElementById('search-dropdown');
-    if (input && dropdown) {
-        let timer = null;
-        let seq = 0; // évite qu'une réponse lente écrase une recherche plus récente
-        input.addEventListener('input', () => {
-            clearTimeout(timer);
-            const q = input.value.trim();
-            if (q.length < 2) { 
-                dropdown.hidden = true; 
-                return; 
-            }
-            timer = setTimeout(() => {
-                const mySeq = ++seq;
-                dropdown.innerHTML = '<div class="dd-status">Recherche…</div>';
-                dropdown.hidden = false;
-                fetch(`/api/search?q=${encodeURIComponent(q)}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        if (mySeq !== seq) return;
-                        const results = data.results || [];
-                        if (!results.length) { 
-                            dropdown.innerHTML = '<div class="dd-status">Aucun résultat</div>';
-                            return; 
-                        }
-                        dropdown.innerHTML = results.map(r => {
-                            let badge = 'Film';
-                            if (r.type === 'drama') badge = 'K-Drama';
-                            else if (r.type === 'anime') badge = 'Animé';
-                            else if (r.type === 'series') badge = 'Série';
+                                    const versionTag = r.version ? ` • ${r.version}` : '';
 
-                            const versionTag = r.version ? ` • ${r.version}` : '';
-
-                            return `
+                                    return `
                             <a href="${r.url || ('/film/' + r.slug)}" class="dd-item">
                                 <img class="dd-poster" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">
                                 <div class="dd-info">
@@ -283,213 +304,214 @@
                                     <span class="dd-badge">${badge}${versionTag}</span>
                                 </div>
                             </a>`;
-                        }).join('');
-                        dropdown.hidden = false;
-                    })
-                    .catch(() => { if (mySeq === seq) dropdown.hidden = true; });
-            }, 200);
-        });
-
-        document.addEventListener('click', e => {
-            if (!document.getElementById('search-form').contains(e.target)) {
-                dropdown.hidden = true;
-            }
-        });
-    }
-
-    // Migration douce des clés localStorage (renommage Nokaflix → NokaTV) :
-    // la valeur est copiée vers nokatv_* à la première visite, l'ancienne clé
-    // est conservée en secours (aucune perte d'historique / de Ma Liste).
-    (function migrateStorageKeys() {
-        try {
-            [
-                ['nokaflix_watch_history', 'nokatv_watch_history'],
-                ['nokaflix_watchlist', 'nokatv_watchlist']
-            ].forEach(function(pair) {
-                var oldVal = localStorage.getItem(pair[0]);
-                if (oldVal !== null && localStorage.getItem(pair[1]) === null) {
-                    localStorage.setItem(pair[1], oldVal);
-                }
-            });
-        } catch(e) {}
-    })();
-
-    // 2. Gestionnaire d'Historique de visionnage (Continue Watching)
-    window.NokaTVHistory = window.NokaflixHistory = window.CoflixHistory = {
-        save: function(item) {
-            try {
-                let history = JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
-                history = history.filter(h => h.slug !== item.slug);
-                history.unshift({
-                    title: item.title,
-                    slug: item.slug,
-                    episode_id: item.episode_id,
-                    episode_title: item.episode_title || '',
-                    image: item.image || '',
-                    url: item.url,
-                    type: item.type || 'movie',
-                    updated_at: Date.now()
+                                }).join('');
+                                dropdown.hidden = false;
+                            })
+                            .catch(() => { if (mySeq === seq) dropdown.hidden = true; });
+                    }, 200);
                 });
-                localStorage.setItem('nokatv_watch_history', JSON.stringify(history.slice(0, 12)));
-            } catch(e) {}
-        },
-        remove: function(slug) {
-            try {
-                let history = JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
-                history = history.filter(h => h.slug !== slug);
-                localStorage.setItem('nokatv_watch_history', JSON.stringify(history));
-            } catch(e) {}
-        },
-        get: function() {
-            try {
-                return JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
-            } catch(e) { return []; }
-        }
-    };
 
-    // 3. Gestionnaire de Favoris (Watchlist / Ma Liste)
-    window.NokaTVWatchlist = window.NokaflixWatchlist = {
-        get: function() {
-            try {
-                return JSON.parse(localStorage.getItem('nokatv_watchlist') || '[]');
-            } catch(e) { return []; }
-        },
-        has: function(slug) {
-            const list = this.get();
-            return list.some(item => item.slug === slug);
-        },
-        add: function(item) {
-            let list = this.get();
-            if (!this.has(item.slug)) {
-                list.unshift(item);
-                localStorage.setItem('nokatv_watchlist', JSON.stringify(list));
+                document.addEventListener('click', e => {
+                    if (!document.getElementById('search-form').contains(e.target)) {
+                        dropdown.hidden = true;
+                    }
+                });
             }
-        },
-        remove: function(slug) {
-            let list = this.get();
-            list = list.filter(item => item.slug !== slug);
-            localStorage.setItem('nokatv_watchlist', JSON.stringify(list));
-        },
-        toggle: function(item) {
-            if (this.has(item.slug)) {
-                this.remove(item.slug);
-                return false;
-            } else {
-                this.add(item);
-                return true;
-            }
-        }
-    };
 
-    // 4. Gestionnaire de Partage Social Viral
-    window.openShareModal = function(title, url) {
-        const shareUrl = url || window.location.href;
-        const shareTitle = title || document.title;
+            // Migration douce des clés localStorage (renommage Nokaflix → NokaTV) :
+            // la valeur est copiée vers nokatv_* à la première visite, l'ancienne clé
+            // est conservée en secours (aucune perte d'historique / de Ma Liste).
+            (function migrateStorageKeys() {
+                try {
+                    [
+                        ['nokaflix_watch_history', 'nokatv_watch_history'],
+                        ['nokaflix_watchlist', 'nokatv_watchlist']
+                    ].forEach(function (pair) {
+                        var oldVal = localStorage.getItem(pair[0]);
+                        if (oldVal !== null && localStorage.getItem(pair[1]) === null) {
+                            localStorage.setItem(pair[1], oldVal);
+                        }
+                    });
+                } catch (e) { }
+            })();
 
-        // Si le navigateur supporte l'API native de partage mobile
-        if (navigator.share && /mobile|android|iphone/i.test(navigator.userAgent)) {
-            navigator.share({ title: shareTitle, url: shareUrl }).catch(() => {});
-            return;
-        }
+            // 2. Gestionnaire d'Historique de visionnage (Continue Watching)
+            window.NokaTVHistory = window.NokaflixHistory = window.CoflixHistory = {
+                save: function (item) {
+                    try {
+                        let history = JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
+                        history = history.filter(h => h.slug !== item.slug);
+                        history.unshift({
+                            title: item.title,
+                            slug: item.slug,
+                            episode_id: item.episode_id,
+                            episode_title: item.episode_title || '',
+                            image: item.image || '',
+                            url: item.url,
+                            type: item.type || 'movie',
+                            updated_at: Date.now()
+                        });
+                        localStorage.setItem('nokatv_watch_history', JSON.stringify(history.slice(0, 12)));
+                    } catch (e) { }
+                },
+                remove: function (slug) {
+                    try {
+                        let history = JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
+                        history = history.filter(h => h.slug !== slug);
+                        localStorage.setItem('nokatv_watch_history', JSON.stringify(history));
+                    } catch (e) { }
+                },
+                get: function () {
+                    try {
+                        return JSON.parse(localStorage.getItem('nokatv_watch_history') || '[]');
+                    } catch (e) { return []; }
+                }
+            };
 
-        const modal = document.getElementById('share-modal');
-        const closeBtn = document.getElementById('share-close-btn');
-        const waBtn = document.getElementById('share-whatsapp');
-        const tgBtn = document.getElementById('share-telegram');
-        const twBtn = document.getElementById('share-twitter');
-        const cpBtn = document.getElementById('share-copy');
-        const msg = document.getElementById('share-copied-msg');
+            // 3. Gestionnaire de Favoris (Watchlist / Ma Liste)
+            window.NokaTVWatchlist = window.NokaflixWatchlist = {
+                get: function () {
+                    try {
+                        return JSON.parse(localStorage.getItem('nokatv_watchlist') || '[]');
+                    } catch (e) { return []; }
+                },
+                has: function (slug) {
+                    const list = this.get();
+                    return list.some(item => item.slug === slug);
+                },
+                add: function (item) {
+                    let list = this.get();
+                    if (!this.has(item.slug)) {
+                        list.unshift(item);
+                        localStorage.setItem('nokatv_watchlist', JSON.stringify(list));
+                    }
+                },
+                remove: function (slug) {
+                    let list = this.get();
+                    list = list.filter(item => item.slug !== slug);
+                    localStorage.setItem('nokatv_watchlist', JSON.stringify(list));
+                },
+                toggle: function (item) {
+                    if (this.has(item.slug)) {
+                        this.remove(item.slug);
+                        return false;
+                    } else {
+                        this.add(item);
+                        return true;
+                    }
+                }
+            };
 
-        if (!modal) return;
+            // 4. Gestionnaire de Partage Social Viral
+            window.openShareModal = function (title, url) {
+                const shareUrl = url || window.location.href;
+                const shareTitle = title || document.title;
 
-        waBtn.onclick = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`, '_blank');
-        tgBtn.onclick = () => window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`, '_blank');
-        twBtn.onclick = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
-        cpBtn.onclick = () => {
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                msg.style.display = 'block';
-                setTimeout(() => { msg.style.display = 'none'; }, 2500);
+                // Si le navigateur supporte l'API native de partage mobile
+                if (navigator.share && /mobile|android|iphone/i.test(navigator.userAgent)) {
+                    navigator.share({ title: shareTitle, url: shareUrl }).catch(() => { });
+                    return;
+                }
+
+                const modal = document.getElementById('share-modal');
+                const closeBtn = document.getElementById('share-close-btn');
+                const waBtn = document.getElementById('share-whatsapp');
+                const tgBtn = document.getElementById('share-telegram');
+                const twBtn = document.getElementById('share-twitter');
+                const cpBtn = document.getElementById('share-copy');
+                const msg = document.getElementById('share-copied-msg');
+
+                if (!modal) return;
+
+                waBtn.onclick = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`, '_blank');
+                tgBtn.onclick = () => window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`, '_blank');
+                twBtn.onclick = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+                cpBtn.onclick = () => {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        msg.style.display = 'block';
+                        setTimeout(() => { msg.style.display = 'none'; }, 2500);
+                    });
+                };
+
+                closeBtn.onclick = () => modal.classList.remove('open');
+                modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('open'); };
+                modal.classList.add('open');
+            };
+
+            // 5. Navigation des rails horizontaux — chevrons discrets, desktop
+            //    uniquement (masqués en CSS sous 1024px). Le clic fait avancer le
+            //    rail d'environ une page de cartes ; chaque chevron n'est affiché
+            //    que lorsque le déplacement correspondant est possible.
+            const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+            document.querySelectorAll('.cards-rail').forEach(rail => {
+                if (rail.dataset.railEnhanced) return;
+                rail.dataset.railEnhanced = '1';
+
+                const shell = document.createElement('div');
+                shell.className = 'rail-shell';
+                rail.parentNode.insertBefore(shell, rail);
+                shell.appendChild(rail);
+
+                const scrollByPage = (dir) => rail.scrollBy({
+                    left: dir * rail.clientWidth * 0.9,
+                    behavior: reduceMotionQuery.matches ? 'auto' : 'smooth'
+                });
+
+                const makeBtn = (dir) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'rail-nav rail-nav--' + (dir < 0 ? 'prev' : 'next');
+                    btn.setAttribute('aria-label', dir < 0 ? 'Faire défiler vers la gauche' : 'Faire défiler vers la droite');
+                    btn.innerHTML = '<i class="fas fa-chevron-' + (dir < 0 ? 'left' : 'right') + '" aria-hidden="true"></i>';
+                    btn.addEventListener('click', () => scrollByPage(dir));
+                    return btn;
+                };
+                const prevBtn = makeBtn(-1);
+                const nextBtn = makeBtn(1);
+                shell.appendChild(prevBtn);
+                shell.appendChild(nextBtn);
+
+                const update = () => {
+                    const maxScroll = rail.scrollWidth - rail.clientWidth;
+                    const scrollable = maxScroll > 4;
+                    prevBtn.hidden = !scrollable || rail.scrollLeft <= 4;
+                    nextBtn.hidden = !scrollable || rail.scrollLeft >= maxScroll - 4;
+                };
+                rail.addEventListener('scroll', update, { passive: true });
+                window.addEventListener('resize', update);
+                // Le rail « Reprendre la lecture » est rempli après coup (localStorage) :
+                // son apparition doit reconfigurer l'état des chevrons.
+                new MutationObserver(update).observe(rail, { childList: true });
+                update();
             });
-        };
-
-        closeBtn.onclick = () => modal.classList.remove('open');
-        modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('open'); };
-        modal.classList.add('open');
-    };
-
-    // 5. Navigation des rails horizontaux — chevrons discrets, desktop
-    //    uniquement (masqués en CSS sous 1024px). Le clic fait avancer le
-    //    rail d'environ une page de cartes ; chaque chevron n'est affiché
-    //    que lorsque le déplacement correspondant est possible.
-    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    document.querySelectorAll('.cards-rail').forEach(rail => {
-        if (rail.dataset.railEnhanced) return;
-        rail.dataset.railEnhanced = '1';
-
-        const shell = document.createElement('div');
-        shell.className = 'rail-shell';
-        rail.parentNode.insertBefore(shell, rail);
-        shell.appendChild(rail);
-
-        const scrollByPage = (dir) => rail.scrollBy({
-            left: dir * rail.clientWidth * 0.9,
-            behavior: reduceMotionQuery.matches ? 'auto' : 'smooth'
-        });
-
-        const makeBtn = (dir) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'rail-nav rail-nav--' + (dir < 0 ? 'prev' : 'next');
-            btn.setAttribute('aria-label', dir < 0 ? 'Faire défiler vers la gauche' : 'Faire défiler vers la droite');
-            btn.innerHTML = '<i class="fas fa-chevron-' + (dir < 0 ? 'left' : 'right') + '" aria-hidden="true"></i>';
-            btn.addEventListener('click', () => scrollByPage(dir));
-            return btn;
-        };
-        const prevBtn = makeBtn(-1);
-        const nextBtn = makeBtn(1);
-        shell.appendChild(prevBtn);
-        shell.appendChild(nextBtn);
-
-        const update = () => {
-            const maxScroll = rail.scrollWidth - rail.clientWidth;
-            const scrollable = maxScroll > 4;
-            prevBtn.hidden = !scrollable || rail.scrollLeft <= 4;
-            nextBtn.hidden = !scrollable || rail.scrollLeft >= maxScroll - 4;
-        };
-        rail.addEventListener('scroll', update, { passive: true });
-        window.addEventListener('resize', update);
-        // Le rail « Reprendre la lecture » est rempli après coup (localStorage) :
-        // son apparition doit reconfigurer l'état des chevrons.
-        new MutationObserver(update).observe(rail, { childList: true });
-        update();
-    });
-})();
-</script>
-{# Mode TV & télécommande (10-foot UI) : détection automatique, navigation
-   flèches, touches Retour/OK/Plein écran et Media Session. Sans effet sur
-   téléphone / ordinateur (cf. static/tv.js). #}
-<script src="{{ static_url('tv.js') }}"></script>
-{# Gestionnaire d'installation isolé : il écoute les capacités réelles du
-   navigateur et reste silencieux lorsqu'aucune installation n'est fiable. #}
-<script>
-    window.NokaTVPWAInstallConfig = window.NokaTVPWAInstallConfig || {};
-</script>
-<script src="{{ static_url('pwa-install-manager.js') }}" defer></script>
-<script src="{{ static_url('pwa-install-prompt.js') }}" defer></script>
-{# Retour visuel à l'appui (ripple + états :active) sur tous les éléments
-   interactifs ; écouteur passif, aucune dépendance. #}
-<script src="{{ static_url('tap-feedback.js') }}" defer></script>
-{# Enregistrement du service worker minimal (shell local uniquement ; aucune
-   interception des pages, API, players ou contenus externes — cf. sw.js). #}
-<script>
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {
-            /* fonctionnalité additive : échec silencieux hors support */
-        });
-    });
-}
-</script>
-{% block scripts %}{% endblock %}
+        })();
+    </script>
+    {# Mode TV & télécommande (10-foot UI) : détection automatique, navigation
+    flèches, touches Retour/OK/Plein écran et Media Session. Sans effet sur
+    téléphone / ordinateur (cf. static/tv.js). #}
+    <script src="{{ static_url('tv.js') }}"></script>
+    {# Gestionnaire d'installation isolé : il écoute les capacités réelles du
+    navigateur et reste silencieux lorsqu'aucune installation n'est fiable. #}
+    <script>
+        window.NokaTVPWAInstallConfig = window.NokaTVPWAInstallConfig || {};
+    </script>
+    <script src="{{ static_url('pwa-install-manager.js') }}" defer></script>
+    <script src="{{ static_url('pwa-install-prompt.js') }}" defer></script>
+    {# Retour visuel à l'appui (ripple + états :active) sur tous les éléments
+    interactifs ; écouteur passif, aucune dépendance. #}
+    <script src="{{ static_url('tap-feedback.js') }}" defer></script>
+    {# Enregistrement du service worker minimal (shell local uniquement ; aucune
+    interception des pages, API, players ou contenus externes — cf. sw.js). #}
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {
+                    /* fonctionnalité additive : échec silencieux hors support */
+                });
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
+
 </html>

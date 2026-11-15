@@ -92,8 +92,8 @@ def test_parser_keeps_different_catalogs_separate():
 def test_cache_separates_source_genre_page_and_old_entries(section, route_name):
     from routes import home
     request = Request({"type": "http", "method": "GET", "scheme": "https",
-                       "server": ("nokatv.xyz", 443), "path": "/films" if section == "movies" else "/series",
-                       "query_string": b"", "headers": [(b"host", b"nokatv.xyz")]})
+                       "server": ("noka-tv.xyz", 443), "path": "/films" if section == "movies" else "/series",
+                       "query_string": b"", "headers": [(b"host", b"noka-tv.xyz")]})
     keys = []
     async def get_or_set(key, ttl, loader):
         keys.append(key)
