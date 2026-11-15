@@ -15,10 +15,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import PlainTextResponse
 from routes.api_v1 import router
 from cache import cache
+from services.image_proxy import UnsafeImageURL, validate_url, fetch_image
 from scraper.coflix_client import SOURCE_URL as COFLIX_SOURCE_URL, close_coflix_client
 from scraper.frenchstream_client import close_frenchstream_client
-from scraper.voirdrama_client import close_voirdrama_client, get_voirdrama_client
-from scraper.voiranime_client import close_voiranime_client, get_voiranime_client
+from scraper.voirdrama_client import close_voirdrama_client
+from scraper.voiranime_client import close_voiranime_client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('nokatv.api')
@@ -57,7 +58,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 @app.middleware('http')
 async def private_responses(request, call_next):
     response = await call_next(request)
-    if not request.url.path.startswith('/api/image-proxy'):
+    if not (request.url.path == '/api/image-proxy' and response.status_code == 200):
         response.headers['Cache-Control'] = 'private, no-store'
         response.headers['X-Robots-Tag'] = 'noindex, nofollow'
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -78,41 +79,26 @@ async def robots():
 
 @app.get('/api/image-proxy')
 async def image_proxy(url: str = Query(...)):
-    """Relaye les images distantes avec le bon Referer pour contourner les erreurs 403."""
-    if not url.startswith('http://') and not url.startswith('https://'):
-        raise HTTPException(status_code=400, detail='Invalid URL')
-
-    # Déterminer le bon Referer selon la source
-    if 'voirdrama' in url:
-        referer = 'https://voirdrama.to/'
-        client = get_voirdrama_client()
-    elif 'voiranime' in url:
-        referer = 'https://voiranime.cx/'
-        client = get_voiranime_client()
-    else:
-        referer = COFLIX_SOURCE_URL + '/'
-        client = get_voirdrama_client()
-
+    """Public images only; no credentials, arbitrary ports or internal destinations."""
     try:
-        r = await client.get(
-            url,
-            headers={
-                'Referer': referer,
-                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-            },
-            timeout=10.0,
-        )
-        if r.status_code == 200:
-            content_type = r.headers.get('content-type', 'image/jpeg')
-            return Response(
-                content=r.content,
-                media_type=content_type,
-                headers={
-                    'Cache-Control': 'public, max-age=604800, immutable',
-                },
-            )
-    except Exception as exc:
-        logger.warning('Erreur image proxy pour %s : %s', url, exc)
+        parsed = validate_url(url)
+    except UnsafeImageURL:
+        raise HTTPException(status_code=400, detail='Image destination not allowed') from None
+    host = parsed.hostname.lower()
+    referer = ('https://voiranime.cx/' if host in {'voiranime.cx', 'voir-anime.to'}
+               else 'https://voirdrama.to/' if host in {'voirdrama.to', 'voirdrama.org'}
+               else COFLIX_SOURCE_URL.rstrip('/') + '/')
+    try:
+        body, mime = await fetch_image(url, referer)
+        return Response(content=body, media_type=mime, headers={
+            'Cache-Control': 'public, max-age=604800, immutable',
+            'Content-Security-Policy': "default-src 'none'; sandbox",
+        })
+    except UnsafeImageURL:
+        raise HTTPException(status_code=400, detail='Image destination not allowed') from None
+    except Exception:
+        # Do not log URLs, query parameters or secrets from upstream responses.
+        logger.warning('Image unavailable from allowed source')
 
     placeholder = (
         '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">'

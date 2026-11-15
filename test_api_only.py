@@ -65,16 +65,10 @@ def test_robots(client):
 
 
 def test_image_proxy_registered(client, monkeypatch):
-    class FakeResponse:
-        status_code = 200
-        content = b'fake-image-bytes'
-        headers = {'content-type': 'image/jpeg'}
+    async def fake_fetch(*args, **kwargs):
+        return b'fake-image-bytes', 'image/jpeg'
 
-    class FakeClient:
-        async def get(self, *args, **kwargs):
-            return FakeResponse()
-
-    monkeypatch.setattr('api_app.get_voiranime_client', lambda: FakeClient())
+    monkeypatch.setattr('api_app.fetch_image', fake_fetch)
     r = client.get('/api/image-proxy?url=https://voiranime.cx/poster.jpg')
     assert r.status_code == 200
     assert r.content == b'fake-image-bytes'
