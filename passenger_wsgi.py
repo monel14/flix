@@ -1,11 +1,23 @@
 import os
 import sys
+import traceback
 
-# Ajouter le répertoire de l'application au PATH Python
-sys.path.insert(0, os.path.dirname(__file__))
+app_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, app_dir)
+os.chdir(app_dir)
 
-from a2wsgi import ASGIMiddleware
-from main import app
+try:
+    from a2wsgi import ASGIMiddleware
+    from api_app import app
+    application = ASGIMiddleware(app)
+except Exception:
+    err_msg = traceback.format_exc()
+    try:
+        with open(os.path.join(app_dir, "passenger_startup_error.log"), "w", encoding="utf-8") as f:
+            f.write(err_msg)
+    except Exception:
+        pass
 
-# Adaptateur ASGI vers WSGI pour Passenger (PlanetHoster / cPanel / N0C)
-application = ASGIMiddleware(app)
+    def application(environ, start_response):
+        start_response("500 Internal Server Error", [("Content-Type", "text/plain; charset=utf-8")])
+        return [f"Passenger Startup Error:\n\n{err_msg}".encode("utf-8")]
