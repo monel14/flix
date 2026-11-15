@@ -60,4 +60,4 @@ templates.env.globals["player_sandbox"] = player_sandbox
 templates.env.globals["static_url"] = static_url
 # Domaine principal du catalogue : cible des liens média sur le domaine
 # observatoire (noka-tv.xyz), chaîne vide ailleurs (liens relatifs habituels).
-templates.env.globals["MEDIA_SITE_URL"] = (os.getenv("SITE_URL") or "https://noka-tv.xyz").rstrip("/")
+templates.env.globals["MEDIA_SITE_URL"] = (os.getenv("SITE_URL") or "https://nokatv.xyz").rstrip("/")

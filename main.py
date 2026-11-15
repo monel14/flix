@@ -191,9 +191,9 @@ async def secret_story_guide(request: Request):
             description="Accédez à la diffusion en direct de Secret Story Afrique sur NokaTV. Programme, horaires et accès officiel.",
             path="/secret-story-afrique",
             noindex=True,
-            image="https://noka-tv.xyz/static/secret-story-guide.png",
+            image="https://nokatv.xyz/static/secret-story-guide.png",
         )
-        seo.canonical = "https://noka-tv.xyz/secret-story-afrique"
+        seo.canonical = "https://nokatv.xyz/secret-story-afrique"
         return templates.TemplateResponse(request, "secret_story_watch.html", {
             "request": request, "seo": seo, "secret_story": get_secret_story(),
             "guide_url": canonical,
@@ -216,7 +216,7 @@ async def secret_story_guide(request: Request):
     seo.canonical = canonical
     return templates.TemplateResponse(request, "secret_story_guide.html", {
         "request": request, "seo": seo,
-        "nokatv_url": "https://noka-tv.xyz/secret-story-afrique?utm_source=noka-tv.xyz&utm_medium=guide&utm_campaign=secret-story-afrique#lecteur",
+        "nokatv_url": "https://nokatv.xyz/secret-story-afrique?utm_source=noka-tv.xyz&utm_medium=guide&utm_campaign=secret-story-afrique#lecteur",
     })
 
 
